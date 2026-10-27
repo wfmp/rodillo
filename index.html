@@ -2090,7 +2090,11 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
 
   /** External activities that are not already in the local history (same time window). */
   function externalOnly() {
-    return external.filter((x) => !summaries.some((s) => x.start < s.end + 600 && x.end > s.start - 600));
+    const overlaps = (a, b) => a.start < b.end + 600 && a.end > b.start - 600;
+    const rank = (x) => (x.hasPower ? 2 : 0) + (x.load > 0 ? 1 : 0);
+    return external.filter((x) => !summaries.some((s) => overlaps(x, s))
+      // when two external activities cover the same session (watch + trainer), keep the one with power
+      && !external.some((y) => y !== x && overlaps(x, y) && (rank(y) > rank(x) || (rank(y) === rank(x) && y.id < x.id))));
   }
 
   /** Combined training load per local day: TSS for rides with power, TRIMP × 0.56 otherwise. */
@@ -2158,7 +2162,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
       if (st.avgHr) metrics.push(st.avgHr + " ppm");
       return app.el("button", { class: "act-row", type: "button", onclick: () => openActivity(s.id) },
         app.el("span", { class: "act-date" }, fmtDate(s.start), app.el("small", {}, fmtTimeOfDay(s.start))),
-        app.el("span", { class: "act-name" }, s.name, app.el("small", {}, s.source === "app" ? "Rodillo" : "FIT importado")),
+        app.el("span", { class: "act-name" }, s.name, app.el("small", {}, s.source === "app" ? "Rodillo" : s.source === "icu" ? (s.sport || "Bici") + " · intervals.icu" : "FIT importado")),
         app.el("span", { class: "act-dur num" }, fmtDur(s.timerSeconds)),
         app.el("span", { class: "act-metrics num" }, metrics.join(" · ")));
     }
@@ -2212,7 +2216,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
     app.showView("activity");
     const s = ride.stats || {};
     $("#act-title").textContent = ride.name;
-    $("#act-date").textContent = fmtDate(ride.columns.ts[0]) + " · " + fmtTimeOfDay(ride.columns.ts[0]) + " · " + (ride.source === "app" ? "Rodillo" : "FIT importado");
+    $("#act-date").textContent = fmtDate(ride.columns.ts[0]) + " · " + fmtTimeOfDay(ride.columns.ts[0]) + " · " + (ride.source === "app" ? "Rodillo" : ride.source === "icu" ? "intervals.icu" : "FIT importado");
     const hasPower = ride.columns.power.some((p) => p > 0);
     const items = [["Tiempo", fmtDur(ride.columns.ts.length)]];
     if (hasPower) items.push(["Potencia media", s.avgPower + " W"], ["NP", s.np + " W"], ["IF", (s.if || 0).toFixed(2)], ["TSS", Math.round(s.tss || 0)], ["Trabajo", s.kj + " kJ"], ["Potencia máx.", s.maxPower + " W"]);
@@ -2449,9 +2453,10 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
 
   /** Map an intervals.icu activity to {id, start, end, seconds, name, type, load, hasPower, avgHr}. */
   function mapIntervals(a) {
-    const start = Math.floor(new Date(a.start_date_local).getTime() / 1000);
+    // start_date is UTC ("...Z"); start_date_local has no zone and is parsed as local time
+    const start = Math.floor(new Date(a.start_date || a.start_date_local).getTime() / 1000);
     const seconds = a.moving_time || a.elapsed_time || 0;
-    const hasPower = BIKE_TYPES.test(a.type || "") && (a.icu_weighted_avg_watts || a.icu_average_watts) > 0;
+    const hasPower = (a.icu_weighted_avg_watts || a.icu_average_watts || a.average_watts || 0) > 0;
     let load;
     if (hasPower && a.power_load != null) load = a.power_load;
     else if (hasPower) load = a.icu_training_load || 0;
@@ -2460,6 +2465,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
     return {
       id: "icu-" + a.id, start, end: start + (a.elapsed_time || seconds), seconds, name: a.name, type: a.type || "Actividad",
       load: Math.round((load || 0) * 10) / 10, hasPower, avgHr: a.average_heartrate ? Math.round(a.average_heartrate) : null,
+      icuId: a.id, ftp: a.icu_ftp || null, bike: BIKE_TYPES.test(a.type || ""),
     };
   }
 
@@ -2480,6 +2486,8 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
       await H.saveExternal(list);
       cfg.lastSync = Date.now(); saveIntervalsCfg(cfg);
       app.toast(list.length + " actividades de intervals.icu.");
+      const got = await downloadPowerRides(list, cfg, status);
+      if (got) app.toast(got === 1 ? "1 salida con potencia descargada." : got + " salidas con potencia descargadas.");
       renderForm();
     } catch (e) {
       const cors = e instanceof TypeError;
@@ -2487,6 +2495,58 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
         ? "No se pudo conectar: intervals.icu no acepta llamadas directas desde esta página (o no hay red)."
         : "No se pudo sincronizar: " + (e.message || e);
     }
+  }
+
+  /** Pull second-by-second streams for rides with power that are not yet in the local history. */
+  async function downloadPowerRides(list, cfg, status) {
+    await loadData();
+    const have = new Set(summaries.map((s) => s.id));
+    const todo = list.filter((x) => x.hasPower && !have.has(x.id));
+    let got = 0;
+    for (let i = 0; i < todo.length; i++) {
+      const x = todo[i];
+      status.textContent = "Bajando datos de potencia " + (i + 1) + "/" + todo.length + "…";
+      try {
+        const url = "https://intervals.icu/api/v1/activity/" + encodeURIComponent(x.icuId) + "/streams?types=time,watts,heartrate,cadence,velocity_smooth,distance";
+        const res = await fetch(url, { headers: { Authorization: "Basic " + btoa("API_KEY:" + cfg.apiKey) } });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const streams = {};
+        for (const s of await res.json()) streams[s.type] = s.data;
+        if (!streams.time || !streams.watts) continue;
+        const samples = streamsToSamples(x.start, streams);
+        if (samples.length < 60) continue;
+        const ftp = x.ftp || app.settings.ftp;
+        const stats = W.rideStats(samples, ftp);
+        await H.saveRide({ id: x.id, source: "icu", name: x.name || x.type, sport: x.type, ftp, stats, load: x.load || stats.tss, samples });
+        got++;
+      } catch (e) {
+        status.textContent = "No se pudo bajar " + (x.name || x.id) + ": " + (e.message || e);
+      }
+    }
+    return got;
+  }
+
+  /** intervals.icu streams -> 1 Hz samples; gaps up to 5 s are filled, longer gaps are pauses. */
+  function streamsToSamples(start, st) {
+    const out = [];
+    const n = st.time.length;
+    for (let i = 0; i < n; i++) {
+      const t = st.time[i];
+      const next = i + 1 < n ? st.time[i + 1] : t + 1;
+      const span = next - t > 0 && next - t <= 5 ? next - t : 1;
+      for (let k = 0; k < span; k++) {
+        const ts = start + t + k;
+        if (out.length && ts <= out[out.length - 1].ts) continue;
+        out.push({
+          ts, power: st.watts[i] == null ? null : Math.round(st.watts[i]),
+          hr: st.heartrate ? st.heartrate[i] || null : null,
+          cadence: st.cadence ? (st.cadence[i] == null ? null : Math.round(st.cadence[i])) : null,
+          speed: st.velocity_smooth ? st.velocity_smooth[i] : null,
+          distance: st.distance ? st.distance[i] : null, lap: 0,
+        });
+      }
+    }
+    return out;
   }
 
   function ratioStatus(r) {
