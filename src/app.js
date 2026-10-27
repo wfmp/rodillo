@@ -6,6 +6,7 @@
   const F = window.RodilloFit;
   const B = window.RodilloBle;
   const D = window.RodilloDropbox;
+  const H = window.RodilloHistory;
   const PLAN = window.RODILLO_PLAN || [];
 
   const ZONE_VARS = ["--z1", "--z2", "--z3", "--z4", "--z5", "--z6"];
@@ -32,7 +33,7 @@
     remove(key) { try { localStorage.removeItem("rodillo." + key); } catch (e) { /* ignore */ } },
   };
 
-  const settings = Object.assign({ ftp: 165, weight: 72, simulator: false, sounds: true, autoPause: true },
+  const settings = Object.assign({ ftp: 165, weight: 72, simulator: false, sounds: true, autoPause: true, hrMax: 182, hrRest: 50 },
     store.get("settings", {}));
 
   // ---------- State ----------
@@ -40,6 +41,7 @@
   const devices = { trainer: null, hr: null };
   let ride = null; // active session
   let lastSummary = null;
+  const doneWorkouts = new Set(); // plan workout ids with a saved ride
   let toastTimer = null;
 
   // ---------- Formatting ----------
@@ -179,6 +181,8 @@
         else if (d.date < today) state = "past";
         else if (!nextMarked) { badge = "Próxima"; state = "next"; nextMarked = true; }
       }
+      const done = doneWorkouts.has(w.id);
+      if (done) { badge = "Hecha ✓"; state += " done"; }
       const canvas = el("canvas", { class: "mini-profile", "aria-hidden": "true" });
       const meta = el("div", { class: "card-meta" },
         el("span", {}, fmtTime(total)),
@@ -194,7 +198,7 @@
       }
       const card = el("article", { class: "workout-card " + state },
         el("div", { class: "card-head" },
-          el("div", { class: "card-date" }, dateLabel, badge ? el("span", { class: "badge" }, badge) : null),
+          el("div", { class: "card-date" }, dateLabel, badge ? el("span", { class: "badge" + (done ? " badge-done" : "") }, badge) : null),
           d.kind ? el("span", { class: "kind kind-" + d.kind }, d.kindName) : null),
         el("h3", {}, d.title),
         w.description ? el("p", { class: "card-desc" }, w.description) : null,
@@ -580,7 +584,23 @@
     lastSummary = buildSummary(ride);
     renderSummary(lastSummary);
     showView("summary");
-    uploadSummary(lastSummary);
+    persistSummary(lastSummary).then(() => uploadSummary(lastSummary));
+  }
+
+  function rideId(sum) { return "app-" + sum.ride.samples[0].ts; }
+
+  /** Save the finished ride in the on-device history. */
+  async function persistSummary(sum) {
+    try {
+      await H.saveRide({
+        id: rideId(sum), source: "app", name: describeWorkout(sum.ride.workout).title, sport: "Rodillo",
+        ftp: settings.ftp, stats: sum.stats, load: sum.stats.tss, fileName: sum.fileName,
+        workoutId: sum.ride.workout.id || null, samples: sum.ride.samples,
+      });
+      doneWorkouts.add(sum.ride.workout.id);
+    } catch (e) {
+      toast("No se pudo guardar en el historial: " + B.errorText(e), "warn");
+    }
   }
 
   function fitBytes(sum) {
@@ -598,6 +618,7 @@
     setUploadStatus("Subiendo a Dropbox…");
     try {
       sum.dropboxPath = await D.uploadOrQueue(sum.fileName, fitBytes(sum));
+      H.updateSummary(rideId(sum), { dropboxPath: sum.dropboxPath }).catch(() => {});
       if (lastSummary === sum) setUploadStatus("Guardado en Dropbox: " + sum.dropboxPath, "ok");
     } catch (e) {
       if (lastSummary === sum) setUploadStatus("No se pudo subir (" + B.errorText(e) + "). Queda en cola y se reintenta al abrir la app.", "error");
@@ -657,11 +678,11 @@
     store.remove("recovery");
     if (lastSummary) {
       D.dequeue(lastSummary.fileName);
+      H.deleteRide(rideId(lastSummary)).catch(() => {});
       if (lastSummary.dropboxPath) D.removeFile(lastSummary.dropboxPath).catch((e) => toast("No se pudo borrar de Dropbox: " + B.errorText(e), "warn"));
     }
     ride = null; lastSummary = null;
-    showView("library");
-    renderLibrary();
+    window.RodilloViews.showTab("library");
   }
 
   // ---------- Settings ----------
@@ -724,6 +745,7 @@
       lastSummary = buildSummary(ride);
       renderSummary(lastSummary);
       showView("summary");
+      persistSummary(lastSummary).then(() => uploadSummary(lastSummary));
     };
     $("#recovery-resume").onclick = () => {
       banner.hidden = true;
@@ -784,7 +806,7 @@
     $("#btn-discard").addEventListener("click", () => { $("#confirm-discard").hidden = false; });
     $("#btn-discard-yes").addEventListener("click", discardRide);
     $("#btn-discard-no").addEventListener("click", () => { $("#confirm-discard").hidden = true; });
-    $("#btn-done").addEventListener("click", () => { store.remove("recovery"); ride = null; showView("library"); renderLibrary(); });
+    $("#btn-done").addEventListener("click", () => { store.remove("recovery"); ride = null; window.RodilloViews.showTab("library"); });
     $("#toast").addEventListener("click", () => { $("#toast").hidden = true; });
     $("#btn-copy-log").addEventListener("click", () => {
       const text = B.bleLog.join("\n");
@@ -797,9 +819,14 @@
       else if (ride) updateRideUi();
     });
     if (!B.bluetoothAvailable()) $("#bt-hint").hidden = false;
-    showView("library");
-    renderLibrary();
+    window.RodilloApp = { $, el, toast, settings, store, fmtTime, showView, describeWorkout, renderLibrary };
+    window.RodilloViews.init(window.RodilloApp);
+    window.RodilloViews.showTab("library");
     checkRecovery();
+    H.listSummaries().then((list) => {
+      for (const s of list) if (s.workoutId) doneWorkouts.add(s.workoutId);
+      if (document.body.dataset.view === "library") renderLibrary();
+    }).catch(() => {});
   }
 
   document.addEventListener("DOMContentLoaded", init);

@@ -237,6 +237,95 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
   .controls .btn { flex: 1 1 auto; }
 }
 
+
+/* ---------- Tabs ---------- */
+.tabs { display: flex; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.tabs button {
+  border: 0; background: transparent; color: var(--muted); border-radius: 999px; padding: 6px 14px;
+  font-size: 14px; font-weight: 600; cursor: pointer; min-height: 34px;
+}
+.tabs button[aria-selected="true"] { background: var(--fg); color: var(--bg); }
+body[data-view="ride"] .tabs, body[data-view="summary"] .tabs { display: none; }
+@media (max-width: 1000px) { .tabs { order: 5; width: 100%; justify-content: space-between; } .tabs button { flex: 1; } }
+.seg { display: inline-flex; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 3px; }
+.seg button { border: 0; background: transparent; color: var(--muted); border-radius: 6px; padding: 6px 12px; font-weight: 600; cursor: pointer; min-height: 36px; }
+.seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--fg); box-shadow: inset 0 0 0 1px var(--grid); }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.empty { color: var(--muted); padding: 24px 0; }
+
+/* ---------- Activities ---------- */
+.activity-list { display: flex; flex-direction: column; gap: 6px; padding-bottom: 32px; }
+.week-head { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; padding: 14px 4px 4px; }
+.act-row {
+  display: grid; grid-template-columns: 110px minmax(0, 1fr) 90px minmax(0, 220px); gap: 12px; align-items: center;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px;
+  color: var(--fg); text-align: left; font: inherit; width: 100%; min-height: 56px;
+}
+button.act-row { cursor: pointer; }
+button.act-row:hover { border-color: var(--grid); }
+.act-row.ext { background: transparent; }
+.act-row small { display: block; color: var(--muted); font-size: 12px; }
+.act-date { text-transform: capitalize; }
+.act-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.act-dur, .act-metrics { color: var(--muted); text-align: right; font-size: 15px; }
+@media (max-width: 700px) {
+  .act-row { grid-template-columns: 1fr auto; }
+  .act-metrics { grid-column: 1 / -1; text-align: left; }
+}
+.detail { display: grid; gap: 14px; padding-block: 16px 32px; }
+.detail-head { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.detail-head h1 { font-family: var(--font-num); font-weight: 600; font-size: clamp(26px, 4vw, 36px); }
+.table-scroll { overflow-x: auto; }
+table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
+.laps th { text-align: left; color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.laps td { padding: 7px 8px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.zone-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+
+/* ---------- Charts ---------- */
+.chart-box { display: flex; flex-direction: column; gap: 6px; }
+.chart-title { font-weight: 600; font-size: 15px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend-item i { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
+.legend-item i.dash { background-image: linear-gradient(90deg, transparent 50%, var(--panel) 50%) !important; background-size: 6px 4px; }
+.band-sw { height: 10px !important; width: 14px !important; }
+.b-fresh { background: color-mix(in srgb, var(--z2) 35%, transparent); }
+.b-ok { background: color-mix(in srgb, var(--ok) 40%, transparent); }
+.b-bad { background: color-mix(in srgb, var(--bad) 35%, transparent); }
+.chart-holder { position: relative; height: clamp(180px, 30vh, 280px); }
+.chart-holder.short { height: clamp(130px, 20vh, 190px); }
+.chart-holder canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: pan-y; }
+.chart-tip {
+  position: absolute; z-index: 4; pointer-events: none; background: var(--panel-2); border: 1px solid var(--grid);
+  border-radius: 8px; padding: 8px 10px; font-size: 13px; line-height: 1.45; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.chart-tip .muted { color: var(--muted); }
+.power-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding-bottom: 32px; }
+@media (max-width: 760px) { .power-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Form ---------- */
+.form-top { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; }
+@media (max-width: 760px) { .form-top { grid-template-columns: minmax(0, 1fr); } }
+.form-charts { display: grid; gap: 12px; padding-block: 12px 32px; }
+.status-card { display: flex; flex-direction: column; gap: 8px; border-left: 6px solid var(--z1); }
+.status-card[data-state="ok"] { border-left-color: var(--ok); }
+.status-card[data-state="fresh"] { border-left-color: var(--z2); }
+.status-card[data-state="warn"] { border-left-color: var(--warn); }
+.status-card[data-state="bad"] { border-left-color: var(--bad); }
+.status-head { display: flex; align-items: center; gap: 10px; }
+.status-icon { font-family: var(--font-num); font-weight: 700; font-size: 20px; min-width: 32px; height: 32px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--panel-2); }
+.status-label { font-family: var(--font-num); font-weight: 600; font-size: 26px; }
+.status-text { margin: 0; color: var(--muted); }
+.status-nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.status-nums > div { display: flex; flex-direction: column; }
+.icu-box { display: flex; flex-direction: column; gap: 8px; }
+.icu-fields { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+.workout-card.done { opacity: 1; }
+.badge-done { background: var(--ok); }
+.badge { white-space: nowrap; }
+
 /* ---------- Summary ---------- */
 .summary { display: grid; gap: 14px; padding-block: 22px 32px; }
 .summary h1 { font-family: var(--font-num); font-weight: 600; font-size: clamp(28px, 4vw, 40px); }
@@ -256,7 +345,8 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
 .dialog { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; width: min(440px, 100%); display: grid; gap: 14px; }
 .dialog h2 { font-family: var(--font-num); font-weight: 600; font-size: 26px; }
 .field { display: grid; gap: 4px; }
-.field input[type=number] {
+.field input[type=number], .field input[type=text], .field input[type=password] {
+  min-width: 0; width: 100%;
   background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 18px;
   font-variant-numeric: tabular-nums;
 }
@@ -296,6 +386,12 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
   <div class="wrap topbar-inner">
     <div class="brand">Rodillo<span>·</span>Fer</div>
     <div class="ftp-label" id="ftp-label">FTP 165 W</div>
+    <nav class="tabs" aria-label="Secciones">
+      <button type="button" data-tab="library" aria-selected="true">Entrenar</button>
+      <button type="button" data-tab="activities" aria-selected="false">Actividades</button>
+      <button type="button" data-tab="form" aria-selected="false">Forma</button>
+      <button type="button" data-tab="power" aria-selected="false">Potencia</button>
+    </nav>
     <div class="chips">
       <button class="chip" id="chip-trainer" data-state="off" type="button"><span class="chip-label">Rodillo</span></button>
       <button class="chip" id="chip-hr" data-state="off" type="button"><span class="chip-label">Pulso</span></button>
@@ -403,6 +499,114 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
       </div>
     </div>
   </section>
+
+  <section class="view wrap" id="view-activities" hidden>
+    <div class="lib-head">
+      <div>
+        <h1>Actividades</h1>
+        <p>Tus sesiones en el rodillo, los FIT que importes y lo que llega de Garmin por intervals.icu.</p>
+      </div>
+      <div class="lib-actions">
+        <label class="btn" for="fit-import">Importar FIT<input id="fit-import" type="file" accept=".fit,application/octet-stream" multiple></label>
+      </div>
+    </div>
+    <div class="activity-list" id="activity-list"></div>
+  </section>
+
+  <section class="view wrap" id="view-activity" hidden>
+    <div class="detail">
+      <div class="detail-head">
+        <button class="btn ghost" id="act-back" type="button">← Actividades</button>
+        <div>
+          <h1 id="act-title"></h1>
+          <div class="muted" id="act-date"></div>
+        </div>
+      </div>
+      <div class="summary-grid" id="act-grid"></div>
+      <div class="box chart-box" id="act-power-box"><div class="chart-title">Potencia (W)</div><div class="chart-holder"><canvas id="act-power"></canvas></div></div>
+      <div class="box chart-box" id="act-hr-box"><div class="chart-title">Pulso (ppm)</div><div class="chart-holder short"><canvas id="act-hr"></canvas></div></div>
+      <div class="box" id="act-laps-box">
+        <div class="chart-title">Laps</div>
+        <div class="table-scroll">
+          <table class="laps"><thead><tr><th>Lap</th><th>Tiempo</th><th>Media</th><th>Máx.</th><th>Pulso</th><th>Cadencia</th></tr></thead><tbody id="act-laps"></tbody></table>
+        </div>
+      </div>
+      <div class="summary-actions">
+        <button class="btn" id="act-share" type="button">Guardar archivo FIT</button>
+        <button class="btn" id="act-dropbox" type="button">Subir a Dropbox</button>
+        <button class="btn danger" id="act-delete" type="button">Borrar</button>
+      </div>
+      <div class="confirm" id="confirm-delete-act" hidden>
+        <p>¿Borrar esta actividad del iPad? Si está en Dropbox, allí se queda.</p>
+        <button class="btn danger" id="act-delete-yes" type="button">Borrar</button>
+        <button class="btn ghost" id="act-delete-no" type="button">Cancelar</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="view wrap" id="view-form" hidden>
+    <div class="lib-head">
+      <div>
+        <h1>Forma</h1>
+        <p>Carga combinada: TSS en bici y TRIMP × 0,56 en los demás deportes, igual que en GoldenCheetah.</p>
+      </div>
+      <div class="seg" role="group" aria-label="Periodo">
+        <button type="button" data-form-range="42" aria-pressed="false">6 sem</button>
+        <button type="button" data-form-range="90" aria-pressed="true">3 meses</button>
+        <button type="button" data-form-range="180" aria-pressed="false">6 meses</button>
+      </div>
+    </div>
+    <div class="form-top">
+      <div class="box status-card" id="form-status" data-state="neutral">
+        <div class="status-head"><span class="status-icon" id="fs-icon" aria-hidden="true">–</span><span class="status-label" id="fs-label">Sin datos</span></div>
+        <p class="status-text" id="fs-text"></p>
+        <div class="status-nums">
+          <div><span class="label">CTL forma</span><span class="small-val" id="fs-ctl">—</span></div>
+          <div><span class="label">ATL fatiga</span><span class="small-val" id="fs-atl">—</span></div>
+          <div><span class="label">TSB</span><span class="small-val" id="fs-tsb">—</span></div>
+          <div><span class="label">Ratio</span><span class="small-val" id="fs-ratio">—</span></div>
+        </div>
+      </div>
+      <div class="box icu-box">
+        <div class="chart-title">intervals.icu</div>
+        <p class="muted small" id="icu-status"></p>
+        <div class="icu-fields">
+          <label class="field" for="icu-key"><span class="label">API key</span><input id="icu-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+          <label class="field" for="icu-athlete"><span class="label">ID atleta (opcional)</span><input id="icu-athlete" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="0"></label>
+        </div>
+        <button class="btn primary" id="icu-save" type="button">Guardar y sincronizar</button>
+      </div>
+    </div>
+    <p class="empty" id="form-empty" hidden>Todavía no hay carga registrada. Sincroniza intervals.icu o termina una sesión.</p>
+    <div class="form-charts" id="form-charts">
+      <div class="box chart-box"><div class="chart-title">Forma, fatiga y frescura</div><div class="legend" id="legend-pmc"></div><div class="chart-holder"><canvas id="chart-pmc"></canvas></div></div>
+      <div class="box chart-box"><div class="chart-title">Ratio fatiga / forma (ATL ÷ CTL)</div>
+        <div class="legend"><span class="legend-item"><i class="band-sw b-fresh"></i>0,8–1,0 antes de partido</span><span class="legend-item"><i class="band-sw b-ok"></i>1,0–1,3 objetivo del plan</span><span class="legend-item"><i class="band-sw b-bad"></i>&gt; 1,4 demasiado</span></div>
+        <div class="chart-holder short"><canvas id="chart-ratio"></canvas></div></div>
+      <div class="box chart-box"><div class="chart-title">Carga diaria</div><div class="legend" id="legend-load"></div><div class="chart-holder short"><canvas id="chart-load"></canvas></div></div>
+    </div>
+  </section>
+
+  <section class="view wrap" id="view-power" hidden>
+    <div class="lib-head">
+      <div>
+        <h1>Potencia</h1>
+        <p>Solo sesiones con potencia. Las zonas usan el FTP que tenías en cada sesión.</p>
+      </div>
+      <div class="seg" role="group" aria-label="Periodo">
+        <button type="button" data-power-range="8" aria-pressed="true">8 sem</button>
+        <button type="button" data-power-range="12" aria-pressed="false">12 sem</button>
+        <button type="button" data-power-range="0" aria-pressed="false">Todo</button>
+      </div>
+    </div>
+    <p class="empty" id="power-empty" hidden>Todavía no hay sesiones con potencia. Termina una sesión en Entrenar o importa archivos FIT en Actividades.</p>
+    <div class="power-grid" id="power-grid">
+      <div class="box chart-box"><div class="chart-title">Aeróbico vs anaeróbico (% del tiempo)</div><div class="legend" id="legend-aer"></div><div class="chart-holder"><canvas id="chart-aer"></canvas></div></div>
+      <div class="box chart-box"><div class="chart-title">Tiempo en zonas (min por semana)</div><div class="legend" id="legend-zones"></div><div class="chart-holder"><canvas id="chart-zones"></canvas></div></div>
+      <div class="box chart-box"><div class="chart-title">Curva de potencia (W)</div><div class="legend" id="legend-curve"></div><div class="chart-holder"><canvas id="chart-curve"></canvas></div></div>
+      <div class="box chart-box"><div class="chart-title">Mejores marcas por semana (W)</div><div class="legend" id="legend-trend"></div><div class="chart-holder"><canvas id="chart-trend"></canvas></div></div>
+    </div>
+  </section>
 </main>
 
 <div class="overlay" id="settings" hidden>
@@ -441,6 +645,11 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
 <script>/*WORKOUTS_JS*/</script>
 <script>/*BLE_JS*/</script>
 <script>/*DROPBOX_JS*/</script>
+<script>/*ANALYSIS_JS*/</script>
+<script>/*HISTORY_JS*/</script>
+<script>/*FITPARSE_JS*/</script>
+<script>/*CHART_JS*/</script>
+<script>/*VIEWS_JS*/</script>
 <script>/*APP_JS*/</script>
 </body>
 </html>
