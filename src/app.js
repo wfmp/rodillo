@@ -692,6 +692,20 @@
     $("#chip-trainer").addEventListener("click", connectTrainer);
     $("#chip-hr").addEventListener("click", connectHr);
     $("#btn-settings").addEventListener("click", openSettings);
+    // Full screen, only where the browser lets the page request it
+    const doc = document.documentElement;
+    const requestFs = doc.requestFullscreen || doc.webkitRequestFullscreen;
+    const exitFs = document.exitFullscreen || document.webkitExitFullscreen;
+    const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
+    if (requestFs && (document.fullscreenEnabled || document.webkitFullscreenEnabled)) {
+      $("#btn-fullscreen").hidden = false;
+      $("#btn-fullscreen").addEventListener("click", () => {
+        try {
+          const r = fsElement() ? exitFs.call(document) : requestFs.call(doc);
+          if (r && r.catch) r.catch((e) => toast("Pantalla completa no disponible: " + B.errorText(e), "warn"));
+        } catch (e) { toast("Pantalla completa no disponible: " + B.errorText(e), "warn"); }
+      });
+    }
     $("#settings-form").addEventListener("submit", saveSettings);
     $("#settings-cancel").addEventListener("click", () => { $("#settings").hidden = true; });
     $("#import-input").addEventListener("change", (e) => { importFiles([...e.target.files]); e.target.value = ""; });
