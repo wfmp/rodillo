@@ -338,6 +338,13 @@
   }
 
   function startRide(workout, resumeData) {
+    // Simulator mode needs no tap on the trainer chip: switch to the simulator automatically
+    const usingSim = devices.trainer instanceof B.SimulatedRig;
+    if (settings.simulator && !usingSim) {
+      connectTrainer().then(() => { if (devices.trainer instanceof B.SimulatedRig) startRide(workout, resumeData); });
+      return;
+    }
+    if (!settings.simulator && usingSim) { devices.trainer.disconnect(); devices.trainer = null; setChip("trainer", "off", "Rodillo"); }
     if (!devices.trainer && !resumeData) {
       toast("Conecta primero el rodillo (o activa el simulador en Ajustes).", "warn");
       return;
