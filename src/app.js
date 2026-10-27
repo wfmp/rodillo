@@ -278,7 +278,7 @@
       devices.trainer = t;
     } catch (e) {
       setChip("trainer", "off", "Rodillo");
-      if (e && e.name !== "NotFoundError") toast("No se pudo conectar el rodillo: " + e.message, "error");
+      if (e && e.name !== "NotFoundError") toast("No se pudo conectar el rodillo. " + B.errorText(e) + " (detalles en Ajustes → Registro)", "error");
     }
   }
 
@@ -297,7 +297,7 @@
       devices.hr = h;
     } catch (e) {
       setChip("hr", "off", "Pulso");
-      if (e && e.name !== "NotFoundError") toast("No se pudo conectar el pulso: " + e.message, "error");
+      if (e && e.name !== "NotFoundError") toast("No se pudo conectar el pulso. " + B.errorText(e) + " (detalles en Ajustes → Registro)", "error");
     }
   }
 
@@ -591,6 +591,7 @@
     $("#set-sim").checked = settings.simulator;
     $("#set-sounds").checked = settings.sounds;
     $("#set-autopause").checked = settings.autoPause;
+    $("#ble-log").textContent = B.bleLog.length ? B.bleLog.join("\n") : "Todavía no hay registro. Conecta el rodillo o el pulso.";
     $("#settings").hidden = false;
   }
   function saveSettings(ev) {
@@ -607,6 +608,12 @@
     $("#ftp-label").textContent = "FTP " + settings.ftp + " W";
     renderLibrary();
     toast("Ajustes guardados.");
+  }
+
+  function selectLog() {
+    const range = document.createRange(); range.selectNodeContents($("#ble-log"));
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    toast("Registro seleccionado: cópialo con Copiar.");
   }
 
   // ---------- Recovery ----------
@@ -658,6 +665,12 @@
     $("#btn-discard-no").addEventListener("click", () => { $("#confirm-discard").hidden = true; });
     $("#btn-done").addEventListener("click", () => { store.remove("recovery"); ride = null; showView("library"); renderLibrary(); });
     $("#toast").addEventListener("click", () => { $("#toast").hidden = true; });
+    $("#btn-copy-log").addEventListener("click", () => {
+      const text = B.bleLog.join("\n");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => toast("Registro copiado."), () => selectLog());
+      } else selectLog();
+    });
     window.addEventListener("resize", () => {
       if (document.body.dataset.view === "library") renderLibrary();
       else if (ride) updateRideUi();

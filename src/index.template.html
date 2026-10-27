@@ -237,6 +237,12 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .check { display: flex; gap: 10px; align-items: flex-start; }
 .check input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--z3); }
 .check small { display: block; color: var(--muted); }
+.log-box summary { cursor: pointer; color: var(--muted); }
+.log-box pre {
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin: 8px 0;
+  max-height: 220px; overflow: auto; font-size: 12px; white-space: pre-wrap; word-break: break-word;
+}
+.dialog { max-height: calc(100vh - 32px); overflow-y: auto; }
 .dialog-actions { display: flex; gap: 10px; justify-content: flex-end; }
 .toast {
   position: fixed; z-index: 30; left: 50%; transform: translateX(-50%);
@@ -366,6 +372,11 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
     <label class="check" for="set-autopause"><input id="set-autopause" type="checkbox"><span>Pausa automática<small>Se detiene si dejas de pedalear 5 s y sigue al volver.</small></span></label>
     <label class="check" for="set-sounds"><input id="set-sounds" type="checkbox"><span>Pitidos<small>Cuenta atrás de 3 s antes de cada cambio de bloque.</small></span></label>
     <label class="check" for="set-sim"><input id="set-sim" type="checkbox"><span>Modo simulador<small>Para probar la app sin rodillo: el botón Rodillo conecta un rodillo y un pulso ficticios.</small></span></label>
+    <details class="log-box">
+      <summary>Registro Bluetooth</summary>
+      <pre id="ble-log"></pre>
+      <button class="btn ghost" id="btn-copy-log" type="button">Copiar registro</button>
+    </details>
     <div class="dialog-actions">
       <button class="btn ghost" id="settings-cancel" type="button">Cancelar</button>
       <button class="btn primary" type="submit">Guardar</button>

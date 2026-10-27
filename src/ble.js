@@ -2,11 +2,48 @@
 (function (root) {
   "use strict";
 
+  const full = (short) => "0000" + short.toString(16).padStart(4, "0") + "-0000-1000-8000-00805f9b34fb";
   const UUID = {
-    ftms: 0x1826, indoorBikeData: 0x2ad2, ftmsControlPoint: 0x2ad9, ftmsStatus: 0x2ada,
-    cyclingPower: 0x1818, cyclingPowerMeasurement: 0x2a63,
-    heartRate: 0x180d, heartRateMeasurement: 0x2a37,
+    ftms: full(0x1826), indoorBikeData: full(0x2ad2), ftmsControlPoint: full(0x2ad9), ftmsStatus: full(0x2ada),
+    cyclingPower: full(0x1818), cyclingPowerMeasurement: full(0x2a63),
+    heartRate: full(0x180d), heartRateMeasurement: full(0x2a37),
   };
+
+  // Diagnostic log shown in the app settings
+  const bleLog = [];
+  function log(msg) {
+    const line = new Date().toLocaleTimeString() + "  " + msg;
+    bleLog.push(line);
+    if (bleLog.length > 200) bleLog.shift();
+    if (typeof console !== "undefined") console.log("[ble] " + msg);
+  }
+  function errorText(e) {
+    if (e == null) return "error sin detalle";
+    if (typeof e === "string") return e;
+    const parts = [e.name, e.message, e.code != null ? "code " + e.code : null].filter(Boolean);
+    return parts.length ? parts.join(": ") : String(e);
+  }
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  /** Run an async step, logging it; retries help with flaky iOS Bluetooth stacks. */
+  async function step(label, fn, retries) {
+    retries = retries || 0;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        log(label + (attempt ? " (reintento " + attempt + ")" : ""));
+        const result = await fn();
+        log(label + " ✓");
+        return result;
+      } catch (e) {
+        log(label + " ✗ " + errorText(e));
+        if (attempt >= retries) {
+          const err = new Error(label + ": " + errorText(e));
+          err.name = e && e.name;
+          throw err;
+        }
+        await sleep(600);
+      }
+    }
+  }
 
   const FTMS_OP = { requestControl: 0x00, reset: 0x01, setTargetPower: 0x05, startResume: 0x07, stopPause: 0x08 };
 
@@ -75,41 +112,47 @@
       this.queue = Promise.resolve(); this.lastTarget = null; this.name = "";
     }
     async connect() {
-      const device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [UUID.ftms] }, { services: [UUID.cyclingPower] }],
+      const device = await step("Elegir rodillo", () => navigator.bluetooth.requestDevice({
+        filters: [{ services: [UUID.ftms] }, { services: [UUID.cyclingPower] }, { namePrefix: "SUITO" }, { namePrefix: "Suito" }],
         optionalServices: [UUID.ftms, UUID.cyclingPower],
-      });
+      }));
       this.device = device;
       this.name = device.name || "Rodillo";
+      log("Dispositivo: " + this.name);
       device.addEventListener("gattserverdisconnected", () => this.handleDisconnect());
       await this.setup();
     }
     async setup() {
-      const server = await this.device.gatt.connect();
+      const server = await step("Conectar GATT", () => this.device.gatt.connect(), 2);
+      await sleep(300);
+      try {
+        const services = await server.getPrimaryServices();
+        log("Servicios: " + services.map((x) => x.uuid.slice(4, 8)).join(", "));
+      } catch (e) { log("No se pudo listar servicios: " + errorText(e)); }
       let ftms = null;
-      try { ftms = await server.getPrimaryService(UUID.ftms); } catch (e) { ftms = null; }
+      try { ftms = await step("Servicio FTMS", () => server.getPrimaryService(UUID.ftms), 2); } catch (e) { ftms = null; }
       if (ftms) {
-        const data = await ftms.getCharacteristic(UUID.indoorBikeData);
+        const data = await step("Característica Indoor Bike Data", () => ftms.getCharacteristic(UUID.indoorBikeData), 1);
         data.addEventListener("characteristicvaluechanged", (e) => this.emit("data", parseIndoorBikeData(e.target.value)));
-        await data.startNotifications();
+        await step("Activar datos del rodillo", () => data.startNotifications(), 2);
         try {
-          this.controlPoint = await ftms.getCharacteristic(UUID.ftmsControlPoint);
+          this.controlPoint = await step("Característica Control Point", () => ftms.getCharacteristic(UUID.ftmsControlPoint), 1);
           this.controlPoint.addEventListener("characteristicvaluechanged", (e) => this.handleControlResponse(e.target.value));
-          await this.controlPoint.startNotifications();
-          await this.sendControl([FTMS_OP.requestControl]);
-          await this.sendControl([FTMS_OP.startResume]);
+          await step("Activar respuestas de control", () => this.controlPoint.startNotifications(), 2);
+          await step("Pedir control", () => this.sendControl([FTMS_OP.requestControl]), 1);
+          await step("Iniciar", () => this.sendControl([FTMS_OP.startResume]), 1);
           this.canControl = true;
         } catch (e) {
           this.canControl = false;
-          this.emit("warning", "El rodillo no aceptó el control (¿otra app conectada?). Solo se leerán datos.");
+          this.emit("warning", "El rodillo no aceptó el control (" + e.message + "). Solo se leerán datos.");
         }
         this.mode = "ftms";
       } else {
-        const cps = await server.getPrimaryService(UUID.cyclingPower);
-        const meas = await cps.getCharacteristic(UUID.cyclingPowerMeasurement);
+        const cps = await step("Servicio Cycling Power", () => server.getPrimaryService(UUID.cyclingPower), 1);
+        const meas = await step("Característica de potencia", () => cps.getCharacteristic(UUID.cyclingPowerMeasurement), 1);
         const parse = makeCyclingPowerParser();
         meas.addEventListener("characteristicvaluechanged", (e) => this.emit("data", parse(e.target.value)));
-        await meas.startNotifications();
+        await step("Activar potencia", () => meas.startNotifications(), 2);
         this.canControl = false;
         this.mode = "power";
         this.emit("warning", "Este dispositivo solo envía potencia: no se puede controlar la resistencia.");
@@ -120,6 +163,7 @@
     handleControlResponse(dv) {
       if (dv.getUint8(0) === 0x80 && dv.byteLength >= 3) {
         const op = dv.getUint8(1), result = dv.getUint8(2);
+        log("Respuesta control: orden " + op + " resultado " + result);
         if (result !== 0x01) this.emit("warning", `El rodillo rechazó la orden ${op} (código ${result}).`);
       }
     }
@@ -135,8 +179,10 @@
       const w = Math.max(0, Math.min(2000, Math.round(watts)));
       if (w === this.lastTarget) return;
       this.lastTarget = w;
-      this.sendControl([FTMS_OP.setTargetPower, w & 0xff, (w >> 8) & 0xff]).catch((e) =>
-        this.emit("warning", "No se pudo enviar la potencia objetivo: " + e.message));
+      this.sendControl([FTMS_OP.setTargetPower, w & 0xff, (w >> 8) & 0xff]).catch((e) => {
+        log("Objetivo " + w + " W ✗ " + errorText(e));
+        this.emit("warning", "No se pudo enviar la potencia objetivo: " + errorText(e));
+      });
     }
     async handleDisconnect() {
       this.canControl = false; this.controlPoint = null;
@@ -156,18 +202,19 @@
   class HeartRateSensor extends Emitter {
     constructor() { super(); this.device = null; this.name = ""; }
     async connect() {
-      const device = await navigator.bluetooth.requestDevice({ filters: [{ services: [UUID.heartRate] }] });
+      const device = await step("Elegir pulsómetro", () => navigator.bluetooth.requestDevice({ filters: [{ services: [UUID.heartRate] }] }));
       this.device = device;
       this.name = device.name || "Pulso";
       device.addEventListener("gattserverdisconnected", () => this.handleDisconnect());
       await this.setup();
     }
     async setup() {
-      const server = await this.device.gatt.connect();
-      const svc = await server.getPrimaryService(UUID.heartRate);
-      const ch = await svc.getCharacteristic(UUID.heartRateMeasurement);
+      const server = await step("Pulso: conectar GATT", () => this.device.gatt.connect(), 2);
+      await sleep(300);
+      const svc = await step("Pulso: servicio", () => server.getPrimaryService(UUID.heartRate), 2);
+      const ch = await step("Pulso: característica", () => svc.getCharacteristic(UUID.heartRateMeasurement), 1);
       ch.addEventListener("characteristicvaluechanged", (e) => this.emit("data", parseHeartRate(e.target.value)));
-      await ch.startNotifications();
+      await step("Pulso: activar", () => ch.startNotifications(), 2);
       this.emit("connected", { name: this.name });
     }
     async handleDisconnect() {
@@ -205,5 +252,5 @@
     disconnect() { clearInterval(this.timer); this.timer = null; this.emit("disconnected"); }
   }
 
-  root.RodilloBle = { Trainer, HeartRateSensor, SimulatedRig, bluetoothAvailable, parseIndoorBikeData };
+  root.RodilloBle = { Trainer, HeartRateSensor, SimulatedRig, bluetoothAvailable, parseIndoorBikeData, bleLog, errorText };
 })(typeof window !== "undefined" ? window : globalThis);
