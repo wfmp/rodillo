@@ -189,20 +189,19 @@
   }
 
   // ---------- Render ----------
+  /** Month ticks labelled "YY.MM" (e.g. 26.10); the step grows with the span so labels never crowd. */
   function yearTicks(minDay, maxDay) {
     const span = maxDay - minDay;
+    const step = span > 2500 ? 24 : span > 1200 ? 12 : span > 500 ? 6 : span > 200 ? 2 : 1; // months between ticks
     const ticks = [];
-    const start = new Date(minDay * 86400000), end = new Date(maxDay * 86400000);
-    if (span > 900) {
-      for (let y = start.getFullYear() + 1; y <= end.getFullYear(); y++) ticks.push({ v: new Date(y, 0, 1).getTime() / 86400000, label: String(y) });
-    } else {
-      const step = span > 400 ? 3 : span > 120 ? 1 : 1;
-      const d = new Date(start.getFullYear(), start.getMonth() + 1, 1);
-      while (d <= end) {
-        if (d.getMonth() % step === 0) ticks.push({ v: d.getTime() / 86400000, label: MONTHS[d.getMonth()] + (d.getMonth() === 0 ? " " + String(d.getFullYear()).slice(2) : "") });
-        d.setMonth(d.getMonth() + 1);
+    const end = new Date(maxDay * 86400000);
+    const d = new Date(new Date(minDay * 86400000).getFullYear(), 0, 1);
+    while (d <= end) {
+      const v = d.getTime() / 86400000;
+      if (v >= minDay && (d.getFullYear() * 12 + d.getMonth()) % step === 0) {
+        ticks.push({ v, label: String(d.getFullYear()).slice(2) + "." + String(d.getMonth() + 1).padStart(2, "0") });
       }
-      if (span <= 120) ticks.splice(0, ticks.length, ...ticks); // monthly ticks are enough for short ranges
+      d.setMonth(d.getMonth() + 1);
     }
     return ticks;
   }

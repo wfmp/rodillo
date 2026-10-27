@@ -88,7 +88,14 @@
       const every = Math.max(1, Math.ceil(n / Math.max(1, Math.floor(pw / 52))));
       spec.x.labels.forEach((lab, i) => { if ((n - 1 - i) % every === 0) xLabel(lab, xs(i)); });
     } else {
-      for (const t of spec.x.ticks || []) xLabel(t.label, xs(t.v));
+      // Skip any tick label that would overlap the previous one
+      let lastRight = -Infinity;
+      for (const t of spec.x.ticks || []) {
+        const w = ctx.measureText(t.label).width, x = xs(t.v);
+        if (x - w / 2 < lastRight + 8) continue;
+        xLabel(t.label, x);
+        lastRight = x + w / 2;
+      }
     }
 
     // Stacked bars (2px surface gap between segments, rounded data end); negative values stack downward from zero
