@@ -407,7 +407,9 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 
 /* ---------- Phone ---------- */
 @media (max-width: 600px) {
-  body { padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+  /* body has height:100%, so its own padding ends before overflowing content; reserve the tab bar's space in main */
+  body { height: auto; min-height: 100%; }
+  main { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
   /* backdrop-filter would make the fixed tab bar position itself inside the header */
   .topbar { backdrop-filter: none; background: var(--bg); }
   .topbar-inner { flex-wrap: nowrap; padding-block: 8px; }

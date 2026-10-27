@@ -407,7 +407,9 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 
 /* ---------- Phone ---------- */
 @media (max-width: 600px) {
-  body { padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+  /* body has height:100%, so its own padding ends before overflowing content; reserve the tab bar's space in main */
+  body { height: auto; min-height: 100%; }
+  main { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
   /* backdrop-filter would make the fixed tab bar position itself inside the header */
   .topbar { backdrop-filter: none; background: var(--bg); }
   .topbar-inner { flex-wrap: nowrap; padding-block: 8px; }
@@ -2322,11 +2324,16 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       ctx.fillText(yFmt(v), m.l - 6, y);
     }
     ctx.textAlign = "center"; ctx.textBaseline = "top";
+    // Keep x labels inside the canvas so the first and last ones are never cut
+    const xLabel = (text, x) => {
+      const w = ctx.measureText(text).width;
+      ctx.fillText(text, Math.max(w / 2 + 2, Math.min(W - w / 2 - 2, x)), H - m.b + 6);
+    };
     if (band) {
       const every = Math.max(1, Math.ceil(n / Math.max(1, Math.floor(pw / 52))));
-      spec.x.labels.forEach((lab, i) => { if ((n - 1 - i) % every === 0) ctx.fillText(lab, xs(i), H - m.b + 6); });
+      spec.x.labels.forEach((lab, i) => { if ((n - 1 - i) % every === 0) xLabel(lab, xs(i)); });
     } else {
-      for (const t of spec.x.ticks || []) ctx.fillText(t.label, xs(t.v), H - m.b + 6);
+      for (const t of spec.x.ticks || []) xLabel(t.label, xs(t.v));
     }
 
     // Stacked bars (2px surface gap between segments, rounded data end); negative values stack downward from zero

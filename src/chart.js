@@ -79,11 +79,16 @@
       ctx.fillText(yFmt(v), m.l - 6, y);
     }
     ctx.textAlign = "center"; ctx.textBaseline = "top";
+    // Keep x labels inside the canvas so the first and last ones are never cut
+    const xLabel = (text, x) => {
+      const w = ctx.measureText(text).width;
+      ctx.fillText(text, Math.max(w / 2 + 2, Math.min(W - w / 2 - 2, x)), H - m.b + 6);
+    };
     if (band) {
       const every = Math.max(1, Math.ceil(n / Math.max(1, Math.floor(pw / 52))));
-      spec.x.labels.forEach((lab, i) => { if ((n - 1 - i) % every === 0) ctx.fillText(lab, xs(i), H - m.b + 6); });
+      spec.x.labels.forEach((lab, i) => { if ((n - 1 - i) % every === 0) xLabel(lab, xs(i)); });
     } else {
-      for (const t of spec.x.ticks || []) ctx.fillText(t.label, xs(t.v), H - m.b + 6);
+      for (const t of spec.x.ticks || []) xLabel(t.label, xs(t.v));
     }
 
     // Stacked bars (2px surface gap between segments, rounded data end); negative values stack downward from zero
