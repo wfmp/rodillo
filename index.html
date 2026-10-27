@@ -147,10 +147,14 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .banner p { margin: 0; flex: 1 1 240px; }
 
 /* ---------- Ride ---------- */
-#view-ride { min-height: calc(100% - 60px); }
+body[data-view="ride"] { height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+body[data-view="ride"] main { flex: 1; min-height: 0; }
+#view-ride { height: 100%; }
 .ride {
-  display: grid; gap: 12px; padding-block: 12px 20px;
+  display: grid; gap: clamp(6px, 1.2vh, 12px); padding-block: clamp(6px, 1.2vh, 12px);
+  height: 100%;
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr) minmax(56px, 20vh) auto;
   grid-template-areas:
     "title title"
     "power interval"
@@ -159,9 +163,9 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
     "controls controls";
 }
 .ride-title { grid-area: title; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-.ride-title h2 { font-family: var(--font-num); font-weight: 600; font-size: 22px; }
+.ride-title h2 { font-family: var(--font-num); font-weight: 600; font-size: clamp(18px, 3vh, 22px); margin: 0; }
 .ride-status { color: var(--warn); font-size: 14px; min-height: 1.4em; }
-.box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; min-width: 0; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: clamp(6px, 1.4vh, 12px) clamp(10px, 1.6vw, 16px); min-width: 0; min-height: 0; overflow: hidden; }
 .label { color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
 .box-power {
   grid-area: power; position: relative; overflow: hidden;
@@ -169,28 +173,35 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   border-left: 6px solid var(--zone);
 }
 .big { font-family: var(--font-num); font-weight: 700; line-height: 0.9; font-variant-numeric: tabular-nums; }
-.power-val { font-size: clamp(96px, 16vw, 200px); }
+.power-val { font-size: clamp(56px, min(16vw, 24vh), 200px); }
 .power-unit { font-family: var(--font-num); font-size: 28px; color: var(--muted); margin-left: 6px; }
 .power-row { display: flex; align-items: baseline; }
 .box-power[data-delta="ok"] .power-val { color: var(--fg); }
 .box-power[data-delta="low"] .power-val { color: var(--z2); }
 .box-power[data-delta="high"] .power-val { color: var(--z5); }
 .target-row { display: flex; gap: 18px; align-items: baseline; flex-wrap: wrap; margin-top: 6px; }
-.target-val { font-family: var(--font-num); font-size: clamp(36px, 5vw, 56px); font-weight: 600; color: var(--zone); }
+.target-val { font-family: var(--font-num); font-size: clamp(28px, min(5vw, 7vh), 56px); font-weight: 600; color: var(--zone); }
 .target-pct { color: var(--muted); font-size: 14px; }
 .box-interval { grid-area: interval; border-top: 4px solid var(--zone); }
-.countdown { font-size: clamp(56px, 8vw, 96px); }
+.box-interval { display: flex; flex-direction: column; justify-content: center; }
+.countdown { font-size: clamp(40px, min(8vw, 12vh), 96px); }
 .seg-label { font-size: 16px; font-weight: 600; }
-.seg-next { color: var(--muted); font-size: 14px; }
-.side { grid-area: side; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.seg-next { color: var(--muted); font-size: clamp(14px, 2.4vh, 18px); }
+.seg-next b { color: var(--fg); font-family: var(--font-num); font-size: 1.5em; font-weight: 600; font-variant-numeric: tabular-nums; }
+.side { grid-area: side; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: clamp(6px, 1.2vh, 12px); min-height: 0; }
 .side .box { display: flex; flex-direction: column; justify-content: center; }
-.mid-val { font-family: var(--font-num); font-weight: 600; font-size: clamp(36px, 5vw, 60px); line-height: 1; font-variant-numeric: tabular-nums; }
+.mid-val { font-family: var(--font-num); font-weight: 600; font-size: clamp(28px, min(5vw, 7vh), 60px); line-height: 1; font-variant-numeric: tabular-nums; }
 .hr-val { color: var(--hr); }
-.small-val { font-family: var(--font-num); font-weight: 600; font-size: 28px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.small-val { font-family: var(--font-num); font-weight: 600; font-size: clamp(22px, 4vh, 32px); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.load-box { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; }
+.load-box > div { display: flex; flex-direction: column; gap: 2px; padding-inline: 4px; }
+.load-box > div + div { border-left: 1px solid var(--line); padding-left: clamp(6px, 1vw, 12px); }
 .profile-box { grid-area: profile; padding: 8px; }
-#ride-profile, #summary-profile { width: 100%; height: clamp(120px, 22vh, 220px); display: block; }
+#view-ride .profile-box { position: relative; }
+#ride-profile { position: absolute; inset: 8px; width: calc(100% - 16px); height: calc(100% - 16px); display: block; }
+#summary-profile { width: 100%; height: clamp(120px, 22vh, 220px); display: block; }
 .controls { grid-area: controls; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-.controls .btn { min-height: 56px; min-width: 64px; font-size: 18px; }
+.controls .btn { min-height: clamp(44px, 7vh, 56px); min-width: 64px; font-size: 18px; }
 .intensity { display: flex; align-items: center; gap: 6px; }
 .intensity .num { font-size: 26px; min-width: 76px; text-align: center; }
 .controls .spacer { flex: 1; }
@@ -200,12 +211,27 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   grid-column: 1 / -1;
 }
 .confirm p { margin: 0; flex: 1 1 200px; }
+.modal {
+  position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px;
+  background: rgb(0 0 0 / 0.6);
+}
+.modal .confirm {
+  flex-direction: column; align-items: stretch; text-align: center; gap: 14px;
+  width: min(420px, 100%); padding: 24px; box-shadow: 0 20px 60px rgb(0 0 0 / 0.5);
+}
+.modal .confirm p { flex: none; font-size: 20px; font-weight: 600; }
+.modal .confirm .btn { min-height: 56px; font-size: 18px; }
 
 @media (max-width: 760px) {
+  body[data-view="ride"] { height: auto; overflow: visible; display: block; }
   .ride {
+    height: auto;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
     grid-template-areas: "title" "power" "interval" "side" "profile" "controls";
   }
+  #view-ride .profile-box { height: 140px; }
+  .controls { position: sticky; bottom: 0; background: var(--bg); padding-block: 8px; z-index: 3; }
   .power-val { font-size: 96px; }
   .countdown { font-size: 64px; }
   .controls .btn { flex: 1 1 auto; }
@@ -319,7 +345,11 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
         <div class="box"><div class="label">Pulso</div><div class="mid-val hr-val" id="m-hr">—</div></div>
         <div class="box"><div class="label">Cadencia</div><div class="mid-val" id="m-cadence">—</div></div>
         <div class="box"><div class="label">Tiempo</div><div class="small-val" id="m-elapsed">0:00</div><div class="label">Quedan <span id="m-remaining" class="num">—</span></div></div>
-        <div class="box"><div class="label">NP · kJ · TSS</div><div class="small-val"><span id="m-np">—</span> · <span id="m-kj">0</span> · <span id="m-tss">0</span></div></div>
+        <div class="box load-box">
+          <div><span class="label">NP</span><span class="small-val" id="m-np">—</span></div>
+          <div><span class="label">kJ</span><span class="small-val" id="m-kj">0</span></div>
+          <div><span class="label">TSS</span><span class="small-val" id="m-tss">0</span></div>
+        </div>
       </div>
       <div class="box profile-box"><canvas id="ride-profile" aria-label="Perfil del entreno con potencia y pulso"></canvas></div>
       <div class="controls">
@@ -333,10 +363,13 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
         <span class="spacer"></span>
         <button class="btn danger" id="btn-finish" type="button">Terminar</button>
       </div>
-      <div class="confirm" id="confirm-finish" hidden>
-        <p>¿Terminar la sesión ahora? Se guarda lo grabado hasta aquí.</p>
-        <button class="btn danger" id="btn-finish-yes" type="button">Terminar</button>
-        <button class="btn ghost" id="btn-finish-no" type="button">Seguir entrenando</button>
+      <div class="modal" id="confirm-finish" hidden>
+        <div class="confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-finish-text">
+          <p id="confirm-finish-text">¿Terminar la sesión?</p>
+          <span class="seg-next">Se guarda lo grabado hasta aquí.</span>
+          <button class="btn danger" id="btn-finish-yes" type="button">Terminar</button>
+          <button class="btn ghost" id="btn-finish-no" type="button">Seguir entrenando</button>
+        </div>
       </div>
     </div>
   </section>
@@ -1566,7 +1599,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
       const next = w.segments[loc.index + 1];
       if (next) {
         const [n0, n1] = W.segmentWatts(w, next, settings.ftp).map((v) => Math.round(v * ride.intensity));
-        $("#seg-next").textContent = "Después: " + fmtTime(next[0]) + " a " + (n0 === n1 ? n0 + " W" : n0 + "→" + n1 + " W");
+        $("#seg-next").replaceChildren("Siguiente: ", el("b", {}, fmtTime(next[0])), " a " + (n0 === n1 ? n0 + " W" : n0 + "→" + n1 + " W"));
       } else $("#seg-next").textContent = "Último bloque";
       $("#m-remaining").textContent = fmtTime(total - ride.t);
     } else {
@@ -1740,10 +1773,8 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
     $("#btn-minus").addEventListener("click", () => adjustIntensity(-5));
     $("#btn-plus").addEventListener("click", () => adjustIntensity(5));
     $("#btn-skip").addEventListener("click", skipSegment);
-    $("#btn-finish").addEventListener("click", () => {
-      const c = $("#confirm-finish");
-      c.hidden = !c.hidden;
-    });
+    $("#btn-finish").addEventListener("click", () => { $("#confirm-finish").hidden = false; });
+    $("#confirm-finish").addEventListener("click", (e) => { if (e.target.id === "confirm-finish") e.currentTarget.hidden = true; });
     $("#btn-finish-yes").addEventListener("click", () => { $("#confirm-finish").hidden = true; finishRide(); });
     $("#btn-finish-no").addEventListener("click", () => { $("#confirm-finish").hidden = true; });
     $("#btn-save").addEventListener("click", saveFit);

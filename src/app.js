@@ -526,7 +526,7 @@
       const next = w.segments[loc.index + 1];
       if (next) {
         const [n0, n1] = W.segmentWatts(w, next, settings.ftp).map((v) => Math.round(v * ride.intensity));
-        $("#seg-next").textContent = "Después: " + fmtTime(next[0]) + " a " + (n0 === n1 ? n0 + " W" : n0 + "→" + n1 + " W");
+        $("#seg-next").replaceChildren("Siguiente: ", el("b", {}, fmtTime(next[0])), " a " + (n0 === n1 ? n0 + " W" : n0 + "→" + n1 + " W"));
       } else $("#seg-next").textContent = "Último bloque";
       $("#m-remaining").textContent = fmtTime(total - ride.t);
     } else {
@@ -700,10 +700,8 @@
     $("#btn-minus").addEventListener("click", () => adjustIntensity(-5));
     $("#btn-plus").addEventListener("click", () => adjustIntensity(5));
     $("#btn-skip").addEventListener("click", skipSegment);
-    $("#btn-finish").addEventListener("click", () => {
-      const c = $("#confirm-finish");
-      c.hidden = !c.hidden;
-    });
+    $("#btn-finish").addEventListener("click", () => { $("#confirm-finish").hidden = false; });
+    $("#confirm-finish").addEventListener("click", (e) => { if (e.target.id === "confirm-finish") e.currentTarget.hidden = true; });
     $("#btn-finish-yes").addEventListener("click", () => { $("#confirm-finish").hidden = true; finishRide(); });
     $("#btn-finish-no").addEventListener("click", () => { $("#confirm-finish").hidden = true; });
     $("#btn-save").addEventListener("click", saveFit);
