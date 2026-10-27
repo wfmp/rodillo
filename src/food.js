@@ -18,8 +18,8 @@
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const num = (s) => { const v = parseFloat(String(s == null ? "" : s).replace(",", ".")); return Number.isFinite(v) ? v : null; };
   const r1 = (v) => v == null ? null : Math.round(v * 10) / 10;
-  const fmt0 = (v) => v == null || !Number.isFinite(v) ? "—" : Math.round(v).toLocaleString("es-CH");
-  const fmt1 = (v) => v == null || !Number.isFinite(v) ? "—" : (Math.round(v * 10) / 10).toFixed(1).replace(".", ",");
+  const fmt0 = (v) => v == null || !Number.isFinite(v) ? "—" : String(Math.round(v));
+  const fmt1 = (v) => v == null || !Number.isFinite(v) ? "—" : (Math.round(v * 10) / 10).toFixed(1);
   const keyOf = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   const dateOf = (k) => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
   const addDays = (k, n) => { const d = dateOf(k); d.setDate(d.getDate() + n); return keyOf(d); };
@@ -140,7 +140,7 @@
       const f = it.libre ? null : findFood(it.food, list);
       return app.el("tr", { onclick: () => openItem(i) },
         app.el("td", {}, it.libre ? (it.libre.name || "Libre") : it.food, it.libre ? app.el("span", { class: "tag" }, "libre") : null, v.missing ? app.el("span", { class: "tag warn" }, "no está en la base") : null),
-        app.el("td", { class: "num" }, it.libre ? "—" : fmt1(it.qty).replace(",0", "") + " " + (f ? f.unit || "" : "")),
+        app.el("td", { class: "num" }, it.libre ? "—" : fmt1(it.qty).replace(/\.0$/, "") + " " + (f ? f.unit || "" : "")),
         app.el("td", { class: "num" }, fmt0(v.kcal)),
         app.el("td", { class: "num" }, fmt1(v.protein)),
         app.el("td", { class: "num" }, fmt1(v.carbs)),
@@ -315,7 +315,7 @@
     const list = foods().filter((f) => !q || norm(f.name).includes(q));
     $("#fd-db-rows").replaceChildren(...list.map((f) => app.el("tr", { onclick: () => openFood(f) },
       app.el("td", {}, f.name), app.el("td", {}, f.unit || ""),
-      ...["kcal", "protein", "carbs", "fat", "fiber"].map((k) => app.el("td", { class: "num" }, f[k] == null ? "—" : String(Math.round(f[k] * 1000) / 1000).replace(".", ","))))));
+      ...["kcal", "protein", "carbs", "fat", "fiber"].map((k) => app.el("td", { class: "num" }, f[k] == null ? "—" : String(Math.round(f[k] * 1000) / 1000))))));
     $("#fd-db-count").textContent = list.length + " de " + foods().length + " alimentos · valores por unidad";
   }
 

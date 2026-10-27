@@ -21,7 +21,7 @@
   const $ = (s) => document.querySelector(s);
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const round1 = (v) => v == null ? null : Math.round(v * 10) / 10;
-  const fmt = (v, d) => v == null ? "—" : v.toFixed(d == null ? 1 : d).replace(".", ",");
+  const fmt = (v, d) => v == null ? "—" : v.toFixed(d == null ? 1 : d);
   const dateKey = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   const parseKey = (k) => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
   const fmtDate = (k) => { const d = parseKey(k); return d.getDate() + " " + MONTHS[d.getMonth()] + " " + d.getFullYear(); };

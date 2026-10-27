@@ -515,9 +515,9 @@
     if (r == null) return { cls: "neutral", icon: "–", label: "Sin datos", text: "Hacen falta unas 4 semanas de datos para calcular el ratio: sincroniza intervals.icu para traer tu historial." };
     if (r < 0.8) return { cls: "low", icon: "↓", label: "Carga baja", text: "Estás descargado: puedes meter la sesión completa." };
     if (r < 1.0) return { cls: "fresh", icon: "●", label: "Fresco", text: "Buena zona antes de un partido." };
-    if (r <= 1.3) return { cls: "ok", icon: "✓", label: "En objetivo", text: "Zona objetivo del plan (1,0–1,3): sigue como está." };
+    if (r <= 1.3) return { cls: "ok", icon: "✓", label: "En objetivo", text: "Zona objetivo del plan (1.0–1.3): sigue como está." };
     if (r <= 1.4) return { cls: "warn", icon: "!", label: "Alta", text: "Carga alta: haz la sesión pero sin extras." };
-    return { cls: "bad", icon: "!!", label: "Muy alta", text: "Por encima de 1,4: sáltate la sesión C de esta semana." };
+    return { cls: "bad", icon: "!!", label: "Muy alta", text: "Por encima de 1.4: sáltate la sesión C de esta semana." };
   }
 
   function renderIcuStatus(cfg) {
@@ -585,7 +585,7 @@
     });
 
     const bikeVals = shown.map((d) => loads.bike.get(d.day) || 0), otherVals = shown.map((d) => loads.other.get(d.day) || 0);
-    C.legend($("#legend-load"), [{ name: "Bici (TSS)", color: SERIES[0] }, { name: "Otros deportes (TRIMP × 0,56)", color: SERIES[1] }]);
+    C.legend($("#legend-load"), [{ name: "Bici (TSS)", color: SERIES[0] }, { name: "Otros deportes (TRIMP × 0.56)", color: SERIES[1] }]);
     C.mount($("#chart-load"), {
       x: { type: "band", labels }, y: { min: 0, max: Math.max(50, ...shown.map((d) => d.load)) * 1.1 },
       stacks: [{ name: "Bici", color: SERIES[0], values: bikeVals }, { name: "Otros", color: SERIES[1], values: otherVals }],
