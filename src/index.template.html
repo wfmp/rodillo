@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#101418">
+<title>Rodillo Fer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout concept: a trainer head unit. Dark cockpit, huge condensed numerals,
+   and the training-zone palette (Z1-Z6) as the only color system. */
+:root {
+  --bg: #101418;
+  --panel: #171d23;
+  --panel-2: #1e252d;
+  --line: #2a333d;
+  --grid: #3a4652;
+  --fg: #eef2f5;
+  --muted: #8a97a5;
+  --hr: #ff5d8f;
+  --z1: #8794a3;
+  --z2: #3f8cff;
+  --z3: #27b37f;
+  --z4: #f2c94c;
+  --z5: #ff8a3d;
+  --z6: #ff4d4f;
+  --zone: var(--z2);
+  --ok: #27b37f;
+  --warn: #f2c94c;
+  --bad: #ff4d4f;
+  --font-num: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+  --font-ui: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius: 10px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.45 var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.wrap {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button, input, label.btn { font: inherit; }
+button:focus-visible, input:focus-visible, label.btn:focus-within {
+  outline: 2px solid var(--zone); outline-offset: 2px;
+}
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* ---------- Top bar ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 5;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-inner {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding-block: 10px;
+}
+.brand {
+  font-family: var(--font-num); font-weight: 700; font-size: 22px; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.brand span { color: var(--zone); }
+.ftp-label { color: var(--muted); font-size: 13px; letter-spacing: 0.04em; }
+.chips { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--fg);
+  border-radius: 999px; padding: 7px 14px; cursor: pointer; font-size: 14px;
+}
+.chip::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--z1); }
+.chip[data-state="on"]::before { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+.chip[data-state="warn"]::before { background: var(--warn); }
+.icon-btn {
+  border: 1px solid var(--line); background: var(--panel); color: var(--fg);
+  border-radius: 999px; padding: 7px 14px; cursor: pointer; font-size: 14px;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--fg);
+  border-radius: var(--radius); padding: 10px 16px; cursor: pointer; font-weight: 600;
+  min-height: 44px;
+}
+.btn:hover { border-color: var(--grid); }
+.btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn.ghost { background: transparent; }
+.btn.danger { border-color: color-mix(in srgb, var(--bad) 60%, var(--line)); color: var(--bad); background: transparent; }
+
+/* ---------- Library ---------- */
+.lib-head {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding-block: 22px 14px;
+}
+.lib-head h1 { font-family: var(--font-num); font-weight: 600; font-size: clamp(28px, 4vw, 40px); letter-spacing: 0.01em; }
+.lib-head p { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
+.lib-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.lib-actions input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.workout-list {
+  display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  padding-bottom: 32px;
+}
+.workout-card {
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px; min-width: 0;
+}
+.workout-card.past { opacity: 0.55; }
+.workout-card.today, .workout-card.next { border-color: var(--grid); background: var(--panel-2); }
+.card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.card-date { color: var(--muted); font-size: 13px; display: flex; gap: 8px; align-items: center; text-transform: capitalize; }
+.badge {
+  text-transform: none; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  background: var(--fg); color: var(--bg);
+}
+.kind { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; }
+.kind-A { color: var(--z6); background: color-mix(in srgb, var(--z6) 16%, transparent); }
+.kind-B { color: var(--z5); background: color-mix(in srgb, var(--z5) 16%, transparent); }
+.kind-C { color: var(--z3); background: color-mix(in srgb, var(--z3) 16%, transparent); }
+.kind-FTP { color: var(--z4); background: color-mix(in srgb, var(--z4) 16%, transparent); }
+.workout-card h3 { font-family: var(--font-num); font-weight: 600; font-size: 24px; line-height: 1.1; }
+.card-desc { margin: 0; color: var(--muted); font-size: 13px; }
+.mini-profile { width: 100%; height: 54px; display: block; }
+.card-meta { display: flex; gap: 14px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.card-actions { display: flex; gap: 8px; margin-top: 4px; }
+.card-actions .btn { flex: 1; }
+.hint { color: var(--muted); font-size: 13px; padding-block: 0 8px; }
+.banner {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  background: var(--panel-2); border: 1px solid var(--warn); border-radius: var(--radius);
+  padding: 12px 14px; margin-top: 14px;
+}
+.banner p { margin: 0; flex: 1 1 240px; }
+
+/* ---------- Ride ---------- */
+#view-ride { min-height: calc(100% - 60px); }
+.ride {
+  display: grid; gap: 12px; padding-block: 12px 20px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  grid-template-areas:
+    "title title"
+    "power interval"
+    "power side"
+    "profile profile"
+    "controls controls";
+}
+.ride-title { grid-area: title; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.ride-title h2 { font-family: var(--font-num); font-weight: 600; font-size: 22px; }
+.ride-status { color: var(--warn); font-size: 14px; min-height: 1.4em; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; min-width: 0; }
+.label { color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+.box-power {
+  grid-area: power; position: relative; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+  border-left: 6px solid var(--zone);
+}
+.big { font-family: var(--font-num); font-weight: 700; line-height: 0.9; font-variant-numeric: tabular-nums; }
+.power-val { font-size: clamp(96px, 16vw, 200px); }
+.power-unit { font-family: var(--font-num); font-size: 28px; color: var(--muted); margin-left: 6px; }
+.power-row { display: flex; align-items: baseline; }
+.box-power[data-delta="ok"] .power-val { color: var(--fg); }
+.box-power[data-delta="low"] .power-val { color: var(--z2); }
+.box-power[data-delta="high"] .power-val { color: var(--z5); }
+.target-row { display: flex; gap: 18px; align-items: baseline; flex-wrap: wrap; margin-top: 6px; }
+.target-val { font-family: var(--font-num); font-size: clamp(36px, 5vw, 56px); font-weight: 600; color: var(--zone); }
+.target-pct { color: var(--muted); font-size: 14px; }
+.box-interval { grid-area: interval; border-top: 4px solid var(--zone); }
+.countdown { font-size: clamp(56px, 8vw, 96px); }
+.seg-label { font-size: 16px; font-weight: 600; }
+.seg-next { color: var(--muted); font-size: 14px; }
+.side { grid-area: side; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.side .box { display: flex; flex-direction: column; justify-content: center; }
+.mid-val { font-family: var(--font-num); font-weight: 600; font-size: clamp(36px, 5vw, 60px); line-height: 1; font-variant-numeric: tabular-nums; }
+.hr-val { color: var(--hr); }
+.small-val { font-family: var(--font-num); font-weight: 600; font-size: 28px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.profile-box { grid-area: profile; padding: 8px; }
+#ride-profile, #summary-profile { width: 100%; height: clamp(120px, 22vh, 220px); display: block; }
+.controls { grid-area: controls; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.controls .btn { min-height: 56px; min-width: 64px; font-size: 18px; }
+.intensity { display: flex; align-items: center; gap: 6px; }
+.intensity .num { font-size: 26px; min-width: 76px; text-align: center; }
+.controls .spacer { flex: 1; }
+.confirm {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  background: var(--panel-2); border: 1px solid var(--bad); border-radius: var(--radius); padding: 10px 14px;
+  grid-column: 1 / -1;
+}
+.confirm p { margin: 0; flex: 1 1 200px; }
+
+@media (max-width: 760px) {
+  .ride {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "title" "power" "interval" "side" "profile" "controls";
+  }
+  .power-val { font-size: 96px; }
+  .countdown { font-size: 64px; }
+  .controls .btn { flex: 1 1 auto; }
+}
+
+/* ---------- Summary ---------- */
+.summary { display: grid; gap: 14px; padding-block: 22px 32px; }
+.summary h1 { font-family: var(--font-num); font-weight: 600; font-size: clamp(28px, 4vw, 40px); }
+.summary-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; display: flex; flex-direction: column; }
+.stat-k { color: var(--muted); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+.stat-v { font-family: var(--font-num); font-weight: 600; font-size: 30px; font-variant-numeric: tabular-nums; }
+.summary-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.file-name { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+
+/* ---------- Settings & toast ---------- */
+.overlay {
+  position: fixed; inset: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 70%, transparent);
+  display: grid; place-items: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.dialog { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; width: min(440px, 100%); display: grid; gap: 14px; }
+.dialog h2 { font-family: var(--font-num); font-weight: 600; font-size: 26px; }
+.field { display: grid; gap: 4px; }
+.field input[type=number] {
+  background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.check { display: flex; gap: 10px; align-items: flex-start; }
+.check input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--z3); }
+.check small { display: block; color: var(--muted); }
+.dialog-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.toast {
+  position: fixed; z-index: 30; left: 50%; transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  max-width: min(560px, calc(100% - 32px));
+  background: var(--panel-2); color: var(--fg); border: 1px solid var(--line); border-left: 5px solid var(--z2);
+  border-radius: var(--radius); padding: 12px 16px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); cursor: pointer;
+}
+.toast[data-kind="warn"] { border-left-color: var(--warn); }
+.toast[data-kind="error"] { border-left-color: var(--bad); }
+@media (prefers-reduced-motion: no-preference) {
+  .toast { animation: rise 180ms ease-out; }
+  @keyframes rise { from { transform: translate(-50%, 8px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+}
+</style>
+</head>
+<body data-view="library">
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">Rodillo<span>·</span>Fer</div>
+    <div class="ftp-label" id="ftp-label">FTP 165 W</div>
+    <div class="chips">
+      <button class="chip" id="chip-trainer" data-state="off" type="button"><span class="chip-label">Rodillo</span></button>
+      <button class="chip" id="chip-hr" data-state="off" type="button"><span class="chip-label">Pulso</span></button>
+      <button class="icon-btn" id="btn-settings" type="button">Ajustes</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="view wrap" id="view-library">
+    <div class="banner" id="recovery" hidden>
+      <p id="recovery-text"></p>
+      <button class="btn" id="recovery-resume" type="button">Seguir</button>
+      <button class="btn primary" id="recovery-summary" type="button">Ver y guardar</button>
+      <button class="btn ghost" id="recovery-discard" type="button">Descartar</button>
+    </div>
+    <div class="lib-head">
+      <div>
+        <h1>Bloque anaeróbico · 26 oct – 28 nov</h1>
+        <p>Conecta el rodillo y el pulso arriba, elige la sesión del día y pulsa Empezar. Los vatios salen de tu FTP y puedes subirlos o bajarlos durante la sesión.</p>
+      </div>
+      <div class="lib-actions">
+        <label class="btn" for="import-input">Importar .mrc / .erg / .zwo
+          <input id="import-input" type="file" accept=".mrc,.erg,.zwo,text/plain,application/xml" multiple>
+        </label>
+        <button class="btn" id="btn-manual" type="button">ERG manual</button>
+      </div>
+    </div>
+    <p class="hint" id="bt-hint" hidden>Este navegador no tiene Bluetooth. En iPhone o iPad abre esta página en la app Bluefy; en el Mac, en Chrome. Mientras tanto puedes probar la app con el simulador (Ajustes).</p>
+    <div class="workout-list" id="workout-list"></div>
+  </section>
+
+  <section class="view wrap" id="view-ride" hidden>
+    <div class="ride">
+      <div class="ride-title">
+        <h2 id="ride-title"></h2>
+        <div class="ride-status" id="ride-status" role="status"></div>
+      </div>
+      <div class="box box-power" id="box-power">
+        <div class="label">Potencia (3 s)</div>
+        <div class="power-row"><span class="big power-val" id="m-power">—</span><span class="power-unit">W</span></div>
+        <div class="target-row">
+          <div><div class="label">Objetivo</div><span class="target-val" id="m-target">—</span></div>
+          <span class="target-pct" id="m-target-pct"></span>
+        </div>
+      </div>
+      <div class="box box-interval">
+        <div class="label" id="seg-label">Bloque</div>
+        <div class="big countdown" id="seg-countdown">0:00</div>
+        <div class="seg-next" id="seg-next"></div>
+      </div>
+      <div class="side">
+        <div class="box"><div class="label">Pulso</div><div class="mid-val hr-val" id="m-hr">—</div></div>
+        <div class="box"><div class="label">Cadencia</div><div class="mid-val" id="m-cadence">—</div></div>
+        <div class="box"><div class="label">Tiempo</div><div class="small-val" id="m-elapsed">0:00</div><div class="label">Quedan <span id="m-remaining" class="num">—</span></div></div>
+        <div class="box"><div class="label">NP · kJ · TSS</div><div class="small-val"><span id="m-np">—</span> · <span id="m-kj">0</span> · <span id="m-tss">0</span></div></div>
+      </div>
+      <div class="box profile-box"><canvas id="ride-profile" aria-label="Perfil del entreno con potencia y pulso"></canvas></div>
+      <div class="controls">
+        <button class="btn primary" id="btn-pause" type="button">Empezar</button>
+        <div class="intensity">
+          <button class="btn" id="btn-minus" type="button" aria-label="Bajar intensidad">−</button>
+          <span class="num" id="m-intensity">100 %</span>
+          <button class="btn" id="btn-plus" type="button" aria-label="Subir intensidad">+</button>
+        </div>
+        <button class="btn" id="btn-skip" type="button">Saltar bloque</button>
+        <span class="spacer"></span>
+        <button class="btn danger" id="btn-finish" type="button">Terminar</button>
+      </div>
+      <div class="confirm" id="confirm-finish" hidden>
+        <p>¿Terminar la sesión ahora? Se guarda lo grabado hasta aquí.</p>
+        <button class="btn danger" id="btn-finish-yes" type="button">Terminar</button>
+        <button class="btn ghost" id="btn-finish-no" type="button">Seguir entrenando</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="view wrap" id="view-summary" hidden>
+    <div class="summary">
+      <div>
+        <div class="label">Sesión terminada</div>
+        <h1 id="summary-title"></h1>
+      </div>
+      <div class="summary-grid" id="summary-grid"></div>
+      <div class="box profile-box"><canvas id="summary-profile" aria-label="Perfil de la sesión"></canvas></div>
+      <div class="summary-actions">
+        <button class="btn primary" id="btn-save" type="button">Guardar archivo FIT</button>
+        <button class="btn" id="btn-done" type="button">Listo</button>
+        <button class="btn danger" id="btn-discard" type="button">Descartar</button>
+        <span class="file-name" id="summary-file"></span>
+      </div>
+      <div class="confirm" id="confirm-discard" hidden>
+        <p>¿Descartar la sesión? No se podrá recuperar.</p>
+        <button class="btn danger" id="btn-discard-yes" type="button">Descartar</button>
+        <button class="btn ghost" id="btn-discard-no" type="button">Cancelar</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="overlay" id="settings" hidden>
+  <form class="dialog" id="settings-form">
+    <h2>Ajustes</h2>
+    <label class="field" for="set-ftp"><span class="label">FTP (W)</span><input id="set-ftp" type="number" min="50" max="600" step="1" inputmode="numeric"></label>
+    <label class="field" for="set-weight"><span class="label">Peso (kg)</span><input id="set-weight" type="number" min="30" max="200" step="0.1" inputmode="decimal"></label>
+    <label class="check" for="set-autopause"><input id="set-autopause" type="checkbox"><span>Pausa automática<small>Se detiene si dejas de pedalear 5 s y sigue al volver.</small></span></label>
+    <label class="check" for="set-sounds"><input id="set-sounds" type="checkbox"><span>Pitidos<small>Cuenta atrás de 3 s antes de cada cambio de bloque.</small></span></label>
+    <label class="check" for="set-sim"><input id="set-sim" type="checkbox"><span>Modo simulador<small>Para probar la app sin rodillo: el botón Rodillo conecta un rodillo y un pulso ficticios.</small></span></label>
+    <div class="dialog-actions">
+      <button class="btn ghost" id="settings-cancel" type="button">Cancelar</button>
+      <button class="btn primary" type="submit">Guardar</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>window.RODILLO_PLAN = /*PLAN_JSON*/;</script>
+<script>/*FIT_JS*/</script>
+<script>/*WORKOUTS_JS*/</script>
+<script>/*BLE_JS*/</script>
+<script>/*APP_JS*/</script>
+</body>
+</html>

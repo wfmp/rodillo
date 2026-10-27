@@ -1,0 +1,1622 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#101418">
+<title>Rodillo Fer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout concept: a trainer head unit. Dark cockpit, huge condensed numerals,
+   and the training-zone palette (Z1-Z6) as the only color system. */
+:root {
+  --bg: #101418;
+  --panel: #171d23;
+  --panel-2: #1e252d;
+  --line: #2a333d;
+  --grid: #3a4652;
+  --fg: #eef2f5;
+  --muted: #8a97a5;
+  --hr: #ff5d8f;
+  --z1: #8794a3;
+  --z2: #3f8cff;
+  --z3: #27b37f;
+  --z4: #f2c94c;
+  --z5: #ff8a3d;
+  --z6: #ff4d4f;
+  --zone: var(--z2);
+  --ok: #27b37f;
+  --warn: #f2c94c;
+  --bad: #ff4d4f;
+  --font-num: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+  --font-ui: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius: 10px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.45 var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.wrap {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button, input, label.btn { font: inherit; }
+button:focus-visible, input:focus-visible, label.btn:focus-within {
+  outline: 2px solid var(--zone); outline-offset: 2px;
+}
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* ---------- Top bar ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 5;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-inner {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding-block: 10px;
+}
+.brand {
+  font-family: var(--font-num); font-weight: 700; font-size: 22px; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.brand span { color: var(--zone); }
+.ftp-label { color: var(--muted); font-size: 13px; letter-spacing: 0.04em; }
+.chips { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--fg);
+  border-radius: 999px; padding: 7px 14px; cursor: pointer; font-size: 14px;
+}
+.chip::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--z1); }
+.chip[data-state="on"]::before { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+.chip[data-state="warn"]::before { background: var(--warn); }
+.icon-btn {
+  border: 1px solid var(--line); background: var(--panel); color: var(--fg);
+  border-radius: 999px; padding: 7px 14px; cursor: pointer; font-size: 14px;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--fg);
+  border-radius: var(--radius); padding: 10px 16px; cursor: pointer; font-weight: 600;
+  min-height: 44px;
+}
+.btn:hover { border-color: var(--grid); }
+.btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn.ghost { background: transparent; }
+.btn.danger { border-color: color-mix(in srgb, var(--bad) 60%, var(--line)); color: var(--bad); background: transparent; }
+
+/* ---------- Library ---------- */
+.lib-head {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding-block: 22px 14px;
+}
+.lib-head h1 { font-family: var(--font-num); font-weight: 600; font-size: clamp(28px, 4vw, 40px); letter-spacing: 0.01em; }
+.lib-head p { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
+.lib-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.lib-actions input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.workout-list {
+  display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  padding-bottom: 32px;
+}
+.workout-card {
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px; min-width: 0;
+}
+.workout-card.past { opacity: 0.55; }
+.workout-card.today, .workout-card.next { border-color: var(--grid); background: var(--panel-2); }
+.card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.card-date { color: var(--muted); font-size: 13px; display: flex; gap: 8px; align-items: center; text-transform: capitalize; }
+.badge {
+  text-transform: none; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  background: var(--fg); color: var(--bg);
+}
+.kind { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; }
+.kind-A { color: var(--z6); background: color-mix(in srgb, var(--z6) 16%, transparent); }
+.kind-B { color: var(--z5); background: color-mix(in srgb, var(--z5) 16%, transparent); }
+.kind-C { color: var(--z3); background: color-mix(in srgb, var(--z3) 16%, transparent); }
+.kind-FTP { color: var(--z4); background: color-mix(in srgb, var(--z4) 16%, transparent); }
+.workout-card h3 { font-family: var(--font-num); font-weight: 600; font-size: 24px; line-height: 1.1; }
+.card-desc { margin: 0; color: var(--muted); font-size: 13px; }
+.mini-profile { width: 100%; height: 54px; display: block; }
+.card-meta { display: flex; gap: 14px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.card-actions { display: flex; gap: 8px; margin-top: 4px; }
+.card-actions .btn { flex: 1; }
+.hint { color: var(--muted); font-size: 13px; padding-block: 0 8px; }
+.banner {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  background: var(--panel-2); border: 1px solid var(--warn); border-radius: var(--radius);
+  padding: 12px 14px; margin-top: 14px;
+}
+.banner p { margin: 0; flex: 1 1 240px; }
+
+/* ---------- Ride ---------- */
+#view-ride { min-height: calc(100% - 60px); }
+.ride {
+  display: grid; gap: 12px; padding-block: 12px 20px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  grid-template-areas:
+    "title title"
+    "power interval"
+    "power side"
+    "profile profile"
+    "controls controls";
+}
+.ride-title { grid-area: title; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.ride-title h2 { font-family: var(--font-num); font-weight: 600; font-size: 22px; }
+.ride-status { color: var(--warn); font-size: 14px; min-height: 1.4em; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; min-width: 0; }
+.label { color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+.box-power {
+  grid-area: power; position: relative; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+  border-left: 6px solid var(--zone);
+}
+.big { font-family: var(--font-num); font-weight: 700; line-height: 0.9; font-variant-numeric: tabular-nums; }
+.power-val { font-size: clamp(96px, 16vw, 200px); }
+.power-unit { font-family: var(--font-num); font-size: 28px; color: var(--muted); margin-left: 6px; }
+.power-row { display: flex; align-items: baseline; }
+.box-power[data-delta="ok"] .power-val { color: var(--fg); }
+.box-power[data-delta="low"] .power-val { color: var(--z2); }
+.box-power[data-delta="high"] .power-val { color: var(--z5); }
+.target-row { display: flex; gap: 18px; align-items: baseline; flex-wrap: wrap; margin-top: 6px; }
+.target-val { font-family: var(--font-num); font-size: clamp(36px, 5vw, 56px); font-weight: 600; color: var(--zone); }
+.target-pct { color: var(--muted); font-size: 14px; }
+.box-interval { grid-area: interval; border-top: 4px solid var(--zone); }
+.countdown { font-size: clamp(56px, 8vw, 96px); }
+.seg-label { font-size: 16px; font-weight: 600; }
+.seg-next { color: var(--muted); font-size: 14px; }
+.side { grid-area: side; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.side .box { display: flex; flex-direction: column; justify-content: center; }
+.mid-val { font-family: var(--font-num); font-weight: 600; font-size: clamp(36px, 5vw, 60px); line-height: 1; font-variant-numeric: tabular-nums; }
+.hr-val { color: var(--hr); }
+.small-val { font-family: var(--font-num); font-weight: 600; font-size: 28px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.profile-box { grid-area: profile; padding: 8px; }
+#ride-profile, #summary-profile { width: 100%; height: clamp(120px, 22vh, 220px); display: block; }
+.controls { grid-area: controls; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.controls .btn { min-height: 56px; min-width: 64px; font-size: 18px; }
+.intensity { display: flex; align-items: center; gap: 6px; }
+.intensity .num { font-size: 26px; min-width: 76px; text-align: center; }
+.controls .spacer { flex: 1; }
+.confirm {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  background: var(--panel-2); border: 1px solid var(--bad); border-radius: var(--radius); padding: 10px 14px;
+  grid-column: 1 / -1;
+}
+.confirm p { margin: 0; flex: 1 1 200px; }
+
+@media (max-width: 760px) {
+  .ride {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "title" "power" "interval" "side" "profile" "controls";
+  }
+  .power-val { font-size: 96px; }
+  .countdown { font-size: 64px; }
+  .controls .btn { flex: 1 1 auto; }
+}
+
+/* ---------- Summary ---------- */
+.summary { display: grid; gap: 14px; padding-block: 22px 32px; }
+.summary h1 { font-family: var(--font-num); font-weight: 600; font-size: clamp(28px, 4vw, 40px); }
+.summary-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; display: flex; flex-direction: column; }
+.stat-k { color: var(--muted); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+.stat-v { font-family: var(--font-num); font-weight: 600; font-size: 30px; font-variant-numeric: tabular-nums; }
+.summary-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.file-name { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+
+/* ---------- Settings & toast ---------- */
+.overlay {
+  position: fixed; inset: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 70%, transparent);
+  display: grid; place-items: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.dialog { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; width: min(440px, 100%); display: grid; gap: 14px; }
+.dialog h2 { font-family: var(--font-num); font-weight: 600; font-size: 26px; }
+.field { display: grid; gap: 4px; }
+.field input[type=number] {
+  background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.check { display: flex; gap: 10px; align-items: flex-start; }
+.check input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--z3); }
+.check small { display: block; color: var(--muted); }
+.dialog-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.toast {
+  position: fixed; z-index: 30; left: 50%; transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  max-width: min(560px, calc(100% - 32px));
+  background: var(--panel-2); color: var(--fg); border: 1px solid var(--line); border-left: 5px solid var(--z2);
+  border-radius: var(--radius); padding: 12px 16px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); cursor: pointer;
+}
+.toast[data-kind="warn"] { border-left-color: var(--warn); }
+.toast[data-kind="error"] { border-left-color: var(--bad); }
+@media (prefers-reduced-motion: no-preference) {
+  .toast { animation: rise 180ms ease-out; }
+  @keyframes rise { from { transform: translate(-50%, 8px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+}
+</style>
+</head>
+<body data-view="library">
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">Rodillo<span>·</span>Fer</div>
+    <div class="ftp-label" id="ftp-label">FTP 165 W</div>
+    <div class="chips">
+      <button class="chip" id="chip-trainer" data-state="off" type="button"><span class="chip-label">Rodillo</span></button>
+      <button class="chip" id="chip-hr" data-state="off" type="button"><span class="chip-label">Pulso</span></button>
+      <button class="icon-btn" id="btn-settings" type="button">Ajustes</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="view wrap" id="view-library">
+    <div class="banner" id="recovery" hidden>
+      <p id="recovery-text"></p>
+      <button class="btn" id="recovery-resume" type="button">Seguir</button>
+      <button class="btn primary" id="recovery-summary" type="button">Ver y guardar</button>
+      <button class="btn ghost" id="recovery-discard" type="button">Descartar</button>
+    </div>
+    <div class="lib-head">
+      <div>
+        <h1>Bloque anaeróbico · 26 oct – 28 nov</h1>
+        <p>Conecta el rodillo y el pulso arriba, elige la sesión del día y pulsa Empezar. Los vatios salen de tu FTP y puedes subirlos o bajarlos durante la sesión.</p>
+      </div>
+      <div class="lib-actions">
+        <label class="btn" for="import-input">Importar .mrc / .erg / .zwo
+          <input id="import-input" type="file" accept=".mrc,.erg,.zwo,text/plain,application/xml" multiple>
+        </label>
+        <button class="btn" id="btn-manual" type="button">ERG manual</button>
+      </div>
+    </div>
+    <p class="hint" id="bt-hint" hidden>Este navegador no tiene Bluetooth. En iPhone o iPad abre esta página en la app Bluefy; en el Mac, en Chrome. Mientras tanto puedes probar la app con el simulador (Ajustes).</p>
+    <div class="workout-list" id="workout-list"></div>
+  </section>
+
+  <section class="view wrap" id="view-ride" hidden>
+    <div class="ride">
+      <div class="ride-title">
+        <h2 id="ride-title"></h2>
+        <div class="ride-status" id="ride-status" role="status"></div>
+      </div>
+      <div class="box box-power" id="box-power">
+        <div class="label">Potencia (3 s)</div>
+        <div class="power-row"><span class="big power-val" id="m-power">—</span><span class="power-unit">W</span></div>
+        <div class="target-row">
+          <div><div class="label">Objetivo</div><span class="target-val" id="m-target">—</span></div>
+          <span class="target-pct" id="m-target-pct"></span>
+        </div>
+      </div>
+      <div class="box box-interval">
+        <div class="label" id="seg-label">Bloque</div>
+        <div class="big countdown" id="seg-countdown">0:00</div>
+        <div class="seg-next" id="seg-next"></div>
+      </div>
+      <div class="side">
+        <div class="box"><div class="label">Pulso</div><div class="mid-val hr-val" id="m-hr">—</div></div>
+        <div class="box"><div class="label">Cadencia</div><div class="mid-val" id="m-cadence">—</div></div>
+        <div class="box"><div class="label">Tiempo</div><div class="small-val" id="m-elapsed">0:00</div><div class="label">Quedan <span id="m-remaining" class="num">—</span></div></div>
+        <div class="box"><div class="label">NP · kJ · TSS</div><div class="small-val"><span id="m-np">—</span> · <span id="m-kj">0</span> · <span id="m-tss">0</span></div></div>
+      </div>
+      <div class="box profile-box"><canvas id="ride-profile" aria-label="Perfil del entreno con potencia y pulso"></canvas></div>
+      <div class="controls">
+        <button class="btn primary" id="btn-pause" type="button">Empezar</button>
+        <div class="intensity">
+          <button class="btn" id="btn-minus" type="button" aria-label="Bajar intensidad">−</button>
+          <span class="num" id="m-intensity">100 %</span>
+          <button class="btn" id="btn-plus" type="button" aria-label="Subir intensidad">+</button>
+        </div>
+        <button class="btn" id="btn-skip" type="button">Saltar bloque</button>
+        <span class="spacer"></span>
+        <button class="btn danger" id="btn-finish" type="button">Terminar</button>
+      </div>
+      <div class="confirm" id="confirm-finish" hidden>
+        <p>¿Terminar la sesión ahora? Se guarda lo grabado hasta aquí.</p>
+        <button class="btn danger" id="btn-finish-yes" type="button">Terminar</button>
+        <button class="btn ghost" id="btn-finish-no" type="button">Seguir entrenando</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="view wrap" id="view-summary" hidden>
+    <div class="summary">
+      <div>
+        <div class="label">Sesión terminada</div>
+        <h1 id="summary-title"></h1>
+      </div>
+      <div class="summary-grid" id="summary-grid"></div>
+      <div class="box profile-box"><canvas id="summary-profile" aria-label="Perfil de la sesión"></canvas></div>
+      <div class="summary-actions">
+        <button class="btn primary" id="btn-save" type="button">Guardar archivo FIT</button>
+        <button class="btn" id="btn-done" type="button">Listo</button>
+        <button class="btn danger" id="btn-discard" type="button">Descartar</button>
+        <span class="file-name" id="summary-file"></span>
+      </div>
+      <div class="confirm" id="confirm-discard" hidden>
+        <p>¿Descartar la sesión? No se podrá recuperar.</p>
+        <button class="btn danger" id="btn-discard-yes" type="button">Descartar</button>
+        <button class="btn ghost" id="btn-discard-no" type="button">Cancelar</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="overlay" id="settings" hidden>
+  <form class="dialog" id="settings-form">
+    <h2>Ajustes</h2>
+    <label class="field" for="set-ftp"><span class="label">FTP (W)</span><input id="set-ftp" type="number" min="50" max="600" step="1" inputmode="numeric"></label>
+    <label class="field" for="set-weight"><span class="label">Peso (kg)</span><input id="set-weight" type="number" min="30" max="200" step="0.1" inputmode="decimal"></label>
+    <label class="check" for="set-autopause"><input id="set-autopause" type="checkbox"><span>Pausa automática<small>Se detiene si dejas de pedalear 5 s y sigue al volver.</small></span></label>
+    <label class="check" for="set-sounds"><input id="set-sounds" type="checkbox"><span>Pitidos<small>Cuenta atrás de 3 s antes de cada cambio de bloque.</small></span></label>
+    <label class="check" for="set-sim"><input id="set-sim" type="checkbox"><span>Modo simulador<small>Para probar la app sin rodillo: el botón Rodillo conecta un rodillo y un pulso ficticios.</small></span></label>
+    <div class="dialog-actions">
+      <button class="btn ghost" id="settings-cancel" type="button">Cancelar</button>
+      <button class="btn primary" type="submit">Guardar</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>window.RODILLO_PLAN = [{"id": "2026-10-26_W1_B_VO2_4x3", "name": "2026-10-26_W1_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-10-27_W1_C_SweetSpot_Sprints", "name": "2026-10-27_W1_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-10-31_W1_A_Anaerobic_8x30s", "name": "2026-10-31_W1_A_Anaerobic_8x30s", "description": "Anaerobic 8x30s @150% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-02_W2_B_VO2_4x3", "name": "2026-11-02_W2_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-05_W2_C_SweetSpot_Short", "name": "2026-11-05_W2_C_SweetSpot_Short", "description": "Short sweet spot 20min @85% (optional)", "segments": [[600, 50, 75], [1200, 85, 85], [300, 60, 40]]}, {"id": "2026-11-13_W3_B_VO2_5x3", "name": "2026-11-13_W3_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "name": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "description": "Repeated sprints: 2 sets of 6x30s @130% / 30s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [300, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-16_W4_B_VO2_5x3", "name": "2026-11-16_W4_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-19_W4_C_SweetSpot_Sprints", "name": "2026-11-19_W4_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-11-22_W4_A_Anaerobic_6x45s", "name": "2026-11-22_W4_A_Anaerobic_6x45s", "description": "Anaerobic capacity: 6x45s @125% / 90s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-24_W5_B_VO2_5x4", "name": "2026-11-24_W5_B_VO2_5x4", "description": "VO2max 5x4min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-28_W5_FTP_Test_20min", "name": "2026-11-28_W5_FTP_Test_20min", "description": "FTP test: 20min max effort in slope/resistance mode, not ERG", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [300, 105, 105], [600, 50, 50], [1200, 100, 100], [300, 50, 50], [600, 60, 40]]}];</script>
+<script>/* FIT file encoder for indoor cycling activities (power, heart rate, cadence, speed). */
+(function (root) {
+  "use strict";
+
+  const FIT_EPOCH_OFFSET = 631065600; // seconds between 1970-01-01 and 1989-12-31
+
+  const CRC_TABLE = [0x0000, 0xcc01, 0xd801, 0x1400, 0xf001, 0x3c00, 0x2800, 0xe401,
+    0xa001, 0x6c00, 0x7800, 0xb401, 0x5000, 0x9c01, 0x8801, 0x4400];
+
+  function fitCrc(bytes, start, end, crc) {
+    crc = crc || 0;
+    for (let i = start; i < end; i++) {
+      const byte = bytes[i];
+      let tmp = CRC_TABLE[crc & 0xf];
+      crc = (crc >> 4) & 0x0fff;
+      crc = crc ^ tmp ^ CRC_TABLE[byte & 0xf];
+      tmp = CRC_TABLE[crc & 0xf];
+      crc = (crc >> 4) & 0x0fff;
+      crc = crc ^ tmp ^ CRC_TABLE[(byte >> 4) & 0xf];
+    }
+    return crc;
+  }
+
+  // Base types: [code, size, invalid value]
+  const T = {
+    enum: [0x00, 1, 0xff],
+    uint8: [0x02, 1, 0xff],
+    sint16: [0x83, 2, 0x7fff],
+    uint16: [0x84, 2, 0xffff],
+    uint32: [0x86, 4, 0xffffffff],
+    uint32z: [0x8c, 4, 0],
+  };
+
+  // Message definitions: global number and ordered fields [name, fieldNum, type]
+  const MESSAGES = {
+    file_id: [0, [["type", 0, "enum"], ["manufacturer", 1, "uint16"], ["product", 2, "uint16"],
+      ["serial_number", 3, "uint32z"], ["time_created", 4, "uint32"]]],
+    sport: [12, [["sport", 0, "enum"], ["sub_sport", 1, "enum"]]],
+    event: [21, [["timestamp", 253, "uint32"], ["event", 0, "enum"], ["event_type", 1, "enum"],
+      ["event_group", 4, "uint8"]]],
+    record: [20, [["timestamp", 253, "uint32"], ["heart_rate", 3, "uint8"], ["cadence", 4, "uint8"],
+      ["distance", 5, "uint32"], ["speed", 6, "uint16"], ["power", 7, "uint16"]]],
+    lap: [19, [["timestamp", 253, "uint32"], ["event", 0, "enum"], ["event_type", 1, "enum"],
+      ["start_time", 2, "uint32"], ["total_elapsed_time", 7, "uint32"], ["total_timer_time", 8, "uint32"],
+      ["total_distance", 9, "uint32"], ["avg_heart_rate", 15, "uint8"], ["max_heart_rate", 16, "uint8"],
+      ["avg_cadence", 17, "uint8"], ["avg_power", 19, "uint16"], ["max_power", 20, "uint16"],
+      ["sport", 25, "enum"], ["sub_sport", 39, "enum"]]],
+    session: [18, [["timestamp", 253, "uint32"], ["event", 0, "enum"], ["event_type", 1, "enum"],
+      ["start_time", 2, "uint32"], ["sport", 5, "enum"], ["sub_sport", 6, "enum"],
+      ["total_elapsed_time", 7, "uint32"], ["total_timer_time", 8, "uint32"], ["total_distance", 9, "uint32"],
+      ["avg_heart_rate", 16, "uint8"], ["max_heart_rate", 17, "uint8"], ["avg_cadence", 18, "uint8"],
+      ["avg_power", 20, "uint16"], ["max_power", 21, "uint16"], ["first_lap_index", 25, "uint16"],
+      ["num_laps", 26, "uint16"], ["normalized_power", 34, "uint16"], ["training_stress_score", 35, "uint16"],
+      ["intensity_factor", 36, "uint16"], ["threshold_power", 45, "uint16"], ["total_work", 48, "uint32"]]],
+    activity: [34, [["timestamp", 253, "uint32"], ["total_timer_time", 0, "uint32"], ["num_sessions", 1, "uint16"],
+      ["type", 2, "enum"], ["event", 3, "enum"], ["event_type", 4, "enum"], ["local_timestamp", 5, "uint32"]]],
+  };
+
+  class ByteWriter {
+    constructor() { this.buf = new Uint8Array(1 << 16); this.len = 0; }
+    ensure(n) {
+      if (this.len + n <= this.buf.length) return;
+      let size = this.buf.length * 2;
+      while (size < this.len + n) size *= 2;
+      const next = new Uint8Array(size);
+      next.set(this.buf.subarray(0, this.len));
+      this.buf = next;
+    }
+    u8(v) { this.ensure(1); this.buf[this.len++] = v & 0xff; }
+    u16(v) { this.u8(v); this.u8(v >>> 8); }
+    u32(v) { this.u16(v & 0xffff); this.u16((v >>> 16) & 0xffff); }
+    value(typeName, v) {
+      const [, size, invalid] = T[typeName];
+      const val = (v === undefined || v === null || Number.isNaN(v)) ? invalid : Math.round(v);
+      if (size === 1) this.u8(val);
+      else if (size === 2) this.u16(val & 0xffff);
+      else this.u32(val >>> 0);
+    }
+  }
+
+  class FitEncoder {
+    constructor() {
+      this.w = new ByteWriter();
+      this.w.len = 14; // header written at the end
+      this.localByName = {};
+      this.nextLocal = 0;
+    }
+    define(name) {
+      if (name in this.localByName) return this.localByName[name];
+      const local = this.nextLocal++;
+      const [globalNum, fields] = MESSAGES[name];
+      const w = this.w;
+      w.u8(0x40 | local);
+      w.u8(0); // reserved
+      w.u8(0); // little endian
+      w.u16(globalNum);
+      w.u8(fields.length);
+      for (const [, num, type] of fields) {
+        w.u8(num); w.u8(T[type][1]); w.u8(T[type][0]);
+      }
+      this.localByName[name] = local;
+      return local;
+    }
+    write(name, values) {
+      const local = this.define(name);
+      const w = this.w;
+      w.u8(local);
+      for (const [field, , type] of MESSAGES[name][1]) w.value(type, values[field]);
+    }
+    finish() {
+      const w = this.w;
+      const dataSize = w.len - 14;
+      const b = w.buf;
+      b[0] = 14; b[1] = 0x20;
+      b[2] = 2132 & 0xff; b[3] = 2132 >> 8; // profile version 21.32
+      b[4] = dataSize & 0xff; b[5] = (dataSize >>> 8) & 0xff; b[6] = (dataSize >>> 16) & 0xff; b[7] = (dataSize >>> 24) & 0xff;
+      b[8] = 0x2e; b[9] = 0x46; b[10] = 0x49; b[11] = 0x54; // ".FIT"
+      const hcrc = fitCrc(b, 0, 12);
+      b[12] = hcrc & 0xff; b[13] = hcrc >> 8;
+      const crc = fitCrc(b, 0, w.len);
+      w.u16(crc);
+      return w.buf.slice(0, w.len);
+    }
+  }
+
+  const toFitTime = (unixSeconds) => Math.round(unixSeconds) - FIT_EPOCH_OFFSET;
+
+  /**
+   * Build a FIT activity from 1 Hz samples.
+   * samples: [{ts (unix s), power, hr, cadence, speed (m/s), distance (m)}]
+   * pauses: [{start (unix s), end (unix s)}]
+   * summary: {avgPower, maxPower, avgHr, maxHr, avgCadence, np, tss, if, ftp, kj, timerSeconds, distance}
+   */
+  function buildActivityFit(samples, pauses, summary) {
+    if (!samples.length) throw new Error("No samples recorded");
+    const enc = new FitEncoder();
+    const SPORT_CYCLING = 2, SUB_INDOOR = 6;
+    const start = samples[0].ts;
+    const end = samples[samples.length - 1].ts;
+    enc.write("file_id", { type: 4, manufacturer: 255, product: 1, serial_number: 26102026, time_created: toFitTime(start) });
+    enc.write("sport", { sport: SPORT_CYCLING, sub_sport: SUB_INDOOR });
+    enc.write("event", { timestamp: toFitTime(start), event: 0, event_type: 0, event_group: 0 });
+
+    const pauseQueue = (pauses || []).slice().sort((a, b) => a.start - b.start);
+    let pi = 0;
+    for (const s of samples) {
+      while (pi < pauseQueue.length && pauseQueue[pi].start <= s.ts) {
+        const p = pauseQueue[pi++];
+        enc.write("event", { timestamp: toFitTime(p.start), event: 0, event_type: 4, event_group: 0 });
+        if (p.end) enc.write("event", { timestamp: toFitTime(p.end), event: 0, event_type: 0, event_group: 0 });
+      }
+      enc.write("record", {
+        timestamp: toFitTime(s.ts),
+        heart_rate: s.hr || undefined,
+        cadence: s.cadence == null ? undefined : s.cadence,
+        distance: s.distance == null ? undefined : s.distance * 100,
+        speed: s.speed == null ? undefined : s.speed * 1000,
+        power: s.power == null ? undefined : Math.max(0, s.power),
+      });
+    }
+    enc.write("event", { timestamp: toFitTime(end), event: 0, event_type: 4, event_group: 0 });
+
+    const elapsedMs = (end - start + 1) * 1000;
+    const timerMs = summary.timerSeconds * 1000;
+    const common = {
+      timestamp: toFitTime(end), start_time: toFitTime(start),
+      total_elapsed_time: elapsedMs, total_timer_time: timerMs,
+      total_distance: (summary.distance || 0) * 100,
+      avg_heart_rate: summary.avgHr || undefined, max_heart_rate: summary.maxHr || undefined,
+      avg_cadence: summary.avgCadence || undefined,
+      avg_power: summary.avgPower, max_power: summary.maxPower,
+    };
+    enc.write("lap", Object.assign({ event: 9, event_type: 1, sport: SPORT_CYCLING, sub_sport: SUB_INDOOR }, common));
+    enc.write("session", Object.assign({
+      event: 8, event_type: 1, sport: SPORT_CYCLING, sub_sport: SUB_INDOOR,
+      first_lap_index: 0, num_laps: 1,
+      normalized_power: summary.np, training_stress_score: summary.tss * 10,
+      intensity_factor: summary.if * 1000, threshold_power: summary.ftp, total_work: summary.kj * 1000,
+    }, common));
+    const tzOffset = -new Date(end * 1000).getTimezoneOffset() * 60;
+    enc.write("activity", {
+      timestamp: toFitTime(end), total_timer_time: timerMs, num_sessions: 1,
+      type: 0, event: 26, event_type: 1, local_timestamp: toFitTime(end + tzOffset),
+    });
+    return enc.finish();
+  }
+
+  root.RodilloFit = { buildActivityFit, fitCrc };
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+<script>/* Workout parsing (.mrc, .erg, .zwo), target lookup and ride statistics. */
+(function (root) {
+  "use strict";
+
+  /**
+   * A workout is {id, name, description, unit: 'pct'|'watts', segments: [[durationSec, startValue, endValue], ...]}.
+   * 'pct' values are % of FTP; 'watts' values are absolute.
+   */
+
+  function pointsToSegments(points) {
+    // points: [[minutes, value], ...] as in MRC/ERG course data
+    const segments = [];
+    for (let i = 1; i < points.length; i++) {
+      const [t0, v0] = points[i - 1];
+      const [t1, v1] = points[i];
+      const dur = Math.round((t1 - t0) * 60);
+      if (dur > 0) segments.push([dur, v0, v1]);
+    }
+    return segments;
+  }
+
+  function parseCourseFile(text, fallbackName) {
+    const header = {};
+    const headerMatch = text.match(/\[COURSE HEADER\]([\s\S]*?)\[END COURSE HEADER\]/i);
+    if (headerMatch) {
+      for (const line of headerMatch[1].split(/\r?\n/)) {
+        const m = line.match(/^\s*([A-Z ]+?)\s*=\s*(.*)$/i);
+        if (m) header[m[1].trim().toUpperCase()] = m[2].trim();
+        if (/MINUTES\s+PERCENT/i.test(line)) header.UNITS_KIND = "pct";
+        if (/MINUTES\s+WATTS/i.test(line)) header.UNITS_KIND = "watts";
+      }
+    }
+    const dataMatch = text.match(/\[COURSE DATA\]([\s\S]*?)\[END COURSE DATA\]/i);
+    if (!dataMatch) throw new Error("No [COURSE DATA] section found");
+    const points = [];
+    for (const line of dataMatch[1].split(/\r?\n/)) {
+      const parts = line.trim().split(/\s+/);
+      if (parts.length >= 2 && !isNaN(parseFloat(parts[0])) && !isNaN(parseFloat(parts[1]))) {
+        points.push([parseFloat(parts[0]), parseFloat(parts[1])]);
+      }
+    }
+    if (points.length < 2) throw new Error("The course data has fewer than two points");
+    const name = header["FILE NAME"] || fallbackName;
+    return {
+      id: "import-" + name,
+      name,
+      description: header["DESCRIPTION"] || "",
+      unit: header.UNITS_KIND || "pct",
+      segments: pointsToSegments(points),
+    };
+  }
+
+  function parseZwo(text, fallbackName) {
+    const doc = new DOMParser().parseFromString(text, "application/xml");
+    if (doc.querySelector("parsererror")) throw new Error("The .zwo file is not valid XML");
+    const name = doc.querySelector("name")?.textContent?.trim() || fallbackName;
+    const description = doc.querySelector("description")?.textContent?.trim() || "";
+    const segments = [];
+    const pct = (v) => Math.round(parseFloat(v) * 1000) / 10;
+    const workoutEl = doc.querySelector("workout");
+    if (!workoutEl) throw new Error("The .zwo file has no <workout> element");
+    for (const el of workoutEl.children) {
+      const tag = el.tagName;
+      const dur = parseInt(el.getAttribute("Duration") || "0", 10);
+      if (tag === "SteadyState" || tag === "FreeRide") {
+        const p = pct(el.getAttribute("Power") || "0.5");
+        segments.push([dur, p, p]);
+      } else if (tag === "Warmup" || tag === "Cooldown" || tag === "Ramp") {
+        segments.push([dur, pct(el.getAttribute("PowerLow")), pct(el.getAttribute("PowerHigh"))]);
+      } else if (tag === "IntervalsT") {
+        const reps = parseInt(el.getAttribute("Repeat") || "1", 10);
+        const on = parseInt(el.getAttribute("OnDuration"), 10);
+        const off = parseInt(el.getAttribute("OffDuration"), 10);
+        const onP = pct(el.getAttribute("OnPower"));
+        const offP = pct(el.getAttribute("OffPower"));
+        for (let i = 0; i < reps; i++) { segments.push([on, onP, onP]); segments.push([off, offP, offP]); }
+      }
+    }
+    if (!segments.length) throw new Error("No supported steps found in the .zwo file");
+    return { id: "import-" + name, name, description, unit: "pct", segments };
+  }
+
+  function parseWorkoutFile(fileName, text) {
+    const base = fileName.replace(/\.[^.]+$/, "");
+    if (/\.zwo$/i.test(fileName)) return parseZwo(text, base);
+    return parseCourseFile(text, base);
+  }
+
+  function totalDuration(workout) {
+    return workout.segments.reduce((sum, s) => sum + s[0], 0);
+  }
+
+  /** Locate the segment at second t. Returns {index, segStart, segEnd, fraction} or null past the end. */
+  function segmentAt(workout, t) {
+    let acc = 0;
+    for (let i = 0; i < workout.segments.length; i++) {
+      const dur = workout.segments[i][0];
+      if (t < acc + dur) return { index: i, segStart: acc, segEnd: acc + dur, fraction: (t - acc) / dur };
+      acc += dur;
+    }
+    return null;
+  }
+
+  /** Target in watts at second t, given FTP and an intensity multiplier (1.0 = 100 %). */
+  function targetWattsAt(workout, t, ftp, intensity) {
+    const loc = segmentAt(workout, t);
+    if (!loc) return null;
+    const [, v0, v1] = workout.segments[loc.index];
+    const value = v0 + (v1 - v0) * loc.fraction;
+    const watts = workout.unit === "watts" ? value : value * ftp / 100;
+    return Math.round(watts * intensity);
+  }
+
+  function segmentWatts(workout, seg, ftp) {
+    const f = workout.unit === "watts" ? 1 : ftp / 100;
+    return [seg[1] * f, seg[2] * f];
+  }
+
+  /** Ride statistics from 1 Hz samples with a 'power' field (timer time only). */
+  function rideStats(samples, ftp) {
+    const n = samples.length;
+    const out = { timerSeconds: n, avgPower: 0, maxPower: 0, np: 0, if: 0, tss: 0, kj: 0,
+      avgHr: 0, maxHr: 0, avgCadence: 0, distance: 0 };
+    if (!n) return out;
+    let pSum = 0, hrSum = 0, hrN = 0, cadSum = 0, cadN = 0;
+    for (const s of samples) {
+      const p = s.power || 0;
+      pSum += p;
+      if (p > out.maxPower) out.maxPower = p;
+      if (s.hr) { hrSum += s.hr; hrN++; if (s.hr > out.maxHr) out.maxHr = s.hr; }
+      if (s.cadence) { cadSum += s.cadence; cadN++; }
+    }
+    out.avgPower = Math.round(pSum / n);
+    out.kj = Math.round(pSum / 1000);
+    out.avgHr = hrN ? Math.round(hrSum / hrN) : 0;
+    out.avgCadence = cadN ? Math.round(cadSum / cadN) : 0;
+    out.distance = samples[n - 1].distance || 0;
+    // Normalized power: 30 s rolling mean, 4th power average, 4th root
+    if (n >= 30) {
+      let window = 0, acc4 = 0, count = 0;
+      for (let i = 0; i < n; i++) {
+        window += samples[i].power || 0;
+        if (i >= 30) window -= samples[i - 30].power || 0;
+        if (i >= 29) { acc4 += Math.pow(window / 30, 4); count++; }
+      }
+      out.np = Math.round(Math.pow(acc4 / count, 0.25));
+    } else {
+      out.np = out.avgPower;
+    }
+    out.if = ftp ? Math.round(out.np / ftp * 100) / 100 : 0;
+    out.tss = ftp ? Math.round((n * out.np * (out.np / ftp)) / (ftp * 3600) * 100 * 10) / 10 : 0;
+    return out;
+  }
+
+  /** Coggan-style zone for a % of FTP (used for colors). */
+  function zoneForPct(pct) {
+    if (pct < 55) return 1;
+    if (pct < 75) return 2;
+    if (pct < 90) return 3;
+    if (pct < 105) return 4;
+    if (pct < 120) return 5;
+    return 6;
+  }
+
+  root.RodilloWorkouts = {
+    parseWorkoutFile, parseCourseFile, totalDuration, segmentAt, targetWattsAt, segmentWatts, rideStats, zoneForPct,
+  };
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+<script>/* Bluetooth devices: FTMS smart trainer (with Cycling Power fallback), heart rate sensor, and a simulator. */
+(function (root) {
+  "use strict";
+
+  const UUID = {
+    ftms: 0x1826, indoorBikeData: 0x2ad2, ftmsControlPoint: 0x2ad9, ftmsStatus: 0x2ada,
+    cyclingPower: 0x1818, cyclingPowerMeasurement: 0x2a63,
+    heartRate: 0x180d, heartRateMeasurement: 0x2a37,
+  };
+
+  const FTMS_OP = { requestControl: 0x00, reset: 0x01, setTargetPower: 0x05, startResume: 0x07, stopPause: 0x08 };
+
+  /** Parse the FTMS Indoor Bike Data characteristic. */
+  function parseIndoorBikeData(dv) {
+    const flags = dv.getUint16(0, true);
+    let o = 2;
+    const out = {};
+    if (!(flags & 0x0001)) { out.speedKmh = dv.getUint16(o, true) / 100; o += 2; } // "more data" bit inverted
+    if (flags & 0x0002) o += 2; // average speed
+    if (flags & 0x0004) { out.cadence = dv.getUint16(o, true) / 2; o += 2; }
+    if (flags & 0x0008) o += 2; // average cadence
+    if (flags & 0x0010) o += 3; // total distance
+    if (flags & 0x0020) o += 2; // resistance level
+    if (flags & 0x0040) { out.power = dv.getInt16(o, true); o += 2; }
+    if (flags & 0x0080) o += 2; // average power
+    if (flags & 0x0100) o += 5; // expended energy
+    if (flags & 0x0200) { out.hr = dv.getUint8(o); o += 1; }
+    return out;
+  }
+
+  /** Parse the Cycling Power Measurement characteristic (power plus crank cadence when present). */
+  function makeCyclingPowerParser() {
+    let lastCrank = null;
+    return function parse(dv) {
+      const flags = dv.getUint16(0, true);
+      const out = { power: dv.getInt16(2, true) };
+      let o = 4;
+      if (flags & 0x0001) o += 1; // pedal power balance
+      if (flags & 0x0004) o += 2; // accumulated torque
+      if (flags & 0x0010) o += 6; // wheel revolutions
+      if (flags & 0x0020) {
+        const revs = dv.getUint16(o, true);
+        const time = dv.getUint16(o + 2, true); // 1/1024 s
+        if (lastCrank) {
+          const dRev = (revs - lastCrank.revs + 0x10000) & 0xffff;
+          const dTime = ((time - lastCrank.time + 0x10000) & 0xffff) / 1024;
+          if (dTime > 0 && dRev < 10) out.cadence = Math.round(dRev / dTime * 60);
+          else if (dTime === 0) out.cadence = lastCrank.cadence;
+        }
+        lastCrank = { revs, time, cadence: out.cadence };
+      }
+      return out;
+    };
+  }
+
+  function parseHeartRate(dv) {
+    const flags = dv.getUint8(0);
+    return { hr: (flags & 0x01) ? dv.getUint16(1, true) : dv.getUint8(1) };
+  }
+
+  class Emitter {
+    constructor() { this.handlers = {}; }
+    on(evt, fn) { (this.handlers[evt] = this.handlers[evt] || []).push(fn); }
+    emit(evt, data) { (this.handlers[evt] || []).forEach((fn) => fn(data)); }
+  }
+
+  function bluetoothAvailable() {
+    return typeof navigator !== "undefined" && !!navigator.bluetooth;
+  }
+
+  class Trainer extends Emitter {
+    constructor() {
+      super();
+      this.device = null; this.controlPoint = null; this.canControl = false;
+      this.queue = Promise.resolve(); this.lastTarget = null; this.name = "";
+    }
+    async connect() {
+      const device = await navigator.bluetooth.requestDevice({
+        filters: [{ services: [UUID.ftms] }, { services: [UUID.cyclingPower] }],
+        optionalServices: [UUID.ftms, UUID.cyclingPower],
+      });
+      this.device = device;
+      this.name = device.name || "Rodillo";
+      device.addEventListener("gattserverdisconnected", () => this.handleDisconnect());
+      await this.setup();
+    }
+    async setup() {
+      const server = await this.device.gatt.connect();
+      let ftms = null;
+      try { ftms = await server.getPrimaryService(UUID.ftms); } catch (e) { ftms = null; }
+      if (ftms) {
+        const data = await ftms.getCharacteristic(UUID.indoorBikeData);
+        data.addEventListener("characteristicvaluechanged", (e) => this.emit("data", parseIndoorBikeData(e.target.value)));
+        await data.startNotifications();
+        try {
+          this.controlPoint = await ftms.getCharacteristic(UUID.ftmsControlPoint);
+          this.controlPoint.addEventListener("characteristicvaluechanged", (e) => this.handleControlResponse(e.target.value));
+          await this.controlPoint.startNotifications();
+          await this.sendControl([FTMS_OP.requestControl]);
+          await this.sendControl([FTMS_OP.startResume]);
+          this.canControl = true;
+        } catch (e) {
+          this.canControl = false;
+          this.emit("warning", "El rodillo no aceptó el control (¿otra app conectada?). Solo se leerán datos.");
+        }
+        this.mode = "ftms";
+      } else {
+        const cps = await server.getPrimaryService(UUID.cyclingPower);
+        const meas = await cps.getCharacteristic(UUID.cyclingPowerMeasurement);
+        const parse = makeCyclingPowerParser();
+        meas.addEventListener("characteristicvaluechanged", (e) => this.emit("data", parse(e.target.value)));
+        await meas.startNotifications();
+        this.canControl = false;
+        this.mode = "power";
+        this.emit("warning", "Este dispositivo solo envía potencia: no se puede controlar la resistencia.");
+      }
+      this.lastTarget = null;
+      this.emit("connected", { name: this.name, canControl: this.canControl });
+    }
+    handleControlResponse(dv) {
+      if (dv.getUint8(0) === 0x80 && dv.byteLength >= 3) {
+        const op = dv.getUint8(1), result = dv.getUint8(2);
+        if (result !== 0x01) this.emit("warning", `El rodillo rechazó la orden ${op} (código ${result}).`);
+      }
+    }
+    sendControl(bytes) {
+      const task = this.queue.then(() => this.controlPoint.writeValueWithResponse
+        ? this.controlPoint.writeValueWithResponse(new Uint8Array(bytes))
+        : this.controlPoint.writeValue(new Uint8Array(bytes)));
+      this.queue = task.catch(() => {});
+      return task;
+    }
+    setTargetPower(watts) {
+      if (!this.canControl || !this.controlPoint) return;
+      const w = Math.max(0, Math.min(2000, Math.round(watts)));
+      if (w === this.lastTarget) return;
+      this.lastTarget = w;
+      this.sendControl([FTMS_OP.setTargetPower, w & 0xff, (w >> 8) & 0xff]).catch((e) =>
+        this.emit("warning", "No se pudo enviar la potencia objetivo: " + e.message));
+    }
+    async handleDisconnect() {
+      this.canControl = false; this.controlPoint = null;
+      this.emit("disconnected");
+      // Try to reconnect a few times; the trainer may drop the link briefly
+      for (let attempt = 1; attempt <= 5 && this.device; attempt++) {
+        await new Promise((r) => setTimeout(r, 2000 * attempt));
+        try { await this.setup(); return; } catch (e) { /* retry */ }
+      }
+    }
+    disconnect() {
+      const d = this.device; this.device = null;
+      if (d && d.gatt.connected) d.gatt.disconnect();
+    }
+  }
+
+  class HeartRateSensor extends Emitter {
+    constructor() { super(); this.device = null; this.name = ""; }
+    async connect() {
+      const device = await navigator.bluetooth.requestDevice({ filters: [{ services: [UUID.heartRate] }] });
+      this.device = device;
+      this.name = device.name || "Pulso";
+      device.addEventListener("gattserverdisconnected", () => this.handleDisconnect());
+      await this.setup();
+    }
+    async setup() {
+      const server = await this.device.gatt.connect();
+      const svc = await server.getPrimaryService(UUID.heartRate);
+      const ch = await svc.getCharacteristic(UUID.heartRateMeasurement);
+      ch.addEventListener("characteristicvaluechanged", (e) => this.emit("data", parseHeartRate(e.target.value)));
+      await ch.startNotifications();
+      this.emit("connected", { name: this.name });
+    }
+    async handleDisconnect() {
+      this.emit("disconnected");
+      for (let attempt = 1; attempt <= 5 && this.device; attempt++) {
+        await new Promise((r) => setTimeout(r, 2000 * attempt));
+        try { await this.setup(); return; } catch (e) { /* retry */ }
+      }
+    }
+    disconnect() {
+      const d = this.device; this.device = null;
+      if (d && d.gatt.connected) d.gatt.disconnect();
+    }
+  }
+
+  /** Simulated trainer + heart rate for trying the app without hardware. */
+  class SimulatedRig extends Emitter {
+    constructor(ftp) {
+      super();
+      this.name = "Simulador"; this.canControl = true; this.target = 100; this.hr = 72; this.ftp = ftp || 165;
+      this.timer = null; this.power = 0;
+    }
+    async connect() {
+      this.timer = setInterval(() => this.tick(), 1000);
+      this.emit("connected", { name: this.name, canControl: true });
+    }
+    tick() {
+      this.power += (this.target - this.power) * 0.5;
+      const power = Math.max(0, Math.round(this.power + (Math.random() - 0.5) * 12));
+      const effort = power / this.ftp;
+      this.hr += ((85 + effort * 75) - this.hr) / 25;
+      this.emit("data", { power, cadence: Math.round(86 + Math.random() * 6), speedKmh: 18 + power / 12, hr: Math.round(this.hr) });
+    }
+    setTargetPower(w) { this.target = w; }
+    disconnect() { clearInterval(this.timer); this.timer = null; this.emit("disconnected"); }
+  }
+
+  root.RodilloBle = { Trainer, HeartRateSensor, SimulatedRig, bluetoothAvailable, parseIndoorBikeData };
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+<script>/* Rodillo app: workout library, live ERG session, recording and FIT export. */
+(function () {
+  "use strict";
+
+  const W = window.RodilloWorkouts;
+  const F = window.RodilloFit;
+  const B = window.RodilloBle;
+  const PLAN = window.RODILLO_PLAN || [];
+
+  const ZONE_VARS = ["--z1", "--z2", "--z3", "--z4", "--z5", "--z6"];
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const $ = (sel) => document.querySelector(sel);
+  const el = (tag, attrs, ...children) => {
+    const node = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (k === "class") node.className = v;
+      else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+      else node.setAttribute(k, v);
+    }
+    for (const c of children) if (c != null) node.append(c);
+    return node;
+  };
+
+  // ---------- Storage helpers (best effort) ----------
+  const store = {
+    get(key, fallback) {
+      try { const v = localStorage.getItem("rodillo." + key); return v == null ? fallback : JSON.parse(v); }
+      catch (e) { return fallback; }
+    },
+    set(key, value) { try { localStorage.setItem("rodillo." + key, JSON.stringify(value)); } catch (e) { /* ignore */ } },
+    remove(key) { try { localStorage.removeItem("rodillo." + key); } catch (e) { /* ignore */ } },
+  };
+
+  const settings = Object.assign({ ftp: 165, weight: 72, simulator: false, sounds: true, autoPause: true },
+    store.get("settings", {}));
+
+  // ---------- State ----------
+  const live = { power: null, cadence: null, speedKmh: null, hr: null, powerAt: 0, hrAt: 0, power3s: [] };
+  const devices = { trainer: null, hr: null };
+  let ride = null; // active session
+  let lastSummary = null;
+  let toastTimer = null;
+
+  // ---------- Formatting ----------
+  const fmtTime = (s) => {
+    s = Math.max(0, Math.round(s));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    return (h ? h + ":" + String(m).padStart(2, "0") : String(m)) + ":" + String(sec).padStart(2, "0");
+  };
+
+  /** Turn "2026-10-26_W1_B_VO2_4x3" into display parts. */
+  function describeWorkout(w) {
+    const m = w.name.match(/^(\d{4})-(\d{2})-(\d{2})_W(\d)_([A-Z]+)_(.+)$/);
+    if (!m) return { date: null, week: null, kind: null, title: w.name.replace(/_/g, " ") };
+    const kindNames = { A: "Anaeróbica", B: "VO2max", C: "Sweet spot", FTP: "Test" };
+    const title = m[6].replace(/_/g, " ").replace(/(\d)x(\d)/g, "$1×$2")
+      .replace(/^Anaerobic/, "Anaeróbica").replace(/^Repeated/, "Repetidos").replace(/^SweetSpot/, "Sweet spot")
+      .replace(/Sprints/, "+ sprints").replace(/Short/, "corta").replace(/^Test/, "Test FTP").replace(/^VO2/, "VO2max");
+    return {
+      date: new Date(+m[1], +m[2] - 1, +m[3]), week: +m[4], kind: m[5], kindName: kindNames[m[5]] || m[5], title,
+    };
+  }
+
+  function estimateTss(w) {
+    const samples = [];
+    const total = W.totalDuration(w);
+    for (let t = 0; t < total; t++) samples.push({ power: W.targetWattsAt(w, t, settings.ftp, 1) });
+    return W.rideStats(samples, settings.ftp).tss;
+  }
+
+  function zoneColor(pct) { return css(ZONE_VARS[W.zoneForPct(pct) - 1]); }
+
+  // ---------- Toast ----------
+  function toast(msg, kind) {
+    const t = $("#toast");
+    t.textContent = msg;
+    t.dataset.kind = kind || "info";
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, 5000);
+  }
+
+  // ---------- Profile drawing ----------
+  function drawProfile(canvas, w, opts) {
+    opts = opts || {};
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(10, rect.width), height = Math.max(10, rect.height);
+    canvas.width = width * dpr; canvas.height = height * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, width, height);
+    const total = W.totalDuration(w);
+    const ftp = settings.ftp;
+    const intensity = opts.intensity || 1;
+    let maxW = ftp * 1.6;
+    for (const seg of w.segments) for (const v of W.segmentWatts(w, seg, ftp)) maxW = Math.max(maxW, v * intensity * 1.1);
+    if (opts.samples) for (const s of opts.samples) if (s.power) maxW = Math.max(maxW, s.power * 1.05);
+    const padTop = opts.compact ? 2 : 8, padBottom = opts.compact ? 0 : 16;
+    const plotH = height - padTop - padBottom;
+    const x = (t) => (t / total) * width;
+    const y = (watts) => padTop + plotH - (watts / maxW) * plotH;
+
+    if (!opts.compact) {
+      // FTP reference line and label
+      ctx.strokeStyle = css("--grid"); ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(0, y(ftp)); ctx.lineTo(width, y(ftp)); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = css("--muted"); ctx.font = "11px " + css("--font-ui");
+      ctx.fillText("FTP " + ftp + " W", 4, y(ftp) - 4);
+    }
+
+    // Target blocks colored by zone
+    let acc = 0;
+    for (const seg of w.segments) {
+      const [w0, w1] = W.segmentWatts(w, seg, ftp).map((v) => v * intensity);
+      const pctMid = ((w0 + w1) / 2) / ftp * 100;
+      ctx.fillStyle = zoneColor(pctMid);
+      ctx.globalAlpha = opts.samples ? 0.38 : 0.9;
+      ctx.beginPath();
+      ctx.moveTo(x(acc), y(0)); ctx.lineTo(x(acc), y(w0)); ctx.lineTo(x(acc + seg[0]), y(w1)); ctx.lineTo(x(acc + seg[0]), y(0));
+      ctx.closePath(); ctx.fill();
+      acc += seg[0];
+    }
+    ctx.globalAlpha = 1;
+
+    if (opts.samples && opts.samples.length) {
+      // Heart rate trace on its own scale (50-200 bpm)
+      const hrY = (hr) => padTop + plotH - ((hr - 50) / 150) * plotH;
+      ctx.strokeStyle = css("--hr"); ctx.lineWidth = 1.5; ctx.beginPath();
+      let started = false;
+      opts.samples.forEach((s, i) => {
+        if (!s.hr) return;
+        if (!started) { ctx.moveTo(x(s.t ?? i), hrY(s.hr)); started = true; } else ctx.lineTo(x(s.t ?? i), hrY(s.hr));
+      });
+      ctx.stroke();
+      // Power trace (3 s smoothed)
+      ctx.strokeStyle = css("--fg"); ctx.lineWidth = 1.6; ctx.beginPath();
+      let win = [];
+      opts.samples.forEach((s, i) => {
+        win.push(s.power || 0); if (win.length > 3) win.shift();
+        const p = win.reduce((a, b) => a + b, 0) / win.length;
+        if (i === 0) ctx.moveTo(x(s.t ?? i), y(p)); else ctx.lineTo(x(s.t ?? i), y(p));
+      });
+      ctx.stroke();
+    }
+
+    if (opts.cursor != null) {
+      ctx.strokeStyle = css("--fg"); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x(opts.cursor), padTop); ctx.lineTo(x(opts.cursor), y(0)); ctx.stroke();
+    }
+
+    if (!opts.compact) {
+      ctx.fillStyle = css("--muted"); ctx.font = "11px " + css("--font-ui");
+      const step = total > 3600 ? 900 : 600;
+      for (let t = step; t < total; t += step) ctx.fillText(Math.round(t / 60) + "′", x(t) - 8, height - 3);
+    }
+  }
+
+  // ---------- Library ----------
+  function allWorkouts() {
+    const imported = store.get("imported", []);
+    return PLAN.map((w) => Object.assign({ unit: "pct", source: "plan" }, w))
+      .concat(imported.map((w) => Object.assign({ source: "import" }, w)));
+  }
+
+  function renderLibrary() {
+    const list = $("#workout-list");
+    list.replaceChildren();
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const workouts = allWorkouts();
+    let nextMarked = false;
+    for (const w of workouts) {
+      const d = describeWorkout(w);
+      const total = W.totalDuration(w);
+      let badge = null, state = "";
+      if (d.date) {
+        if (d.date.getTime() === today.getTime()) { badge = "Hoy"; state = "today"; nextMarked = true; }
+        else if (d.date < today) state = "past";
+        else if (!nextMarked) { badge = "Próxima"; state = "next"; nextMarked = true; }
+      }
+      const canvas = el("canvas", { class: "mini-profile", "aria-hidden": "true" });
+      const meta = el("div", { class: "card-meta" },
+        el("span", {}, fmtTime(total)),
+        el("span", {}, "TSS ≈ " + Math.round(estimateTss(w))),
+        w.unit === "watts" ? el("span", {}, "vatios fijos") : el("span", {}, "% FTP"));
+      const dateLabel = d.date
+        ? d.date.toLocaleDateString("es-CH", { weekday: "short", day: "numeric", month: "short" }) + " · Semana " + d.week
+        : (w.source === "import" ? "Importado" : "");
+      const actions = el("div", { class: "card-actions" },
+        el("button", { class: "btn primary", onclick: () => startRide(w) }, "Empezar"));
+      if (w.source === "import") {
+        actions.append(el("button", { class: "btn ghost", onclick: () => removeImported(w.id) }, "Quitar"));
+      }
+      const card = el("article", { class: "workout-card " + state },
+        el("div", { class: "card-head" },
+          el("div", { class: "card-date" }, dateLabel, badge ? el("span", { class: "badge" }, badge) : null),
+          d.kind ? el("span", { class: "kind kind-" + d.kind }, d.kindName) : null),
+        el("h3", {}, d.title),
+        w.description ? el("p", { class: "card-desc" }, w.description) : null,
+        canvas, meta, actions);
+      list.append(card);
+      requestAnimationFrame(() => drawProfile(canvas, w, { compact: true }));
+      if (state === "today" || state === "next") card.dataset.focus = "1";
+    }
+    const focus = list.querySelector('[data-focus="1"]');
+    if (focus) setTimeout(() => focus.scrollIntoView({ block: "nearest", inline: "start" }), 50);
+  }
+
+  function removeImported(id) {
+    store.set("imported", store.get("imported", []).filter((w) => w.id !== id));
+    renderLibrary();
+  }
+
+  async function importFiles(files) {
+    const imported = store.get("imported", []);
+    let ok = 0;
+    for (const file of files) {
+      try {
+        const w = W.parseWorkoutFile(file.name, await file.text());
+        const i = imported.findIndex((x) => x.id === w.id);
+        if (i >= 0) imported[i] = w; else imported.push(w);
+        ok++;
+      } catch (e) {
+        toast(file.name + ": " + e.message, "error");
+      }
+    }
+    store.set("imported", imported);
+    if (ok) toast(ok === 1 ? "Entreno importado." : ok + " entrenos importados.");
+    renderLibrary();
+  }
+
+  function manualErgWorkout() {
+    return { id: "manual-erg", name: "ERG manual", description: "Potencia fija que ajustas con − y +.",
+      unit: "watts", segments: [[4 * 3600, Math.round(settings.ftp * 0.6), Math.round(settings.ftp * 0.6)]], manual: true };
+  }
+
+  // ---------- Devices ----------
+  function setChip(kind, state, label) {
+    const chip = $("#chip-" + kind);
+    chip.dataset.state = state;
+    chip.querySelector(".chip-label").textContent = label;
+  }
+
+  function wireTrainer(dev) {
+    dev.on("connected", (info) => {
+      setChip("trainer", "on", info.name + (info.canControl ? " · ERG" : " · solo lectura"));
+      if (ride && ride.target != null) dev.setTargetPower(ride.target);
+    });
+    dev.on("disconnected", () => setChip("trainer", "warn", "Reconectando…"));
+    dev.on("warning", (msg) => toast(msg, "warn"));
+    dev.on("data", (d) => {
+      const now = Date.now();
+      if (d.power != null) { live.power = d.power; live.powerAt = now; }
+      if (d.cadence != null) live.cadence = d.cadence;
+      if (d.speedKmh != null) live.speedKmh = d.speedKmh;
+      if (d.hr && (!devices.hr || now - live.hrAt > 3000)) { live.hr = d.hr; live.hrAt = now; }
+      updateLiveReadouts();
+    });
+  }
+
+  async function connectTrainer() {
+    try {
+      if (settings.simulator) {
+        if (devices.trainer) devices.trainer.disconnect();
+        const sim = new B.SimulatedRig(settings.ftp);
+        devices.trainer = sim; wireTrainer(sim);
+        await sim.connect();
+        return;
+      }
+      if (!B.bluetoothAvailable()) {
+        toast("Este navegador no tiene Bluetooth. En el Mac abre la página en Chrome (Safari no sirve); en iPhone o iPad, en Bluefy.", "error");
+        return;
+      }
+      setChip("trainer", "warn", "Buscando…");
+      const t = new B.Trainer();
+      wireTrainer(t);
+      await t.connect();
+      devices.trainer = t;
+    } catch (e) {
+      setChip("trainer", "off", "Rodillo");
+      if (e && e.name !== "NotFoundError") toast("No se pudo conectar el rodillo: " + e.message, "error");
+    }
+  }
+
+  async function connectHr() {
+    try {
+      if (!B.bluetoothAvailable()) {
+        toast("Este navegador no tiene Bluetooth. En el Mac abre la página en Chrome (Safari no sirve); en iPhone o iPad, en Bluefy.", "error");
+        return;
+      }
+      setChip("hr", "warn", "Buscando…");
+      const h = new B.HeartRateSensor();
+      h.on("connected", (info) => setChip("hr", "on", info.name));
+      h.on("disconnected", () => setChip("hr", "warn", "Reconectando…"));
+      h.on("data", (d) => { live.hr = d.hr; live.hrAt = Date.now(); updateLiveReadouts(); });
+      await h.connect();
+      devices.hr = h;
+    } catch (e) {
+      setChip("hr", "off", "Pulso");
+      if (e && e.name !== "NotFoundError") toast("No se pudo conectar el pulso: " + e.message, "error");
+    }
+  }
+
+  function setTarget(watts) {
+    if (!ride) return;
+    ride.target = watts;
+    if (devices.trainer && watts != null) devices.trainer.setTargetPower(watts);
+  }
+
+  // ---------- Sound cues ----------
+  let audioCtx = null;
+  function beep(freq, ms) {
+    if (!settings.sounds) return;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+      osc.frequency.value = freq; osc.connect(gain); gain.connect(audioCtx.destination);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + ms / 1000);
+      osc.start(); osc.stop(audioCtx.currentTime + ms / 1000);
+    } catch (e) { /* audio is optional */ }
+  }
+
+  // ---------- Wake lock ----------
+  let wakeLock = null;
+  async function keepAwake() {
+    try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); } catch (e) { /* optional */ }
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && ride && !ride.finished) keepAwake();
+  });
+
+  // ---------- Ride session ----------
+  function showView(name) {
+    for (const v of document.querySelectorAll(".view")) v.hidden = v.id !== "view-" + name;
+    document.body.dataset.view = name;
+  }
+
+  function startRide(workout, resumeData) {
+    if (!devices.trainer && !resumeData) {
+      toast("Conecta primero el rodillo (o activa el simulador en Ajustes).", "warn");
+      return;
+    }
+    if (audioCtx == null && settings.sounds) beep(660, 1); // unlock audio from this tap
+    ride = Object.assign({
+      workout, t: 0, intensity: 1, paused: true, started: false, samples: [], pauses: [],
+      startedAt: null, target: null, lastSegment: -1, autoPaused: false, idleSeconds: 0, finished: false,
+      distance: 0, manualWatts: workout.manual ? workout.segments[0][1] : null,
+    }, resumeData || {});
+    ride.workout = workout;
+    $("#ride-title").textContent = describeWorkout(workout).title;
+    showView("ride");
+    keepAwake();
+    updateRideUi();
+    setTarget(currentTarget());
+    if (!ride.timer) ride.timer = setInterval(rideTick, 1000);
+  }
+
+  function currentTarget() {
+    if (!ride) return null;
+    if (ride.workout.manual) return ride.manualWatts;
+    const tw = W.targetWattsAt(ride.workout, Math.min(ride.t, W.totalDuration(ride.workout) - 1), settings.ftp, ride.intensity);
+    return tw;
+  }
+
+  function togglePause() {
+    if (!ride) return;
+    if (ride.paused) {
+      if (!ride.started) { ride.started = true; ride.startedAt = Date.now() / 1000; beep(880, 150); }
+      else if (ride.pauseStart) { ride.pauses.push({ start: ride.pauseStart, end: Date.now() / 1000 }); ride.pauseStart = null; }
+      ride.paused = false; ride.autoPaused = false;
+    } else {
+      ride.paused = true; ride.pauseStart = Date.now() / 1000;
+    }
+    updateRideUi();
+  }
+
+  function rideTick() {
+    if (!ride || ride.finished) return;
+    const now = Date.now();
+    const total = W.totalDuration(ride.workout);
+    const powerFresh = now - live.powerAt < 3000;
+    const pedaling = powerFresh && ((live.cadence || 0) > 15 || (live.power || 0) > 20);
+
+    // Auto-pause / auto-resume once the session has started
+    if (ride.started && settings.autoPause) {
+      if (!ride.paused && !pedaling) {
+        ride.idleSeconds++;
+        if (ride.idleSeconds >= 5) { ride.paused = true; ride.autoPaused = true; ride.pauseStart = now / 1000 - 5; toast("Pausa automática: no detecto pedaleo."); }
+      } else if (ride.paused && ride.autoPaused && pedaling) {
+        ride.pauses.push({ start: ride.pauseStart, end: now / 1000 }); ride.pauseStart = null;
+        ride.paused = false; ride.autoPaused = false; ride.idleSeconds = 0;
+      } else if (pedaling) ride.idleSeconds = 0;
+    }
+
+    if (!ride.paused) {
+      const speed = live.speedKmh != null && powerFresh ? live.speedKmh / 3.6 : 0;
+      ride.distance += speed;
+      ride.samples.push({
+        t: ride.t, ts: Math.floor(now / 1000),
+        power: powerFresh ? Math.max(0, Math.round(live.power || 0)) : 0,
+        hr: now - live.hrAt < 5000 ? live.hr : null,
+        cadence: powerFresh && live.cadence != null ? Math.round(live.cadence) : null,
+        speed, distance: ride.distance, target: ride.target,
+      });
+      ride.t++;
+      // Countdown beeps before an interval change
+      const loc = W.segmentAt(ride.workout, ride.t);
+      if (loc && !ride.workout.manual) {
+        const remaining = loc.segEnd - ride.t;
+        if (remaining <= 3 && remaining >= 1) beep(remaining === 1 ? 990 : 660, 120);
+        if (loc.index !== ride.lastSegment) { ride.lastSegment = loc.index; }
+      }
+      if (!ride.workout.manual && ride.t >= total) { finishRide(); return; }
+      if (ride.t % 15 === 0) autosave();
+    }
+    setTarget(currentTarget());
+    updateRideUi();
+  }
+
+  function adjustIntensity(deltaPct) {
+    if (!ride) return;
+    if (ride.workout.manual) {
+      ride.manualWatts = Math.max(30, ride.manualWatts + (deltaPct > 0 ? 5 : -5));
+    } else {
+      ride.intensity = Math.max(0.5, Math.min(1.5, Math.round((ride.intensity + deltaPct / 100) * 100) / 100));
+    }
+    setTarget(currentTarget());
+    updateRideUi();
+  }
+
+  function skipSegment() {
+    if (!ride || ride.workout.manual) return;
+    const loc = W.segmentAt(ride.workout, ride.t);
+    if (!loc) return;
+    // Move the workout clock to the next segment; recorded samples stay untouched
+    ride.t = loc.segEnd;
+    if (ride.t >= W.totalDuration(ride.workout)) { finishRide(); return; }
+    setTarget(currentTarget());
+    updateRideUi();
+  }
+
+  function updateLiveReadouts() {
+    if (!ride) return;
+    const now = Date.now();
+    live.power3s.push({ at: now, p: live.power || 0 });
+    while (live.power3s.length && now - live.power3s[0].at > 3000) live.power3s.shift();
+  }
+
+  function updateRideUi() {
+    if (!ride) return;
+    const w = ride.workout;
+    const total = w.manual ? null : W.totalDuration(w);
+    const now = Date.now();
+    const powerFresh = now - live.powerAt < 3000;
+    const p3 = live.power3s.length ? Math.round(live.power3s.reduce((a, b) => a + b.p, 0) / live.power3s.length) : null;
+    const target = ride.target;
+
+    $("#m-power").textContent = powerFresh && p3 != null ? p3 : "—";
+    $("#m-target").textContent = target != null ? target : "—";
+    $("#m-hr").textContent = now - live.hrAt < 5000 && live.hr ? live.hr : "—";
+    $("#m-cadence").textContent = powerFresh && live.cadence != null ? Math.round(live.cadence) : "—";
+
+    const pct = target ? target / settings.ftp * 100 : 0;
+    document.documentElement.style.setProperty("--zone", zoneColor(pct || 50));
+    $("#m-target-pct").textContent = target ? Math.round(pct) + " % FTP" : "";
+    const diff = powerFresh && p3 != null && target ? p3 - target : null;
+    const powerBox = $("#box-power");
+    powerBox.dataset.delta = diff == null ? "" : Math.abs(diff) <= Math.max(10, target * 0.05) ? "ok" : diff > 0 ? "high" : "low";
+
+    $("#m-elapsed").textContent = fmtTime(ride.samples.length);
+    $("#m-intensity").textContent = w.manual ? ride.manualWatts + " W" : Math.round(ride.intensity * 100) + " %";
+
+    if (!w.manual) {
+      const loc = W.segmentAt(w, Math.min(ride.t, total - 1));
+      const seg = w.segments[loc.index];
+      const [w0, w1] = W.segmentWatts(w, seg, settings.ftp).map((v) => Math.round(v * ride.intensity));
+      $("#seg-countdown").textContent = fmtTime(loc.segEnd - ride.t);
+      $("#seg-label").textContent = "Bloque " + (loc.index + 1) + "/" + w.segments.length + " · " + (w0 === w1 ? w0 + " W" : w0 + "→" + w1 + " W");
+      const next = w.segments[loc.index + 1];
+      if (next) {
+        const [n0, n1] = W.segmentWatts(w, next, settings.ftp).map((v) => Math.round(v * ride.intensity));
+        $("#seg-next").textContent = "Después: " + fmtTime(next[0]) + " a " + (n0 === n1 ? n0 + " W" : n0 + "→" + n1 + " W");
+      } else $("#seg-next").textContent = "Último bloque";
+      $("#m-remaining").textContent = fmtTime(total - ride.t);
+    } else {
+      $("#seg-countdown").textContent = fmtTime(ride.samples.length);
+      $("#seg-label").textContent = "ERG manual";
+      $("#seg-next").textContent = "Ajusta la potencia con − y +";
+      $("#m-remaining").textContent = "—";
+    }
+
+    const stats = W.rideStats(ride.samples, settings.ftp);
+    $("#m-np").textContent = ride.samples.length >= 30 ? stats.np : "—";
+    $("#m-kj").textContent = stats.kj;
+    $("#m-tss").textContent = stats.tss.toFixed(0);
+
+    const btn = $("#btn-pause");
+    btn.textContent = !ride.started ? "Empezar" : ride.paused ? "Seguir" : "Pausa";
+    btn.classList.toggle("primary", ride.paused);
+    $("#ride-status").textContent = !ride.started ? "Listo para empezar: pulsa Empezar y pedalea."
+      : ride.autoPaused ? "Pausa automática: empieza a pedalear para seguir."
+      : ride.paused ? "En pausa" : "";
+
+    if (!w.manual) drawProfile($("#ride-profile"), w, { samples: ride.samples, cursor: ride.t, intensity: ride.intensity });
+  }
+
+  function autosave() {
+    if (!ride || !ride.samples.length) return;
+    store.set("recovery", {
+      workout: ride.workout, t: ride.t, intensity: ride.intensity, samples: ride.samples, pauses: ride.pauses,
+      started: true, startedAt: ride.startedAt, distance: ride.distance, manualWatts: ride.manualWatts, savedAt: Date.now(),
+    });
+  }
+
+  function finishRide() {
+    if (!ride) return;
+    clearInterval(ride.timer); ride.timer = null;
+    ride.finished = true;
+    if (ride.pauseStart) { ride.pauses.push({ start: ride.pauseStart, end: null }); ride.pauseStart = null; }
+    if (devices.trainer) devices.trainer.setTargetPower(Math.round(settings.ftp * 0.4));
+    try { if (wakeLock) wakeLock.release(); } catch (e) { /* ignore */ }
+    if (!ride.samples.length) { ride = null; store.remove("recovery"); showView("library"); return; }
+    autosave();
+    lastSummary = buildSummary(ride);
+    renderSummary(lastSummary);
+    showView("summary");
+  }
+
+  function buildSummary(r) {
+    const stats = W.rideStats(r.samples, settings.ftp);
+    const startTs = r.samples[0].ts;
+    const d = new Date(startTs * 1000);
+    const pad = (n) => String(n).padStart(2, "0");
+    const stamp = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "_" + pad(d.getHours()) + pad(d.getMinutes());
+    const shortName = r.workout.name.replace(/^\d{4}-\d{2}-\d{2}_/, "").replace(/[^\w.-]+/g, "_");
+    return { ride: r, stats, fileName: stamp + "_" + shortName + ".fit" };
+  }
+
+  function renderSummary(sum) {
+    const s = sum.stats;
+    const grid = $("#summary-grid");
+    grid.replaceChildren();
+    const items = [
+      ["Tiempo", fmtTime(s.timerSeconds)], ["Potencia media", s.avgPower + " W"], ["NP", s.np + " W"],
+      ["IF", s.if.toFixed(2)], ["TSS", s.tss.toFixed(0)], ["Trabajo", s.kj + " kJ"],
+      ["Pulso medio", s.avgHr ? s.avgHr + " ppm" : "—"], ["Pulso máx.", s.maxHr ? s.maxHr + " ppm" : "—"],
+      ["Cadencia media", s.avgCadence ? s.avgCadence + " rpm" : "—"], ["Potencia máx.", s.maxPower + " W"],
+    ];
+    for (const [k, v] of items) grid.append(el("div", { class: "stat" }, el("span", { class: "stat-k" }, k), el("span", { class: "stat-v" }, v)));
+    $("#summary-title").textContent = describeWorkout(sum.ride.workout).title;
+    $("#summary-file").textContent = sum.fileName;
+    if (!sum.ride.workout.manual) {
+      requestAnimationFrame(() => drawProfile($("#summary-profile"), sum.ride.workout,
+        { samples: sum.ride.samples, intensity: sum.ride.intensity }));
+    }
+  }
+
+  async function saveFit() {
+    if (!lastSummary) return;
+    const r = lastSummary.ride;
+    const bytes = F.buildActivityFit(r.samples.map((s) => s), r.pauses,
+      Object.assign({ ftp: settings.ftp }, lastSummary.stats));
+    const blob = new Blob([bytes], { type: "application/vnd.ant.fit" });
+    const file = new File([blob], lastSummary.fileName, { type: "application/octet-stream" });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: lastSummary.fileName });
+        toast("Archivo listo. Guárdalo en Dropbox o en Archivos.");
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+    }
+    const a = el("a", { href: URL.createObjectURL(blob), download: lastSummary.fileName });
+    document.body.append(a); a.click(); a.remove();
+    toast("Archivo descargado: " + lastSummary.fileName);
+  }
+
+  function discardRide() {
+    store.remove("recovery");
+    ride = null; lastSummary = null;
+    showView("library");
+    renderLibrary();
+  }
+
+  // ---------- Settings ----------
+  function openSettings() {
+    $("#set-ftp").value = settings.ftp;
+    $("#set-weight").value = settings.weight;
+    $("#set-sim").checked = settings.simulator;
+    $("#set-sounds").checked = settings.sounds;
+    $("#set-autopause").checked = settings.autoPause;
+    $("#settings").hidden = false;
+  }
+  function saveSettings(ev) {
+    ev.preventDefault();
+    const ftp = parseInt($("#set-ftp").value, 10);
+    if (!(ftp >= 50 && ftp <= 600)) { toast("El FTP tiene que estar entre 50 y 600 W.", "error"); return; }
+    settings.ftp = ftp;
+    settings.weight = parseFloat($("#set-weight").value) || settings.weight;
+    settings.simulator = $("#set-sim").checked;
+    settings.sounds = $("#set-sounds").checked;
+    settings.autoPause = $("#set-autopause").checked;
+    store.set("settings", settings);
+    $("#settings").hidden = true;
+    $("#ftp-label").textContent = "FTP " + settings.ftp + " W";
+    renderLibrary();
+    toast("Ajustes guardados.");
+  }
+
+  // ---------- Recovery ----------
+  function checkRecovery() {
+    const rec = store.get("recovery", null);
+    if (!rec || !rec.samples || !rec.samples.length) return;
+    const ago = Math.round((Date.now() - rec.savedAt) / 60000);
+    const banner = $("#recovery");
+    $("#recovery-text").textContent = "Hay una sesión sin guardar de " + describeWorkout(rec.workout).title +
+      " (" + fmtTime(rec.samples.length) + ", hace " + ago + " min).";
+    banner.hidden = false;
+    $("#recovery-summary").onclick = () => {
+      banner.hidden = true;
+      ride = Object.assign({ finished: true }, rec);
+      lastSummary = buildSummary(ride);
+      renderSummary(lastSummary);
+      showView("summary");
+    };
+    $("#recovery-resume").onclick = () => {
+      banner.hidden = true;
+      startRide(rec.workout, Object.assign({}, rec, { paused: true, started: true, pauseStart: Date.now() / 1000 }));
+    };
+    $("#recovery-discard").onclick = () => { banner.hidden = true; store.remove("recovery"); };
+  }
+
+  // ---------- Wire up ----------
+  function init() {
+    $("#ftp-label").textContent = "FTP " + settings.ftp + " W";
+    $("#chip-trainer").addEventListener("click", connectTrainer);
+    $("#chip-hr").addEventListener("click", connectHr);
+    $("#btn-settings").addEventListener("click", openSettings);
+    $("#settings-form").addEventListener("submit", saveSettings);
+    $("#settings-cancel").addEventListener("click", () => { $("#settings").hidden = true; });
+    $("#import-input").addEventListener("change", (e) => { importFiles([...e.target.files]); e.target.value = ""; });
+    $("#btn-manual").addEventListener("click", () => startRide(manualErgWorkout()));
+    $("#btn-pause").addEventListener("click", togglePause);
+    $("#btn-minus").addEventListener("click", () => adjustIntensity(-5));
+    $("#btn-plus").addEventListener("click", () => adjustIntensity(5));
+    $("#btn-skip").addEventListener("click", skipSegment);
+    $("#btn-finish").addEventListener("click", () => {
+      const c = $("#confirm-finish");
+      c.hidden = !c.hidden;
+    });
+    $("#btn-finish-yes").addEventListener("click", () => { $("#confirm-finish").hidden = true; finishRide(); });
+    $("#btn-finish-no").addEventListener("click", () => { $("#confirm-finish").hidden = true; });
+    $("#btn-save").addEventListener("click", saveFit);
+    $("#btn-discard").addEventListener("click", () => { $("#confirm-discard").hidden = false; });
+    $("#btn-discard-yes").addEventListener("click", discardRide);
+    $("#btn-discard-no").addEventListener("click", () => { $("#confirm-discard").hidden = true; });
+    $("#btn-done").addEventListener("click", () => { store.remove("recovery"); ride = null; showView("library"); renderLibrary(); });
+    $("#toast").addEventListener("click", () => { $("#toast").hidden = true; });
+    window.addEventListener("resize", () => {
+      if (document.body.dataset.view === "library") renderLibrary();
+      else if (ride) updateRideUi();
+    });
+    if (!B.bluetoothAvailable()) $("#bt-hint").hidden = false;
+    showView("library");
+    renderLibrary();
+    checkRecovery();
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
