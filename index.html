@@ -323,8 +323,34 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
 .icu-box { display: flex; flex-direction: column; gap: 8px; }
 .icu-fields { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
 .workout-card.done { opacity: 1; }
+.workout-card { cursor: pointer; }
+.wk-titles { flex: 1 1 260px; }
+.wk-titles h1 { font-family: var(--font-num); font-weight: 600; font-size: clamp(26px, 3.4vw, 34px); }
+.detail > * { grid-area: auto; min-width: 0; }
+.wk-start { min-width: 160px; min-height: 52px; font-size: 18px; }
+.wk-desc { margin: 0; color: var(--muted); max-width: 70ch; }
+.wk-profile { width: 100%; height: clamp(150px, 28vh, 240px); display: block; }
+.wk-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 760px) { .wk-cols { grid-template-columns: minmax(0, 1fr); } }
+.zbar { display: flex; gap: 2px; height: 18px; margin: 10px 0; }
+.zbar-seg { min-width: 3px; border-radius: 3px; }
+.blocks { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
+.blk { display: grid; grid-template-columns: 18px 64px 1fr auto; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+.blk.in-rep { padding-left: 18px; border-left: 2px solid var(--grid); margin-left: 4px; }
+.blk-rep { font-family: var(--font-num); font-weight: 700; font-size: 18px; padding-top: 8px; }
 .badge-done { background: var(--ok); }
 .badge { white-space: nowrap; }
+.stat-d { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.ms-range { display: flex; justify-content: flex-end; padding: 12px 0; }
+.ms-table { max-height: 420px; overflow-y: auto; }
+.ms-table tbody tr { cursor: pointer; }
+.ms-table tbody tr:hover td { background: var(--panel-2); }
+.ms-table td.est { color: var(--muted); }
+.ms-table th { position: sticky; top: 0; background: var(--panel); }
+.ms-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.field input[type=date] { background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 16px; }
+.dialog-actions .spacer { flex: 1; }
+#ms-empty .btn input, .lib-actions .btn input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
 
 /* ---------- Summary ---------- */
 .summary { display: grid; gap: 14px; padding-block: 22px 32px; }
@@ -391,6 +417,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
       <button type="button" data-tab="activities" aria-selected="false">Actividades</button>
       <button type="button" data-tab="form" aria-selected="false">Forma</button>
       <button type="button" data-tab="power" aria-selected="false">Potencia</button>
+      <button type="button" data-tab="measures" aria-selected="false">Medidas</button>
     </nav>
     <div class="chips">
       <button class="chip" id="chip-trainer" data-state="off" type="button"><span class="chip-label">Rodillo</span></button>
@@ -500,6 +527,33 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
     </div>
   </section>
 
+  <section class="view wrap" id="view-workout" hidden>
+    <div class="detail">
+      <div class="detail-head">
+        <button class="btn ghost" id="wk-back" type="button">← Entrenar</button>
+        <div class="wk-titles">
+          <h1 id="wk-title"></h1>
+          <div class="muted" id="wk-meta"></div>
+        </div>
+        <button class="btn primary wk-start" id="wk-start" type="button">Empezar</button>
+      </div>
+      <p class="wk-desc" id="wk-desc"></p>
+      <div class="box profile-box"><canvas id="wk-profile" class="wk-profile" aria-label="Perfil del entreno"></canvas></div>
+      <div class="summary-grid" id="wk-grid"></div>
+      <div class="wk-cols">
+        <div class="box">
+          <div class="chart-title">Tiempo en zonas</div>
+          <div class="zbar" id="wk-zones"></div>
+          <div class="legend" id="wk-zones-legend"></div>
+        </div>
+        <div class="box">
+          <div class="chart-title">Bloques</div>
+          <ol class="blocks" id="wk-blocks"></ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="view wrap" id="view-activities" hidden>
     <div class="lib-head">
       <div>
@@ -569,12 +623,8 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
       </div>
       <div class="box icu-box">
         <div class="chart-title">intervals.icu</div>
-        <p class="muted small" id="icu-status"></p>
-        <div class="icu-fields">
-          <label class="field" for="icu-key"><span class="label">API key</span><input id="icu-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-          <label class="field" for="icu-athlete"><span class="label">ID atleta (opcional)</span><input id="icu-athlete" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="0"></label>
-        </div>
-        <button class="btn primary" id="icu-save" type="button">Guardar y sincronizar</button>
+        <p class="muted small icu-status"></p>
+        <button class="btn" id="icu-sync" type="button">Sincronizar ahora</button>
       </div>
     </div>
     <p class="empty" id="form-empty" hidden>Todavía no hay carga registrada. Sincroniza intervals.icu o termina una sesión.</p>
@@ -607,6 +657,52 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
       <div class="box chart-box"><div class="chart-title">Mejores marcas por semana (W)</div><div class="legend" id="legend-trend"></div><div class="chart-holder"><canvas id="chart-trend"></canvas></div></div>
     </div>
   </section>
+
+  <section class="view wrap" id="view-measures" hidden>
+    <div class="lib-head">
+      <div>
+        <h1>Medidas</h1>
+        <p id="ms-last">Peso, cintura y composición corporal. Los datos se guardan solo en este iPad.</p>
+      </div>
+      <div class="lib-actions">
+        <button class="btn primary" id="ms-add" type="button">+ Nueva medida</button>
+        <label class="btn" for="ms-import">Importar Excel<input id="ms-import" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+        <button class="btn" id="ms-export" type="button">Exportar Excel</button>
+      </div>
+    </div>
+    <p class="muted small" id="ms-backup"></p>
+    <div class="empty" id="ms-empty" hidden>
+      <p>Todavía no hay medidas. Importa tu Excel (hoja <b>medidas</b>) o añade la primera.</p>
+      <label class="btn primary" for="ms-import-empty">Importar Excel<input id="ms-import-empty" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+    </div>
+    <div id="ms-content">
+      <div class="summary-grid ms-cards" id="ms-cards"></div>
+      <div class="ms-range">
+        <div class="seg" role="group" aria-label="Periodo">
+          <button type="button" data-ms-range="182" aria-pressed="false">6 meses</button>
+          <button type="button" data-ms-range="365" aria-pressed="true">1 año</button>
+          <button type="button" data-ms-range="1095" aria-pressed="false">3 años</button>
+          <button type="button" data-ms-range="0" aria-pressed="false">Todo</button>
+        </div>
+      </div>
+      <div class="power-grid">
+        <div class="box chart-box"><div class="chart-title">Peso [kg]</div><div class="chart-holder"><canvas id="ms-chart-weight"></canvas></div></div>
+        <div class="box chart-box"><div class="chart-title">Grasa [%]</div><div class="legend" id="ms-legend-fat"></div><div class="chart-holder"><canvas id="ms-chart-fat"></canvas></div></div>
+        <div class="box chart-box"><div class="chart-title">Músculo y grasa [kg]</div><div class="legend" id="ms-legend-mass"></div><div class="chart-holder"><canvas id="ms-chart-mass"></canvas></div></div>
+        <div class="box chart-box"><div class="chart-title">Cintura [cm] según peso [kg]</div><div class="legend" id="ms-legend-scatter"></div><div class="chart-holder"><canvas id="ms-chart-wv"></canvas></div></div>
+        <div class="box chart-box"><div class="chart-title">Grasa [%] según cintura [cm]</div><div class="chart-holder"><canvas id="ms-chart-wf"></canvas></div></div>
+      </div>
+      <div class="box">
+        <div class="chart-title">Todas las medidas <span class="muted small">· toca una fila para editarla · * grasa estimada por cintura</span></div>
+        <div class="table-scroll ms-table">
+          <table class="laps">
+            <thead><tr><th>Fecha</th><th>Peso</th><th>Cintura</th><th>Cuello</th><th>Grasa %</th><th>Agua %</th><th>Músculo %</th><th>Hueso</th><th>Grasa kg</th><th>Músculo kg</th></tr></thead>
+            <tbody id="ms-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <div class="overlay" id="settings" hidden>
@@ -626,6 +722,15 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
         <button class="btn ghost" id="btn-dbx-disconnect" type="button" hidden>Desconectar</button>
       </div>
     </fieldset>
+    <fieldset class="dbx">
+      <legend class="label">intervals.icu</legend>
+      <p class="dbx-status icu-status"></p>
+      <div class="icu-fields">
+        <label class="field" for="icu-key"><span class="label">API key</span><input id="icu-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <label class="field" for="icu-athlete"><span class="label">ID atleta (opcional)</span><input id="icu-athlete" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="0"></label>
+      </div>
+      <div class="dbx-actions"><button class="btn" id="icu-save" type="button">Guardar y sincronizar</button></div>
+    </fieldset>
     <details class="log-box">
       <summary>Registro Bluetooth</summary>
       <pre id="ble-log"></pre>
@@ -633,6 +738,29 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
     </details>
     <div class="dialog-actions">
       <button class="btn ghost" id="settings-cancel" type="button">Cancelar</button>
+      <button class="btn primary" type="submit">Guardar</button>
+    </div>
+  </form>
+</div>
+
+<div class="overlay" id="ms-dialog" hidden>
+  <form class="dialog" id="ms-form">
+    <h2 id="ms-form-title">Nueva medida</h2>
+    <label class="field" for="ms-date"><span class="label">Fecha</span><input id="ms-date" type="date" required></label>
+    <div class="ms-fields">
+      <label class="field" for="ms-weight"><span class="label">Peso [kg]</span><input id="ms-weight" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-waist"><span class="label">Cintura [cm]</span><input id="ms-waist" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-neck"><span class="label">Cuello [cm]</span><input id="ms-neck" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-ribs"><span class="label">Costillas [cm]</span><input id="ms-ribs" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-fatPct"><span class="label">Grasa [%]</span><input id="ms-fatPct" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-waterPct"><span class="label">Agua [%]</span><input id="ms-waterPct" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-musclePct"><span class="label">Músculo [%]</span><input id="ms-musclePct" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-boneKg"><span class="label">Hueso [kg]</span><input id="ms-boneKg" type="text" inputmode="decimal"></label>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn danger" id="ms-delete" type="button" hidden>Borrar</button>
+      <span class="spacer"></span>
+      <button class="btn ghost" id="ms-cancel" type="button">Cancelar</button>
       <button class="btn primary" type="submit">Guardar</button>
     </div>
   </form>
@@ -1402,9 +1530,10 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
   }
 
   /** Upload bytes to the app folder; returns the Dropbox path actually used (renamed if it already existed). */
-  async function upload(fileName, bytes) {
+  async function upload(fileName, bytes, opts) {
     const token = await accessToken();
-    const arg = JSON.stringify({ path: "/" + fileName, mode: "add", autorename: true, mute: true });
+    const overwrite = opts && opts.overwrite;
+    const arg = JSON.stringify({ path: "/" + fileName, mode: overwrite ? "overwrite" : "add", autorename: !overwrite, mute: true });
     const res = await fetch("https://content.dropboxapi.com/2/files/upload", {
       method: "POST",
       headers: { Authorization: "Bearer " + token, "Content-Type": "application/octet-stream", "Dropbox-API-Arg": arg },
@@ -1959,28 +2088,34 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
     for (const l of spec.lines || []) {
       ctx.strokeStyle = l.color; ctx.lineWidth = l.width || 2; ctx.lineJoin = "round"; ctx.lineCap = "round";
       ctx.setLineDash(l.dash || []);
-      ctx.beginPath();
-      let started = false;
       const pts = l.points || l.values.map((v, i) => [i, v]);
-      for (const [x, y] of pts) {
-        if (y == null || Number.isNaN(y)) { started = false; continue; }
-        const px = band ? xs(x) : xs(x), py = ys(Math.max(yMin, Math.min(yMax, y)));
-        if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+      if (!l.noLine) {
+        ctx.beginPath();
+        let started = false, prevX = null;
+        for (const [x, y] of pts) {
+          if (y == null || Number.isNaN(y)) { started = false; continue; }
+          // Do not bridge long gaps in time series (spec.gap in x units)
+          if (spec.gap && prevX != null && x - prevX > spec.gap) started = false;
+          prevX = x;
+          const px = xs(x), py = ys(Math.max(yMin, Math.min(yMax, y)));
+          if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
       }
-      ctx.stroke();
       ctx.setLineDash([]);
       if (l.markers) {
+        const r = l.markerSize || 4;
         for (const [x, y] of pts) {
           if (y == null) continue;
-          ctx.beginPath(); ctx.arc(xs(x), ys(y), 4, 0, Math.PI * 2);
-          ctx.fillStyle = l.color; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = colors.surface; ctx.stroke();
+          ctx.beginPath(); ctx.arc(xs(x), ys(y), r, 0, Math.PI * 2);
+          ctx.fillStyle = l.color; ctx.fill(); ctx.lineWidth = r > 3 ? 2 : 1; ctx.strokeStyle = colors.surface; ctx.stroke();
         }
       }
     }
 
     // Crosshair for the active item
     if (spec.active != null) {
-      const ax = band ? xs(spec.active) : xs(spec.active);
+      const ax = xs(spec.activeX != null ? spec.activeX : spec.active);
       ctx.strokeStyle = colors.fg; ctx.globalAlpha = 0.5; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(Math.round(ax) + 0.5, m.t); ctx.lineTo(Math.round(ax) + 0.5, m.t + ph); ctx.stroke();
       ctx.globalAlpha = 1;
@@ -1996,14 +2131,23 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (!tip) { tip = document.createElement("div"); tip.className = "chart-tip"; tip.hidden = true; holder.append(tip); }
     let geo = draw(canvas, spec);
     const xValues = () => {
-      const l = (spec.lines || [])[0];
-      return l && l.points ? l.points.map((p) => p[0]) : [];
+      const lines = spec.pickAll ? spec.lines || [] : (spec.lines || []).slice(0, 1);
+      return lines.flatMap((l) => l.points ? l.points.map((p) => p[0]) : []);
     };
     function pick(ev) {
       const r = canvas.getBoundingClientRect();
-      const px = ev.clientX - r.left;
+      const px = ev.clientX - r.left, py = ev.clientY - r.top;
       if (px < geo.m.l || px > r.width - geo.m.r) return null;
       if (geo.band) return Math.max(0, Math.min(geo.n - 1, Math.floor((px - geo.m.l) / geo.bw)));
+      if (spec.pickXY) {
+        // Scatter: nearest point in both directions, among all series
+        let best = null, bestD = 40 * 40;
+        for (const l of spec.lines || []) for (const p of l.points || []) {
+          const dx = geo.xs(p[0]) - px, dy = geo.ys(p[1]) - py, d = dx * dx + dy * dy;
+          if (d < bestD) { bestD = d; best = { line: l, point: p, x: p[0] }; }
+        }
+        return best;
+      }
       let best = null, bestD = Infinity;
       for (const x of xValues()) { const d = Math.abs(geo.xs(x) - px); if (d < bestD) { bestD = d; best = x; } }
       return best;
@@ -2014,15 +2158,16 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
       if (idx == null) { hide(); return; }
       const html = spec.tooltip(idx);
       if (!html) { hide(); return; }
-      spec.active = idx; geo = draw(canvas, spec);
+      const xVal = idx && typeof idx === "object" ? idx.x : idx;
+      spec.active = idx; spec.activeX = xVal; geo = draw(canvas, spec);
       tip.innerHTML = html; tip.hidden = false;
       const r = canvas.getBoundingClientRect(), hr = holder.getBoundingClientRect();
-      const x = geo.xs(idx) + (r.left - hr.left);
+      const x = geo.xs(xVal) + (r.left - hr.left);
       const tw = tip.offsetWidth;
       tip.style.left = Math.max(4, Math.min(hr.width - tw - 4, x + 12 > hr.width - tw ? x - tw - 12 : x + 12)) + "px";
       tip.style.top = (r.top - hr.top + 6) + "px";
     }
-    function hide() { tip.hidden = true; if (spec.active != null) { spec.active = null; geo = draw(canvas, spec); } }
+    function hide() { tip.hidden = true; if (spec.active != null) { spec.active = null; spec.activeX = null; geo = draw(canvas, spec); } }
     canvas.onpointermove = show; canvas.onpointerdown = show; canvas.onpointerleave = (e) => { if (e.pointerType === "mouse") hide(); };
     return () => { geo = draw(canvas, spec); };
   }
@@ -2109,7 +2254,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
   }
 
   // ---------- Tabs ----------
-  const TABS = ["library", "activities", "form", "power"];
+  const TABS = ["library", "activities", "form", "power", "measures"];
   function showTab(name) {
     app.showView(name);
     for (const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
@@ -2121,6 +2266,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
     if (name === "activities") renderActivities();
     else if (name === "power") renderPower();
     else if (name === "form") renderForm();
+    else if (name === "measures") window.RodilloMeasures.render();
     else if (name === "library") app.renderLibrary();
   }
 
@@ -2472,7 +2618,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
   async function syncIntervals() {
     const cfg = intervalsCfg();
     if (!cfg.apiKey) { app.toast("Pega primero tu API key de intervals.icu.", "warn"); return; }
-    const status = $("#icu-status");
+    const status = { set textContent(t) { for (const n of document.querySelectorAll(".icu-status")) n.textContent = t; } };
     status.textContent = "Sincronizando…";
     const newest = A.dayKey(Date.now() / 1000);
     const oldestD = new Date(); oldestD.setDate(oldestD.getDate() - 400);
@@ -2558,14 +2704,26 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
     return { cls: "bad", icon: "!!", label: "Muy alta", text: "Por encima de 1,4: sáltate la sesión C de esta semana." };
   }
 
-  async function renderForm() {
-    await loadData();
+  function renderIcuStatus(cfg) {
+    const text = cfg.apiKey
+      ? (cfg.lastSync ? "Última sincronización: " + new Date(cfg.lastSync).toLocaleString("es") + " · " + external.length + " actividades." : "Conectado, todavía sin sincronizar.")
+      : "Sin conectar: pega la API key de intervals.icu en Ajustes.";
+    for (const n of document.querySelectorAll(".icu-status")) n.textContent = text;
+    $("#icu-sync").hidden = !cfg.apiKey;
+  }
+
+  /** Fill the intervals.icu fields of the settings dialog. */
+  function fillIcuSettings() {
     const cfg = intervalsCfg();
     $("#icu-key").value = cfg.apiKey || "";
     $("#icu-athlete").value = cfg.athleteId || "";
-    $("#icu-status").textContent = cfg.apiKey
-      ? (cfg.lastSync ? "Última sincronización: " + new Date(cfg.lastSync).toLocaleString("es") + " · " + external.length + " actividades." : "Conectado, todavía sin sincronizar.")
-      : "Sin conectar. Pega la API key de intervals.icu (Settings → Developer Settings).";
+    loadData().then(() => renderIcuStatus(cfg));
+  }
+
+  async function renderForm() {
+    await loadData();
+    const cfg = intervalsCfg();
+    renderIcuStatus(cfg);
 
     const loads = dailyLoads();
     const allDays = [...loads.total.keys()].sort();
@@ -2653,6 +2811,8 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
       for (const o of document.querySelectorAll("[data-form-range]")) o.setAttribute("aria-pressed", o === b ? "true" : "false");
       renderForm();
     });
+    $("#btn-settings").addEventListener("click", fillIcuSettings);
+    $("#icu-sync").addEventListener("click", syncIntervals);
     $("#icu-save").addEventListener("click", () => {
       const cfg = intervalsCfg();
       cfg.apiKey = $("#icu-key").value.trim();
@@ -2673,6 +2833,562 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
 
   /** Called by app.js after a ride is saved, so lists refresh next time they are shown. */
   window.RodilloViews = { init, showTab, loadData, summariesCache: () => summaries };
+})();
+</script>
+<script>/* Minimal .xlsx reader (cached cell values) and writer (one sheet, stored zip), with no external libraries. */
+(function (root) {
+  "use strict";
+
+  // ---------- ZIP ----------
+  const CRC_TABLE = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  function crc32(bytes) {
+    let c = 0xffffffff;
+    for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  }
+
+  async function inflateRaw(bytes) {
+    if (typeof DecompressionStream === "undefined") throw new Error("Este navegador no puede leer archivos .xlsx");
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+
+  /** Read every entry of a zip archive: returns Map name -> Uint8Array. */
+  async function unzip(buffer) {
+    const bytes = new Uint8Array(buffer);
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    let eocd = -1;
+    for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 65557); i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error("No es un archivo .xlsx válido");
+    const count = dv.getUint16(eocd + 10, true);
+    let p = dv.getUint32(eocd + 16, true);
+    const files = new Map();
+    const dec = new TextDecoder();
+    for (let i = 0; i < count; i++) {
+      if (dv.getUint32(p, true) !== 0x02014b50) throw new Error("Archivo .xlsx dañado");
+      const method = dv.getUint16(p + 10, true);
+      const compSize = dv.getUint32(p + 20, true);
+      const nameLen = dv.getUint16(p + 28, true), extraLen = dv.getUint16(p + 30, true), commentLen = dv.getUint16(p + 32, true);
+      const localOffset = dv.getUint32(p + 42, true);
+      const name = dec.decode(bytes.subarray(p + 46, p + 46 + nameLen));
+      p += 46 + nameLen + extraLen + commentLen;
+      const lNameLen = dv.getUint16(localOffset + 26, true), lExtraLen = dv.getUint16(localOffset + 28, true);
+      const start = localOffset + 30 + lNameLen + lExtraLen;
+      const data = bytes.subarray(start, start + compSize);
+      files.set(name, { method, data });
+    }
+    const out = new Map();
+    for (const [name, f] of files) out.set(name, f.method === 0 ? f.data : f.method === 8 ? await inflateRaw(f.data) : null);
+    return out;
+  }
+
+  /** Build a zip with stored (uncompressed) entries. files: [{name, data: Uint8Array}] */
+  function zip(files) {
+    const enc = new TextEncoder();
+    const chunks = [], central = [];
+    let offset = 0;
+    for (const f of files) {
+      const name = enc.encode(f.name);
+      const crc = crc32(f.data);
+      const local = new Uint8Array(30 + name.length);
+      const dv = new DataView(local.buffer);
+      dv.setUint32(0, 0x04034b50, true); dv.setUint16(4, 20, true); dv.setUint16(8, 0, true);
+      dv.setUint32(14, crc, true); dv.setUint32(18, f.data.length, true); dv.setUint32(22, f.data.length, true);
+      dv.setUint16(26, name.length, true); local.set(name, 30);
+      chunks.push(local, f.data);
+      const cen = new Uint8Array(46 + name.length);
+      const cv = new DataView(cen.buffer);
+      cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true);
+      cv.setUint32(16, crc, true); cv.setUint32(20, f.data.length, true); cv.setUint32(24, f.data.length, true);
+      cv.setUint16(28, name.length, true); cv.setUint32(42, offset, true); cen.set(name, 46);
+      central.push(cen);
+      offset += local.length + f.data.length;
+    }
+    const cenSize = central.reduce((a, c) => a + c.length, 0);
+    const end = new Uint8Array(22);
+    const ev = new DataView(end.buffer);
+    ev.setUint32(0, 0x06054b50, true); ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true);
+    ev.setUint32(12, cenSize, true); ev.setUint32(16, offset, true);
+    return new Blob([...chunks, ...central, end], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  }
+
+  // ---------- Reader ----------
+  const parseXml = (bytes) => new DOMParser().parseFromString(new TextDecoder().decode(bytes), "application/xml");
+  const byTag = (node, tag) => Array.from(node.getElementsByTagNameNS("*", tag));
+
+  function colIndex(ref) {
+    const letters = ref.match(/^[A-Z]+/)[0];
+    let n = 0;
+    for (const ch of letters) n = n * 26 + (ch.charCodeAt(0) - 64);
+    return n - 1;
+  }
+
+  /**
+   * Read the sheets of an .xlsx file.
+   * Returns [{name, rows: [[{v, f}]]}] where v is the cached value (number or string) and f the formula text, if any.
+   */
+  async function read(buffer) {
+    const files = await unzip(buffer);
+    const shared = [];
+    if (files.get("xl/sharedStrings.xml")) {
+      for (const si of byTag(parseXml(files.get("xl/sharedStrings.xml")), "si")) shared.push(byTag(si, "t").map((t) => t.textContent).join(""));
+    }
+    const rels = new Map();
+    for (const r of byTag(parseXml(files.get("xl/_rels/workbook.xml.rels")), "Relationship")) rels.set(r.getAttribute("Id"), r.getAttribute("Target"));
+    const sheets = [];
+    for (const s of byTag(parseXml(files.get("xl/workbook.xml")), "sheet")) {
+      const rid = s.getAttribute("r:id") || s.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+      let target = rels.get(rid) || "";
+      target = target.startsWith("/") ? target.slice(1) : "xl/" + target.replace(/^\.\//, "");
+      const data = files.get(target);
+      if (!data) continue;
+      const rows = [];
+      for (const row of byTag(parseXml(data), "row")) {
+        const ri = parseInt(row.getAttribute("r"), 10) - 1;
+        const cells = [];
+        for (const c of byTag(row, "c")) {
+          const type = c.getAttribute("t");
+          const vNode = byTag(c, "v")[0], fNode = byTag(c, "f")[0];
+          let v = vNode ? vNode.textContent : null;
+          if (type === "s") v = shared[+v];
+          else if (type === "inlineStr") v = byTag(c, "t").map((t) => t.textContent).join("");
+          else if (type === "e") v = null;
+          else if (type !== "str" && v != null && v !== "") v = Number(v);
+          cells[colIndex(c.getAttribute("r"))] = { v, f: fNode ? fNode.textContent : null };
+        }
+        rows[ri] = cells;
+      }
+      sheets.push({ name: s.getAttribute("name"), rows });
+    }
+    return sheets;
+  }
+
+  /** Excel serial date (1900 system) -> local Date at midnight. */
+  function serialToDate(serial) {
+    const ms = Math.round((serial - 25569) * 86400000);
+    const utc = new Date(ms);
+    return new Date(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate());
+  }
+  function dateToSerial(d) {
+    return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000 + 25569;
+  }
+
+  // ---------- Writer ----------
+  const xmlEsc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  function colName(i) { let s = ""; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+
+  /**
+   * Write one sheet. columns: [{header, width, type: "date"|"number"|"text", decimals}]
+   * rows: arrays of values (Date for date columns) or {formula, value} objects.
+   */
+  function write(sheetName, columns, rows) {
+    const enc = new TextEncoder();
+    const styleFor = (col) => col.type === "date" ? 1 : col.decimals === 1 ? 2 : col.decimals === 2 ? 3 : 0;
+    let sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+    sheet += '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>';
+    sheet += "<cols>" + columns.map((c, i) => '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + (c.width || 12) + '" customWidth="1"/>').join("") + "</cols><sheetData>";
+    sheet += '<row r="1">' + columns.map((c, i) => '<c r="' + colName(i) + '1" t="inlineStr" s="4"><is><t>' + xmlEsc(c.header) + "</t></is></c>").join("") + "</row>";
+    rows.forEach((row, ri) => {
+      const r = ri + 2;
+      sheet += '<row r="' + r + '">';
+      row.forEach((val, ci) => {
+        const ref = colName(ci) + r, col = columns[ci];
+        if (val == null || val === "") return;
+        if (typeof val === "object" && !(val instanceof Date) && val.formula) {
+          sheet += '<c r="' + ref + '" s="' + styleFor(col) + '"><f>' + xmlEsc(val.formula.replace(/\{r\}/g, r)) + "</f>" + (val.value != null ? "<v>" + val.value + "</v>" : "") + "</c>";
+        } else if (val instanceof Date) {
+          sheet += '<c r="' + ref + '" s="1"><v>' + dateToSerial(val) + "</v></c>";
+        } else if (typeof val === "number") {
+          sheet += '<c r="' + ref + '" s="' + styleFor(col) + '"><v>' + val + "</v></c>";
+        } else {
+          sheet += '<c r="' + ref + '" t="inlineStr"><is><t>' + xmlEsc(val) + "</t></is></c>";
+        }
+      });
+      sheet += "</row>";
+    });
+    sheet += "</sheetData></worksheet>";
+    const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<numFmts count="1"><numFmt numFmtId="164" formatCode="dd.mm.yyyy"/></numFmts>' +
+      '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>' +
+      '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>' +
+      '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      '<cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+      '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+      '<xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+      '<xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+      '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>' +
+      '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+    const files = [
+      { name: "[Content_Types].xml", text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>' },
+      { name: "_rels/.rels", text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
+      { name: "xl/workbook.xml", text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="' + xmlEsc(sheetName) + '" sheetId="1" r:id="rId1"/></sheets></workbook>' },
+      { name: "xl/_rels/workbook.xml.rels", text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>' },
+      { name: "xl/styles.xml", text: styles },
+      { name: "xl/worksheets/sheet1.xml", text: sheet },
+    ];
+    return zip(files.map((f) => ({ name: f.name, data: enc.encode(f.text) })));
+  }
+
+  root.RodilloXlsx = { read, write, serialToDate, dateToSerial, unzip, crc32 };
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+<script>/* Body measurements tab: entries kept on the device, charts, edit form, Excel import/export and Dropbox backup. */
+(function () {
+  "use strict";
+
+  const C = window.RodilloChart;
+  const X = window.RodilloXlsx;
+  const D = window.RodilloDropbox;
+  const KEY = "rodillo.medidas";
+  const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const SERIES = ["#3f8cff", "#27b37f", "#f2c94c", "#e63971"];
+  let app = null;
+  let range = 365;
+  let editingId = null;
+
+  // Field definitions: key, label, unit, decimals
+  const FIELDS = [
+    ["weight", "Peso", "kg", 1], ["waist", "Cintura", "cm", 1], ["neck", "Cuello", "cm", 1], ["ribs", "Costillas", "cm", 1],
+    ["fatPct", "Grasa", "%", 1], ["waterPct", "Agua", "%", 1], ["musclePct", "Músculo", "%", 1], ["boneKg", "Hueso", "kg", 1],
+  ];
+
+  const $ = (s) => document.querySelector(s);
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const round1 = (v) => v == null ? null : Math.round(v * 10) / 10;
+  const fmt = (v, d) => v == null ? "—" : v.toFixed(d == null ? 1 : d).replace(".", ",");
+  const dateKey = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  const parseKey = (k) => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+  const fmtDate = (k) => { const d = parseKey(k); return d.getDate() + " " + MONTHS[d.getMonth()] + " " + d.getFullYear(); };
+  const dayNum = (k) => parseKey(k).getTime() / 86400000;
+
+  /** Waist-based body-fat estimate used in the spreadsheet before the scale existed. */
+  const estimateFat = (waist) => waist ? round1(0.4868 * waist - 18.987) : null;
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; }
+  }
+  function save(list) {
+    list.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+    try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) { app.toast("No se pudo guardar en el iPad: " + e.message, "error"); }
+    // The latest weight feeds W/kg and the app settings
+    const last = [...list].reverse().find((m) => m.weight);
+    if (last && app.settings.weight !== last.weight) { app.settings.weight = last.weight; app.store.set("settings", app.settings); }
+  }
+
+  /** Entry with derived values: fat % (measured or estimated), fat and muscle mass. */
+  function derive(m) {
+    // Only the old spreadsheet rows use the waist estimate; new entries without a scale reading stay empty
+    const fatPct = m.fatPct != null ? m.fatPct : m.fatEstimated ? estimateFat(m.waist) : null;
+    const fatEstimated = m.fatPct == null && fatPct != null;
+    return Object.assign({}, m, {
+      fat: fatPct, fatEstimated,
+      fatKg: m.weight && fatPct != null ? round1(m.weight * fatPct / 100) : null,
+      muscleKg: m.weight && m.musclePct != null ? round1(m.weight * m.musclePct / 100) : null,
+    });
+  }
+
+  // ---------- Import / export ----------
+  const HEADER_MAP = [
+    [/^fecha/, "date"], [/^peso/, "weight"], [/^cintura/, "waist"], [/^cuello/, "neck"], [/^costillas/, "ribs"],
+    [/%\s*grasa|grasa\s*\[%\]/, "fatPct"], [/^agua/, "waterPct"], [/^m[uú]sculo\s*\[%\]/, "musclePct"], [/^hueso/, "boneKg"],
+  ];
+
+  async function importExcel(file) {
+    try {
+      const sheets = await X.read(await file.arrayBuffer());
+      const sheet = sheets.find((s) => /^medidas$/i.test(s.name))
+        || sheets.find((s) => s.rows[0] && s.rows[0].some((c) => c && /fecha/i.test(String(c.v))) && s.rows[0].some((c) => c && /peso/i.test(String(c.v))));
+      if (!sheet) throw new Error("no encuentro una hoja 'medidas' con columnas fecha y peso");
+      const cols = {};
+      (sheet.rows[0] || []).forEach((c, i) => {
+        if (!c || c.v == null) return;
+        const h = String(c.v).trim().toLowerCase();
+        for (const [re, key] of HEADER_MAP) if (re.test(h) && cols[key] == null) cols[key] = i;
+      });
+      if (cols.date == null || cols.weight == null) throw new Error("faltan las columnas fecha o peso");
+      const byDate = new Map(load().map((m) => [m.date, m]));
+      let n = 0;
+      for (let r = 1; r < sheet.rows.length; r++) {
+        const row = sheet.rows[r];
+        if (!row || !row[cols.date] || typeof row[cols.date].v !== "number") continue;
+        const entry = { date: dateKey(X.serialToDate(row[cols.date].v)) };
+        for (const [key, idx] of Object.entries(cols)) {
+          if (key === "date") continue;
+          const cell = row[idx];
+          entry[key] = cell && typeof cell.v === "number" && Number.isFinite(cell.v) ? round1(cell.v) : null;
+        }
+        // Old rows: fat % is the waist formula, not a scale reading
+        const fatCell = cols.fatPct != null ? row[cols.fatPct] : null;
+        if (fatCell && fatCell.f && /0\.4868/.test(fatCell.f)) { entry.fatPct = null; entry.fatEstimated = true; }
+        if (entry.weight == null && entry.waist == null) continue;
+        entry.id = entry.date;
+        byDate.set(entry.date, entry);
+        n++;
+      }
+      save([...byDate.values()]);
+      app.toast(n + " medidas importadas.");
+      render();
+      backupToDropbox();
+    } catch (e) {
+      app.toast(file.name + ": " + (e.message || e), "error");
+    }
+  }
+
+  function buildExcel() {
+    const list = load();
+    const columns = [
+      { header: "fecha", type: "date", width: 12 }, { header: "peso [kg]", decimals: 1 }, { header: "cintura [cm]", decimals: 1 },
+      { header: "cuello [cm]", decimals: 1 }, { header: "costillas [cm]", decimals: 1 }, { header: "% grasa", decimals: 1 },
+      { header: "agua [%]", decimals: 1 }, { header: "musculo [%]", decimals: 1 }, { header: "hueso [kg]", decimals: 1 },
+      { header: "grasa [kg]", decimals: 1 }, { header: "musculo [kg]", decimals: 1 },
+    ];
+    const rows = list.map((m) => {
+      const d = derive(m);
+      // Estimated fat stays a formula so a later re-import recognises it
+      const fat = m.fatPct != null ? m.fatPct : m.fatEstimated && m.waist ? { formula: 'IF(C{r}<>"",0.4868*C{r}-18.987,"")', value: d.fat } : null;
+      return [parseKey(m.date), m.weight, m.waist, m.neck, m.ribs, fat, m.waterPct, m.musclePct, m.boneKg,
+        d.fat != null && m.weight ? { formula: "B{r}*F{r}/100", value: d.fatKg } : null,
+        m.musclePct != null && m.weight ? { formula: "B{r}*H{r}/100", value: d.muscleKg } : null];
+    });
+    return X.write("medidas", columns, rows);
+  }
+
+  async function exportExcel() {
+    const blob = buildExcel();
+    const name = "medidas_" + dateKey(new Date()) + ".xlsx";
+    const file = new File([blob], name, { type: blob.type });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
+    } catch (e) { if (e && e.name === "AbortError") return; }
+    const a = app.el("a", { href: URL.createObjectURL(file), download: name });
+    document.body.append(a); a.click(); a.remove();
+  }
+
+  /** Keep an up-to-date copy in Dropbox (overwritten on each change). */
+  let backupTimer = null;
+  function backupToDropbox() {
+    if (!D.isConnected()) return;
+    clearTimeout(backupTimer);
+    backupTimer = setTimeout(async () => {
+      try {
+        const bytes = new Uint8Array(await buildExcel().arrayBuffer());
+        await D.upload("medidas/medidas.xlsx", bytes, { overwrite: true });
+        $("#ms-backup").textContent = "Copia en Dropbox actualizada " + new Date().toLocaleTimeString("es").slice(0, 5) + ".";
+      } catch (e) {
+        $("#ms-backup").textContent = "No se pudo copiar a Dropbox: " + (e.message || e);
+      }
+    }, 1500);
+  }
+
+  // ---------- Form ----------
+  function openForm(entry) {
+    editingId = entry ? entry.id : null;
+    $("#ms-form-title").textContent = entry ? "Editar medida" : "Nueva medida";
+    $("#ms-date").value = entry ? entry.date : dateKey(new Date());
+    for (const [key] of FIELDS) $("#ms-" + key).value = entry && entry[key] != null ? entry[key] : "";
+    $("#ms-delete").hidden = !entry;
+    $("#ms-dialog").hidden = false;
+    $("#ms-weight").focus();
+  }
+
+  function submitForm(ev) {
+    ev.preventDefault();
+    const date = $("#ms-date").value;
+    if (!date) { app.toast("Falta la fecha.", "error"); return; }
+    const entry = { id: date, date };
+    for (const [key] of FIELDS) {
+      const raw = $("#ms-" + key).value.replace(",", ".").trim();
+      entry[key] = raw === "" ? null : round1(parseFloat(raw));
+      if (raw !== "" && !Number.isFinite(entry[key])) { app.toast("Valor no válido en " + key + ".", "error"); return; }
+    }
+    if (entry.weight == null && entry.waist == null) { app.toast("Pon al menos el peso o la cintura.", "error"); return; }
+    const before = editingId ? load().find((m) => m.id === editingId) : null;
+    if (before && before.fatEstimated && entry.fatPct == null) entry.fatEstimated = true;
+    const list = load().filter((m) => m.id !== editingId && m.id !== entry.id);
+    list.push(entry);
+    save(list);
+    $("#ms-dialog").hidden = true;
+    app.toast("Medida guardada.");
+    render();
+    backupToDropbox();
+  }
+
+  function deleteEntry() {
+    if (!editingId) return;
+    save(load().filter((m) => m.id !== editingId));
+    $("#ms-dialog").hidden = true;
+    app.toast("Medida borrada.");
+    render();
+    backupToDropbox();
+  }
+
+  // ---------- Render ----------
+  function yearTicks(minDay, maxDay) {
+    const span = maxDay - minDay;
+    const ticks = [];
+    const start = new Date(minDay * 86400000), end = new Date(maxDay * 86400000);
+    if (span > 900) {
+      for (let y = start.getFullYear() + 1; y <= end.getFullYear(); y++) ticks.push({ v: new Date(y, 0, 1).getTime() / 86400000, label: String(y) });
+    } else {
+      const step = span > 400 ? 3 : span > 120 ? 1 : 1;
+      const d = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+      while (d <= end) {
+        if (d.getMonth() % step === 0) ticks.push({ v: d.getTime() / 86400000, label: MONTHS[d.getMonth()] + (d.getMonth() === 0 ? " " + String(d.getFullYear()).slice(2) : "") });
+        d.setMonth(d.getMonth() + 1);
+      }
+      if (span <= 120) ticks.splice(0, ticks.length, ...ticks); // monthly ticks are enough for short ranges
+    }
+    return ticks;
+  }
+
+  function bounds(values, pad, step) {
+    const v = values.filter((x) => x != null);
+    if (!v.length) return { min: 0, max: 1 };
+    return { min: Math.floor((Math.min(...v) - pad) / step) * step, max: Math.ceil((Math.max(...v) + pad) / step) * step };
+  }
+
+  function render() {
+    const all = load().map(derive);
+    $("#ms-empty").hidden = all.length > 0;
+    $("#ms-content").hidden = all.length === 0;
+    $("#ms-backup").textContent = D.isConnected() ? "Cada cambio se copia a Dropbox (carpeta medidas)." : "Conecta Dropbox en Ajustes para tener una copia fuera del iPad.";
+    if (!all.length) return;
+
+    renderCards(all);
+    renderTable(all);
+
+    const lastDay = dayNum(all[all.length - 1].date);
+    const shown = range ? all.filter((m) => dayNum(m.date) >= lastDay - range) : all;
+    if (!shown.length) return;
+    const minDay = dayNum(shown[0].date), maxDay = Math.max(lastDay, minDay + 30);
+    const x = { type: "linear", min: minDay - 3, max: maxDay + 3, ticks: yearTicks(minDay, maxDay) };
+    const gap = 90; // days without measurements before a line is broken
+    const pts = (key, filter) => shown.filter((m) => m[key] != null && (!filter || filter(m))).map((m) => [dayNum(m.date), m[key]]);
+    const byDay = new Map(shown.map((m) => [dayNum(m.date), m]));
+    const tipFor = (lines) => (day) => {
+      const m = byDay.get(day);
+      if (!m) return null;
+      return "<b>" + fmtDate(m.date) + "</b><br>" + lines.map(([k, label, unit]) => label + ": " + fmt(m[k]) + " " + unit).join("<br>") + (m.fatEstimated && lines.some((l) => l[0] === "fat") ? "<br><span class=muted>grasa estimada por cintura</span>" : "");
+    };
+    const dense = shown.length > 80;
+
+    // Weight
+    const w = pts("weight");
+    C.mount($("#ms-chart-weight"), {
+      x, gap, y: Object.assign(bounds(w.map((p) => p[1]), 0.5, 1), { format: (v) => v + "" }),
+      lines: [{ name: "Peso", color: SERIES[0], points: w, markers: !dense }],
+      tooltip: tipFor([["weight", "Peso", "kg"], ["fat", "Grasa", "%"]]),
+    });
+
+    // Body fat: scale readings vs waist estimate
+    const fatScale = pts("fat", (m) => !m.fatEstimated), fatEst = pts("fat", (m) => m.fatEstimated);
+    const fatLines = [];
+    if (fatEst.length) fatLines.push({ name: "Estimada por cintura", color: SERIES[2], points: fatEst, dash: [5, 4], markers: !dense });
+    if (fatScale.length) fatLines.push({ name: "Báscula", color: SERIES[3], points: fatScale, markers: !dense });
+    C.legend($("#ms-legend-fat"), fatLines.map((l) => ({ name: l.name, color: l.color, dash: !!l.dash })));
+    C.mount($("#ms-chart-fat"), {
+      x, gap, y: Object.assign(bounds([...fatScale, ...fatEst].map((p) => p[1]), 0.5, 1), { format: (v) => v + " %" }),
+      lines: fatLines, pickAll: true,
+      tooltip: tipFor([["fat", "Grasa", "%"], ["waist", "Cintura", "cm"]]),
+    });
+
+    // Fat and muscle mass
+    const fk = pts("fatKg"), mk = pts("muscleKg");
+    C.legend($("#ms-legend-mass"), [{ name: "Músculo [kg]", color: SERIES[1] }, { name: "Grasa [kg]", color: SERIES[3] }]);
+    C.mount($("#ms-chart-mass"), {
+      x, gap, y: Object.assign(bounds([...fk, ...mk].map((p) => p[1]), 1, 2), { format: (v) => v + "" }),
+      lines: [{ name: "Músculo", color: SERIES[1], points: mk, markers: !dense }, { name: "Grasa", color: SERIES[3], points: fk, markers: !dense }],
+      pickAll: true,
+      tooltip: tipFor([["muscleKg", "Músculo", "kg"], ["fatKg", "Grasa", "kg"], ["weight", "Peso", "kg"]]),
+    });
+
+    // Waist vs weight and waist vs fat (scatter, recent 8 weeks highlighted)
+    const recentFrom = lastDay - 56;
+    const scatter = (xKey, yKey) => {
+      const older = shown.filter((m) => m[xKey] != null && m[yKey] != null && dayNum(m.date) < recentFrom).map((m) => [m[xKey], m[yKey], m]);
+      const recent = shown.filter((m) => m[xKey] != null && m[yKey] != null && dayNum(m.date) >= recentFrom).map((m) => [m[xKey], m[yKey], m]);
+      return { older, recent };
+    };
+    C.legend($("#ms-legend-scatter"), [{ name: "Anteriores", color: css("--z1") }, { name: "Últimas 8 semanas", color: SERIES[0] }]);
+    const drawScatter = (canvasSel, xKey, yKey, xLabel, yLabel, xUnit, yUnit) => {
+      const s = scatter(xKey, yKey);
+      const xs = bounds([...s.older, ...s.recent].map((p) => p[0]), 0.5, 1), ys = bounds([...s.older, ...s.recent].map((p) => p[1]), 0.5, 1);
+      const ticks = [];
+      const step = C.niceStep(xs.max - xs.min, 6);
+      for (let v = Math.ceil(xs.min / step) * step; v <= xs.max; v += step) ticks.push({ v, label: String(Math.round(v * 10) / 10) });
+      C.mount($(canvasSel), {
+        x: { type: "linear", min: xs.min, max: xs.max, ticks }, y: Object.assign(ys, { format: (v) => v + "" }),
+        lines: [
+          { name: "Anteriores", color: css("--z1"), points: s.older, markers: true, noLine: true, markerSize: 3 },
+          { name: "Últimas 8 semanas", color: SERIES[0], points: s.recent, markers: true, noLine: true, markerSize: 4.5 },
+        ],
+        pickXY: true,
+        tooltip: (hit) => {
+          const m = hit && hit.point && hit.point[2];
+          return m ? "<b>" + fmtDate(m.date) + "</b><br>" + xLabel + ": " + fmt(m[xKey]) + " " + xUnit + "<br>" + yLabel + ": " + fmt(m[yKey]) + " " + yUnit : null;
+        },
+      });
+    };
+    drawScatter("#ms-chart-wv", "weight", "waist", "Peso", "Cintura", "kg", "cm");
+    drawScatter("#ms-chart-wf", "waist", "fat", "Cintura", "Grasa", "cm", "%");
+  }
+
+  function renderCards(all) {
+    const last = all[all.length - 1];
+    const lastDay = dayNum(last.date);
+    // Reference entry: the closest one to 4 weeks before the latest
+    const ref = all.filter((m) => dayNum(m.date) <= lastDay - 21).pop();
+    const cards = [["weight", "Peso", "kg"], ["fat", "Grasa", "%"], ["waist", "Cintura", "cm"], ["fatKg", "Grasa", "kg"], ["muscleKg", "Músculo", "kg"]];
+    $("#ms-cards").replaceChildren(...cards.map(([k, label, unit]) => {
+      const v = last[k];
+      const prev = ref ? ref[k] : null;
+      const delta = v != null && prev != null ? round1(v - prev) : null;
+      return app.el("div", { class: "stat" },
+        app.el("span", { class: "stat-k" }, label + " [" + unit + "]"),
+        app.el("span", { class: "stat-v" }, fmt(v)),
+        app.el("span", { class: "stat-d" }, delta == null ? "" : (delta > 0 ? "+" : delta < 0 ? "−" : "±") + fmt(Math.abs(delta)) + " desde " + fmtDate(ref.date).replace(/ \d{4}$/, "")));
+    }));
+    $("#ms-last").textContent = "Última medida: " + fmtDate(last.date);
+  }
+
+  function renderTable(all) {
+    const rows = [...all].reverse().map((m) => app.el("tr", { onclick: () => openForm(load().find((x) => x.id === m.id)) },
+      app.el("td", {}, fmtDate(m.date)),
+      ...["weight", "waist", "neck"].map((k) => app.el("td", { class: "num" }, fmt(m[k]))),
+      app.el("td", { class: "num" + (m.fatEstimated ? " est" : "") }, fmt(m.fat) + (m.fatEstimated ? "*" : "")),
+      ...["waterPct", "musclePct", "boneKg", "fatKg", "muscleKg"].map((k) => app.el("td", { class: "num" }, fmt(m[k])))));
+    $("#ms-rows").replaceChildren(...rows);
+  }
+
+  // ---------- Wire up ----------
+  function init(helpers) {
+    app = helpers;
+    $("#ms-add").addEventListener("click", () => openForm(null));
+    $("#ms-form").addEventListener("submit", submitForm);
+    $("#ms-cancel").addEventListener("click", () => { $("#ms-dialog").hidden = true; });
+    $("#ms-delete").addEventListener("click", deleteEntry);
+    $("#ms-import").addEventListener("change", (e) => { if (e.target.files[0]) importExcel(e.target.files[0]); e.target.value = ""; });
+    $("#ms-import-empty").addEventListener("change", (e) => { if (e.target.files[0]) importExcel(e.target.files[0]); e.target.value = ""; });
+    $("#ms-export").addEventListener("click", exportExcel);
+    for (const b of document.querySelectorAll("[data-ms-range]")) b.addEventListener("click", () => {
+      range = +b.dataset.msRange;
+      for (const o of document.querySelectorAll("[data-ms-range]")) o.setAttribute("aria-pressed", o === b ? "true" : "false");
+      render();
+    });
+  }
+
+  window.RodilloMeasures = { init, render, load };
 })();
 </script>
 <script>/* Rodillo app: workout library, live ERG session, recording and FIT export. */
@@ -2869,6 +3585,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
         ? d.date.toLocaleDateString("es-CH", { weekday: "short", day: "numeric", month: "short" }) + " · Semana " + d.week
         : (w.source === "import" ? "Importado" : "");
       const actions = el("div", { class: "card-actions" },
+        el("button", { class: "btn", onclick: () => openWorkout(w) }, "Ver detalle"),
         el("button", { class: "btn primary", onclick: () => startRide(w) }, "Empezar"));
       if (w.source === "import") {
         actions.append(el("button", { class: "btn ghost", onclick: () => removeImported(w.id) }, "Quitar"));
@@ -2880,12 +3597,82 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
         el("h3", {}, d.title),
         w.description ? el("p", { class: "card-desc" }, w.description) : null,
         canvas, meta, actions);
+      card.addEventListener("click", (e) => { if (!e.target.closest("button")) openWorkout(w); });
       list.append(card);
       requestAnimationFrame(() => drawProfile(canvas, w, { compact: true }));
       if (state === "today" || state === "next") card.dataset.focus = "1";
     }
     const focus = list.querySelector('[data-focus="1"]');
     if (focus) setTimeout(() => focus.scrollIntoView({ block: "nearest", inline: "start" }), 50);
+  }
+
+  // ---------- Workout preview ----------
+  let previewWorkout = null;
+
+  /** Group repeated runs of segments, e.g. 6 x (30 s on + 30 s off). */
+  function compressSegments(segs) {
+    const same = (a, b) => a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+    const out = [];
+    let i = 0;
+    while (i < segs.length) {
+      let best = null;
+      for (let len = 1; len <= 4 && i + 2 * len <= segs.length; len++) {
+        let reps = 1;
+        while (i + (reps + 1) * len <= segs.length && segs.slice(i, i + len).every((s, k) => same(s, segs[i + reps * len + k]))) reps++;
+        if (reps >= 2 && (!best || reps * len > best.reps * best.len)) best = { len, reps };
+      }
+      if (best) { out.push({ reps: best.reps, items: segs.slice(i, i + best.len) }); i += best.len * best.reps; }
+      else { out.push({ reps: 1, items: [segs[i]] }); i++; }
+    }
+    return out;
+  }
+
+  function describeSegment(w, seg) {
+    const [w0, w1] = W.segmentWatts(w, seg, settings.ftp).map(Math.round);
+    const p0 = Math.round(w0 / settings.ftp * 100), p1 = Math.round(w1 / settings.ftp * 100);
+    const watts = w0 === w1 ? w0 + " W" : w0 + "→" + w1 + " W";
+    const pct = p0 === p1 ? p0 + " %" : p0 + "→" + p1 + " %";
+    return { dur: fmtTime(seg[0]), watts, pct, zone: W.zoneForPct((p0 + p1) / 2) };
+  }
+
+  function openWorkout(w) {
+    previewWorkout = w;
+    const d = describeWorkout(w);
+    const total = W.totalDuration(w);
+    const samples = [];
+    for (let t = 0; t < total; t++) samples.push({ power: W.targetWattsAt(w, t, settings.ftp, 1) });
+    const stats = W.rideStats(samples, settings.ftp);
+    const zoneSecs = [0, 0, 0, 0, 0, 0];
+    let above = 0;
+    for (const s of samples) { zoneSecs[W.zoneForPct(s.power / settings.ftp * 100) - 1]++; if (s.power >= settings.ftp) above++; }
+
+    $("#wk-title").textContent = d.title;
+    $("#wk-meta").textContent = [d.date ? d.date.toLocaleDateString("es-CH", { weekday: "long", day: "numeric", month: "long" }) : null,
+      d.week ? "Semana " + d.week : null, d.kindName || null, doneWorkouts.has(w.id) ? "Hecha ✓" : null].filter(Boolean).join(" · ");
+    $("#wk-desc").textContent = w.description || "";
+    const items = [["Duración", fmtTime(total)], ["TSS", "≈ " + Math.round(stats.tss)], ["IF", "≈ " + stats.if.toFixed(2)],
+      ["Trabajo", "≈ " + stats.kj + " kJ"], ["Sobre FTP", fmtTime(above)], ["Potencia máx.", stats.maxPower + " W"]];
+    $("#wk-grid").replaceChildren(...items.map(([k, v]) => el("div", { class: "stat" }, el("span", { class: "stat-k" }, k), el("span", { class: "stat-v" }, v))));
+
+    // Time in zones as one proportional bar with labels
+    $("#wk-zones").replaceChildren(...zoneSecs.map((s, z) => s ? el("div", { class: "zbar-seg", style: "flex-grow:" + s + ";background:var(" + ZONE_VARS[z] + ")", title: "Z" + (z + 1) }) : null).filter(Boolean));
+    $("#wk-zones-legend").replaceChildren(...zoneSecs.map((s, z) => s ? el("span", { class: "legend-item" }, el("i", { style: "background:var(" + ZONE_VARS[z] + ")" }), "Z" + (z + 1) + " " + fmtTime(s)) : null).filter(Boolean));
+
+    // Block list with repeats grouped
+    const rows = [];
+    for (const g of compressSegments(w.segments)) {
+      if (g.reps > 1) rows.push(el("li", { class: "blk-rep" }, g.reps + " ×"));
+      for (const seg of g.items) {
+        const s = describeSegment(w, seg);
+        rows.push(el("li", { class: g.reps > 1 ? "blk in-rep" : "blk" },
+          el("i", { class: "zone-dot", style: "background:var(" + ZONE_VARS[s.zone - 1] + ")" }),
+          el("span", { class: "num blk-dur" }, s.dur), el("span", { class: "num" }, s.watts), el("span", { class: "muted num" }, s.pct)));
+      }
+    }
+    $("#wk-blocks").replaceChildren(...rows);
+    showView("workout");
+    window.scrollTo(0, 0);
+    requestAnimationFrame(() => drawProfile($("#wk-profile"), w, {}));
   }
 
   function removeImported(id) {
@@ -3493,11 +4280,15 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
     });
     window.addEventListener("resize", () => {
       if (document.body.dataset.view === "library") renderLibrary();
+      else if (document.body.dataset.view === "workout" && previewWorkout) drawProfile($("#wk-profile"), previewWorkout, {});
       else if (ride) updateRideUi();
     });
     if (!B.bluetoothAvailable()) $("#bt-hint").hidden = false;
+    $("#wk-back").addEventListener("click", () => window.RodilloViews.showTab("library"));
+    $("#wk-start").addEventListener("click", () => { if (previewWorkout) startRide(previewWorkout); });
     window.RodilloApp = { $, el, toast, settings, store, fmtTime, showView, describeWorkout, renderLibrary };
     window.RodilloViews.init(window.RodilloApp);
+    window.RodilloMeasures.init(window.RodilloApp);
     window.RodilloViews.showTab("library");
     checkRecovery();
     H.listSummaries().then((list) => {

@@ -119,28 +119,34 @@
     for (const l of spec.lines || []) {
       ctx.strokeStyle = l.color; ctx.lineWidth = l.width || 2; ctx.lineJoin = "round"; ctx.lineCap = "round";
       ctx.setLineDash(l.dash || []);
-      ctx.beginPath();
-      let started = false;
       const pts = l.points || l.values.map((v, i) => [i, v]);
-      for (const [x, y] of pts) {
-        if (y == null || Number.isNaN(y)) { started = false; continue; }
-        const px = band ? xs(x) : xs(x), py = ys(Math.max(yMin, Math.min(yMax, y)));
-        if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+      if (!l.noLine) {
+        ctx.beginPath();
+        let started = false, prevX = null;
+        for (const [x, y] of pts) {
+          if (y == null || Number.isNaN(y)) { started = false; continue; }
+          // Do not bridge long gaps in time series (spec.gap in x units)
+          if (spec.gap && prevX != null && x - prevX > spec.gap) started = false;
+          prevX = x;
+          const px = xs(x), py = ys(Math.max(yMin, Math.min(yMax, y)));
+          if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
       }
-      ctx.stroke();
       ctx.setLineDash([]);
       if (l.markers) {
+        const r = l.markerSize || 4;
         for (const [x, y] of pts) {
           if (y == null) continue;
-          ctx.beginPath(); ctx.arc(xs(x), ys(y), 4, 0, Math.PI * 2);
-          ctx.fillStyle = l.color; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = colors.surface; ctx.stroke();
+          ctx.beginPath(); ctx.arc(xs(x), ys(y), r, 0, Math.PI * 2);
+          ctx.fillStyle = l.color; ctx.fill(); ctx.lineWidth = r > 3 ? 2 : 1; ctx.strokeStyle = colors.surface; ctx.stroke();
         }
       }
     }
 
     // Crosshair for the active item
     if (spec.active != null) {
-      const ax = band ? xs(spec.active) : xs(spec.active);
+      const ax = xs(spec.activeX != null ? spec.activeX : spec.active);
       ctx.strokeStyle = colors.fg; ctx.globalAlpha = 0.5; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(Math.round(ax) + 0.5, m.t); ctx.lineTo(Math.round(ax) + 0.5, m.t + ph); ctx.stroke();
       ctx.globalAlpha = 1;
@@ -156,14 +162,23 @@
     if (!tip) { tip = document.createElement("div"); tip.className = "chart-tip"; tip.hidden = true; holder.append(tip); }
     let geo = draw(canvas, spec);
     const xValues = () => {
-      const l = (spec.lines || [])[0];
-      return l && l.points ? l.points.map((p) => p[0]) : [];
+      const lines = spec.pickAll ? spec.lines || [] : (spec.lines || []).slice(0, 1);
+      return lines.flatMap((l) => l.points ? l.points.map((p) => p[0]) : []);
     };
     function pick(ev) {
       const r = canvas.getBoundingClientRect();
-      const px = ev.clientX - r.left;
+      const px = ev.clientX - r.left, py = ev.clientY - r.top;
       if (px < geo.m.l || px > r.width - geo.m.r) return null;
       if (geo.band) return Math.max(0, Math.min(geo.n - 1, Math.floor((px - geo.m.l) / geo.bw)));
+      if (spec.pickXY) {
+        // Scatter: nearest point in both directions, among all series
+        let best = null, bestD = 40 * 40;
+        for (const l of spec.lines || []) for (const p of l.points || []) {
+          const dx = geo.xs(p[0]) - px, dy = geo.ys(p[1]) - py, d = dx * dx + dy * dy;
+          if (d < bestD) { bestD = d; best = { line: l, point: p, x: p[0] }; }
+        }
+        return best;
+      }
       let best = null, bestD = Infinity;
       for (const x of xValues()) { const d = Math.abs(geo.xs(x) - px); if (d < bestD) { bestD = d; best = x; } }
       return best;
@@ -174,15 +189,16 @@
       if (idx == null) { hide(); return; }
       const html = spec.tooltip(idx);
       if (!html) { hide(); return; }
-      spec.active = idx; geo = draw(canvas, spec);
+      const xVal = idx && typeof idx === "object" ? idx.x : idx;
+      spec.active = idx; spec.activeX = xVal; geo = draw(canvas, spec);
       tip.innerHTML = html; tip.hidden = false;
       const r = canvas.getBoundingClientRect(), hr = holder.getBoundingClientRect();
-      const x = geo.xs(idx) + (r.left - hr.left);
+      const x = geo.xs(xVal) + (r.left - hr.left);
       const tw = tip.offsetWidth;
       tip.style.left = Math.max(4, Math.min(hr.width - tw - 4, x + 12 > hr.width - tw ? x - tw - 12 : x + 12)) + "px";
       tip.style.top = (r.top - hr.top + 6) + "px";
     }
-    function hide() { tip.hidden = true; if (spec.active != null) { spec.active = null; geo = draw(canvas, spec); } }
+    function hide() { tip.hidden = true; if (spec.active != null) { spec.active = null; spec.activeX = null; geo = draw(canvas, spec); } }
     canvas.onpointermove = show; canvas.onpointerdown = show; canvas.onpointerleave = (e) => { if (e.pointerType === "mouse") hide(); };
     return () => { geo = draw(canvas, spec); };
   }

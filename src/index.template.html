@@ -323,8 +323,34 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
 .icu-box { display: flex; flex-direction: column; gap: 8px; }
 .icu-fields { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
 .workout-card.done { opacity: 1; }
+.workout-card { cursor: pointer; }
+.wk-titles { flex: 1 1 260px; }
+.wk-titles h1 { font-family: var(--font-num); font-weight: 600; font-size: clamp(26px, 3.4vw, 34px); }
+.detail > * { grid-area: auto; min-width: 0; }
+.wk-start { min-width: 160px; min-height: 52px; font-size: 18px; }
+.wk-desc { margin: 0; color: var(--muted); max-width: 70ch; }
+.wk-profile { width: 100%; height: clamp(150px, 28vh, 240px); display: block; }
+.wk-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 760px) { .wk-cols { grid-template-columns: minmax(0, 1fr); } }
+.zbar { display: flex; gap: 2px; height: 18px; margin: 10px 0; }
+.zbar-seg { min-width: 3px; border-radius: 3px; }
+.blocks { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
+.blk { display: grid; grid-template-columns: 18px 64px 1fr auto; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+.blk.in-rep { padding-left: 18px; border-left: 2px solid var(--grid); margin-left: 4px; }
+.blk-rep { font-family: var(--font-num); font-weight: 700; font-size: 18px; padding-top: 8px; }
 .badge-done { background: var(--ok); }
 .badge { white-space: nowrap; }
+.stat-d { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.ms-range { display: flex; justify-content: flex-end; padding: 12px 0; }
+.ms-table { max-height: 420px; overflow-y: auto; }
+.ms-table tbody tr { cursor: pointer; }
+.ms-table tbody tr:hover td { background: var(--panel-2); }
+.ms-table td.est { color: var(--muted); }
+.ms-table th { position: sticky; top: 0; background: var(--panel); }
+.ms-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.field input[type=date] { background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 16px; }
+.dialog-actions .spacer { flex: 1; }
+#ms-empty .btn input, .lib-actions .btn input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
 
 /* ---------- Summary ---------- */
 .summary { display: grid; gap: 14px; padding-block: 22px 32px; }
@@ -391,6 +417,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
       <button type="button" data-tab="activities" aria-selected="false">Actividades</button>
       <button type="button" data-tab="form" aria-selected="false">Forma</button>
       <button type="button" data-tab="power" aria-selected="false">Potencia</button>
+      <button type="button" data-tab="measures" aria-selected="false">Medidas</button>
     </nav>
     <div class="chips">
       <button class="chip" id="chip-trainer" data-state="off" type="button"><span class="chip-label">Rodillo</span></button>
@@ -500,6 +527,33 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
     </div>
   </section>
 
+  <section class="view wrap" id="view-workout" hidden>
+    <div class="detail">
+      <div class="detail-head">
+        <button class="btn ghost" id="wk-back" type="button">← Entrenar</button>
+        <div class="wk-titles">
+          <h1 id="wk-title"></h1>
+          <div class="muted" id="wk-meta"></div>
+        </div>
+        <button class="btn primary wk-start" id="wk-start" type="button">Empezar</button>
+      </div>
+      <p class="wk-desc" id="wk-desc"></p>
+      <div class="box profile-box"><canvas id="wk-profile" class="wk-profile" aria-label="Perfil del entreno"></canvas></div>
+      <div class="summary-grid" id="wk-grid"></div>
+      <div class="wk-cols">
+        <div class="box">
+          <div class="chart-title">Tiempo en zonas</div>
+          <div class="zbar" id="wk-zones"></div>
+          <div class="legend" id="wk-zones-legend"></div>
+        </div>
+        <div class="box">
+          <div class="chart-title">Bloques</div>
+          <ol class="blocks" id="wk-blocks"></ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="view wrap" id="view-activities" hidden>
     <div class="lib-head">
       <div>
@@ -569,12 +623,8 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
       </div>
       <div class="box icu-box">
         <div class="chart-title">intervals.icu</div>
-        <p class="muted small" id="icu-status"></p>
-        <div class="icu-fields">
-          <label class="field" for="icu-key"><span class="label">API key</span><input id="icu-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-          <label class="field" for="icu-athlete"><span class="label">ID atleta (opcional)</span><input id="icu-athlete" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="0"></label>
-        </div>
-        <button class="btn primary" id="icu-save" type="button">Guardar y sincronizar</button>
+        <p class="muted small icu-status"></p>
+        <button class="btn" id="icu-sync" type="button">Sincronizar ahora</button>
       </div>
     </div>
     <p class="empty" id="form-empty" hidden>Todavía no hay carga registrada. Sincroniza intervals.icu o termina una sesión.</p>
@@ -607,6 +657,52 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
       <div class="box chart-box"><div class="chart-title">Mejores marcas por semana (W)</div><div class="legend" id="legend-trend"></div><div class="chart-holder"><canvas id="chart-trend"></canvas></div></div>
     </div>
   </section>
+
+  <section class="view wrap" id="view-measures" hidden>
+    <div class="lib-head">
+      <div>
+        <h1>Medidas</h1>
+        <p id="ms-last">Peso, cintura y composición corporal. Los datos se guardan solo en este iPad.</p>
+      </div>
+      <div class="lib-actions">
+        <button class="btn primary" id="ms-add" type="button">+ Nueva medida</button>
+        <label class="btn" for="ms-import">Importar Excel<input id="ms-import" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+        <button class="btn" id="ms-export" type="button">Exportar Excel</button>
+      </div>
+    </div>
+    <p class="muted small" id="ms-backup"></p>
+    <div class="empty" id="ms-empty" hidden>
+      <p>Todavía no hay medidas. Importa tu Excel (hoja <b>medidas</b>) o añade la primera.</p>
+      <label class="btn primary" for="ms-import-empty">Importar Excel<input id="ms-import-empty" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+    </div>
+    <div id="ms-content">
+      <div class="summary-grid ms-cards" id="ms-cards"></div>
+      <div class="ms-range">
+        <div class="seg" role="group" aria-label="Periodo">
+          <button type="button" data-ms-range="182" aria-pressed="false">6 meses</button>
+          <button type="button" data-ms-range="365" aria-pressed="true">1 año</button>
+          <button type="button" data-ms-range="1095" aria-pressed="false">3 años</button>
+          <button type="button" data-ms-range="0" aria-pressed="false">Todo</button>
+        </div>
+      </div>
+      <div class="power-grid">
+        <div class="box chart-box"><div class="chart-title">Peso [kg]</div><div class="chart-holder"><canvas id="ms-chart-weight"></canvas></div></div>
+        <div class="box chart-box"><div class="chart-title">Grasa [%]</div><div class="legend" id="ms-legend-fat"></div><div class="chart-holder"><canvas id="ms-chart-fat"></canvas></div></div>
+        <div class="box chart-box"><div class="chart-title">Músculo y grasa [kg]</div><div class="legend" id="ms-legend-mass"></div><div class="chart-holder"><canvas id="ms-chart-mass"></canvas></div></div>
+        <div class="box chart-box"><div class="chart-title">Cintura [cm] según peso [kg]</div><div class="legend" id="ms-legend-scatter"></div><div class="chart-holder"><canvas id="ms-chart-wv"></canvas></div></div>
+        <div class="box chart-box"><div class="chart-title">Grasa [%] según cintura [cm]</div><div class="chart-holder"><canvas id="ms-chart-wf"></canvas></div></div>
+      </div>
+      <div class="box">
+        <div class="chart-title">Todas las medidas <span class="muted small">· toca una fila para editarla · * grasa estimada por cintura</span></div>
+        <div class="table-scroll ms-table">
+          <table class="laps">
+            <thead><tr><th>Fecha</th><th>Peso</th><th>Cintura</th><th>Cuello</th><th>Grasa %</th><th>Agua %</th><th>Músculo %</th><th>Hueso</th><th>Grasa kg</th><th>Músculo kg</th></tr></thead>
+            <tbody id="ms-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <div class="overlay" id="settings" hidden>
@@ -626,6 +722,15 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
         <button class="btn ghost" id="btn-dbx-disconnect" type="button" hidden>Desconectar</button>
       </div>
     </fieldset>
+    <fieldset class="dbx">
+      <legend class="label">intervals.icu</legend>
+      <p class="dbx-status icu-status"></p>
+      <div class="icu-fields">
+        <label class="field" for="icu-key"><span class="label">API key</span><input id="icu-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <label class="field" for="icu-athlete"><span class="label">ID atleta (opcional)</span><input id="icu-athlete" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="0"></label>
+      </div>
+      <div class="dbx-actions"><button class="btn" id="icu-save" type="button">Guardar y sincronizar</button></div>
+    </fieldset>
     <details class="log-box">
       <summary>Registro Bluetooth</summary>
       <pre id="ble-log"></pre>
@@ -633,6 +738,29 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
     </details>
     <div class="dialog-actions">
       <button class="btn ghost" id="settings-cancel" type="button">Cancelar</button>
+      <button class="btn primary" type="submit">Guardar</button>
+    </div>
+  </form>
+</div>
+
+<div class="overlay" id="ms-dialog" hidden>
+  <form class="dialog" id="ms-form">
+    <h2 id="ms-form-title">Nueva medida</h2>
+    <label class="field" for="ms-date"><span class="label">Fecha</span><input id="ms-date" type="date" required></label>
+    <div class="ms-fields">
+      <label class="field" for="ms-weight"><span class="label">Peso [kg]</span><input id="ms-weight" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-waist"><span class="label">Cintura [cm]</span><input id="ms-waist" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-neck"><span class="label">Cuello [cm]</span><input id="ms-neck" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-ribs"><span class="label">Costillas [cm]</span><input id="ms-ribs" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-fatPct"><span class="label">Grasa [%]</span><input id="ms-fatPct" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-waterPct"><span class="label">Agua [%]</span><input id="ms-waterPct" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-musclePct"><span class="label">Músculo [%]</span><input id="ms-musclePct" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-boneKg"><span class="label">Hueso [kg]</span><input id="ms-boneKg" type="text" inputmode="decimal"></label>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn danger" id="ms-delete" type="button" hidden>Borrar</button>
+      <span class="spacer"></span>
+      <button class="btn ghost" id="ms-cancel" type="button">Cancelar</button>
       <button class="btn primary" type="submit">Guardar</button>
     </div>
   </form>
@@ -650,6 +778,8 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
 <script>/*FITPARSE_JS*/</script>
 <script>/*CHART_JS*/</script>
 <script>/*VIEWS_JS*/</script>
+<script>/*XLSX_JS*/</script>
+<script>/*MEASURES_JS*/</script>
 <script>/*APP_JS*/</script>
 </body>
 </html>

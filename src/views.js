@@ -68,7 +68,7 @@
   }
 
   // ---------- Tabs ----------
-  const TABS = ["library", "activities", "form", "power"];
+  const TABS = ["library", "activities", "form", "power", "measures"];
   function showTab(name) {
     app.showView(name);
     for (const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
@@ -80,6 +80,7 @@
     if (name === "activities") renderActivities();
     else if (name === "power") renderPower();
     else if (name === "form") renderForm();
+    else if (name === "measures") window.RodilloMeasures.render();
     else if (name === "library") app.renderLibrary();
   }
 
@@ -431,7 +432,7 @@
   async function syncIntervals() {
     const cfg = intervalsCfg();
     if (!cfg.apiKey) { app.toast("Pega primero tu API key de intervals.icu.", "warn"); return; }
-    const status = $("#icu-status");
+    const status = { set textContent(t) { for (const n of document.querySelectorAll(".icu-status")) n.textContent = t; } };
     status.textContent = "Sincronizando…";
     const newest = A.dayKey(Date.now() / 1000);
     const oldestD = new Date(); oldestD.setDate(oldestD.getDate() - 400);
@@ -517,14 +518,26 @@
     return { cls: "bad", icon: "!!", label: "Muy alta", text: "Por encima de 1,4: sáltate la sesión C de esta semana." };
   }
 
-  async function renderForm() {
-    await loadData();
+  function renderIcuStatus(cfg) {
+    const text = cfg.apiKey
+      ? (cfg.lastSync ? "Última sincronización: " + new Date(cfg.lastSync).toLocaleString("es") + " · " + external.length + " actividades." : "Conectado, todavía sin sincronizar.")
+      : "Sin conectar: pega la API key de intervals.icu en Ajustes.";
+    for (const n of document.querySelectorAll(".icu-status")) n.textContent = text;
+    $("#icu-sync").hidden = !cfg.apiKey;
+  }
+
+  /** Fill the intervals.icu fields of the settings dialog. */
+  function fillIcuSettings() {
     const cfg = intervalsCfg();
     $("#icu-key").value = cfg.apiKey || "";
     $("#icu-athlete").value = cfg.athleteId || "";
-    $("#icu-status").textContent = cfg.apiKey
-      ? (cfg.lastSync ? "Última sincronización: " + new Date(cfg.lastSync).toLocaleString("es") + " · " + external.length + " actividades." : "Conectado, todavía sin sincronizar.")
-      : "Sin conectar. Pega la API key de intervals.icu (Settings → Developer Settings).";
+    loadData().then(() => renderIcuStatus(cfg));
+  }
+
+  async function renderForm() {
+    await loadData();
+    const cfg = intervalsCfg();
+    renderIcuStatus(cfg);
 
     const loads = dailyLoads();
     const allDays = [...loads.total.keys()].sort();
@@ -612,6 +625,8 @@
       for (const o of document.querySelectorAll("[data-form-range]")) o.setAttribute("aria-pressed", o === b ? "true" : "false");
       renderForm();
     });
+    $("#btn-settings").addEventListener("click", fillIcuSettings);
+    $("#icu-sync").addEventListener("click", syncIntervals);
     $("#icu-save").addEventListener("click", () => {
       const cfg = intervalsCfg();
       cfg.apiKey = $("#icu-key").value.trim();

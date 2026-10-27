@@ -192,6 +192,7 @@
         ? d.date.toLocaleDateString("es-CH", { weekday: "short", day: "numeric", month: "short" }) + " · Semana " + d.week
         : (w.source === "import" ? "Importado" : "");
       const actions = el("div", { class: "card-actions" },
+        el("button", { class: "btn", onclick: () => openWorkout(w) }, "Ver detalle"),
         el("button", { class: "btn primary", onclick: () => startRide(w) }, "Empezar"));
       if (w.source === "import") {
         actions.append(el("button", { class: "btn ghost", onclick: () => removeImported(w.id) }, "Quitar"));
@@ -203,12 +204,82 @@
         el("h3", {}, d.title),
         w.description ? el("p", { class: "card-desc" }, w.description) : null,
         canvas, meta, actions);
+      card.addEventListener("click", (e) => { if (!e.target.closest("button")) openWorkout(w); });
       list.append(card);
       requestAnimationFrame(() => drawProfile(canvas, w, { compact: true }));
       if (state === "today" || state === "next") card.dataset.focus = "1";
     }
     const focus = list.querySelector('[data-focus="1"]');
     if (focus) setTimeout(() => focus.scrollIntoView({ block: "nearest", inline: "start" }), 50);
+  }
+
+  // ---------- Workout preview ----------
+  let previewWorkout = null;
+
+  /** Group repeated runs of segments, e.g. 6 x (30 s on + 30 s off). */
+  function compressSegments(segs) {
+    const same = (a, b) => a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+    const out = [];
+    let i = 0;
+    while (i < segs.length) {
+      let best = null;
+      for (let len = 1; len <= 4 && i + 2 * len <= segs.length; len++) {
+        let reps = 1;
+        while (i + (reps + 1) * len <= segs.length && segs.slice(i, i + len).every((s, k) => same(s, segs[i + reps * len + k]))) reps++;
+        if (reps >= 2 && (!best || reps * len > best.reps * best.len)) best = { len, reps };
+      }
+      if (best) { out.push({ reps: best.reps, items: segs.slice(i, i + best.len) }); i += best.len * best.reps; }
+      else { out.push({ reps: 1, items: [segs[i]] }); i++; }
+    }
+    return out;
+  }
+
+  function describeSegment(w, seg) {
+    const [w0, w1] = W.segmentWatts(w, seg, settings.ftp).map(Math.round);
+    const p0 = Math.round(w0 / settings.ftp * 100), p1 = Math.round(w1 / settings.ftp * 100);
+    const watts = w0 === w1 ? w0 + " W" : w0 + "→" + w1 + " W";
+    const pct = p0 === p1 ? p0 + " %" : p0 + "→" + p1 + " %";
+    return { dur: fmtTime(seg[0]), watts, pct, zone: W.zoneForPct((p0 + p1) / 2) };
+  }
+
+  function openWorkout(w) {
+    previewWorkout = w;
+    const d = describeWorkout(w);
+    const total = W.totalDuration(w);
+    const samples = [];
+    for (let t = 0; t < total; t++) samples.push({ power: W.targetWattsAt(w, t, settings.ftp, 1) });
+    const stats = W.rideStats(samples, settings.ftp);
+    const zoneSecs = [0, 0, 0, 0, 0, 0];
+    let above = 0;
+    for (const s of samples) { zoneSecs[W.zoneForPct(s.power / settings.ftp * 100) - 1]++; if (s.power >= settings.ftp) above++; }
+
+    $("#wk-title").textContent = d.title;
+    $("#wk-meta").textContent = [d.date ? d.date.toLocaleDateString("es-CH", { weekday: "long", day: "numeric", month: "long" }) : null,
+      d.week ? "Semana " + d.week : null, d.kindName || null, doneWorkouts.has(w.id) ? "Hecha ✓" : null].filter(Boolean).join(" · ");
+    $("#wk-desc").textContent = w.description || "";
+    const items = [["Duración", fmtTime(total)], ["TSS", "≈ " + Math.round(stats.tss)], ["IF", "≈ " + stats.if.toFixed(2)],
+      ["Trabajo", "≈ " + stats.kj + " kJ"], ["Sobre FTP", fmtTime(above)], ["Potencia máx.", stats.maxPower + " W"]];
+    $("#wk-grid").replaceChildren(...items.map(([k, v]) => el("div", { class: "stat" }, el("span", { class: "stat-k" }, k), el("span", { class: "stat-v" }, v))));
+
+    // Time in zones as one proportional bar with labels
+    $("#wk-zones").replaceChildren(...zoneSecs.map((s, z) => s ? el("div", { class: "zbar-seg", style: "flex-grow:" + s + ";background:var(" + ZONE_VARS[z] + ")", title: "Z" + (z + 1) }) : null).filter(Boolean));
+    $("#wk-zones-legend").replaceChildren(...zoneSecs.map((s, z) => s ? el("span", { class: "legend-item" }, el("i", { style: "background:var(" + ZONE_VARS[z] + ")" }), "Z" + (z + 1) + " " + fmtTime(s)) : null).filter(Boolean));
+
+    // Block list with repeats grouped
+    const rows = [];
+    for (const g of compressSegments(w.segments)) {
+      if (g.reps > 1) rows.push(el("li", { class: "blk-rep" }, g.reps + " ×"));
+      for (const seg of g.items) {
+        const s = describeSegment(w, seg);
+        rows.push(el("li", { class: g.reps > 1 ? "blk in-rep" : "blk" },
+          el("i", { class: "zone-dot", style: "background:var(" + ZONE_VARS[s.zone - 1] + ")" }),
+          el("span", { class: "num blk-dur" }, s.dur), el("span", { class: "num" }, s.watts), el("span", { class: "muted num" }, s.pct)));
+      }
+    }
+    $("#wk-blocks").replaceChildren(...rows);
+    showView("workout");
+    window.scrollTo(0, 0);
+    requestAnimationFrame(() => drawProfile($("#wk-profile"), w, {}));
   }
 
   function removeImported(id) {
@@ -816,11 +887,15 @@
     });
     window.addEventListener("resize", () => {
       if (document.body.dataset.view === "library") renderLibrary();
+      else if (document.body.dataset.view === "workout" && previewWorkout) drawProfile($("#wk-profile"), previewWorkout, {});
       else if (ride) updateRideUi();
     });
     if (!B.bluetoothAvailable()) $("#bt-hint").hidden = false;
+    $("#wk-back").addEventListener("click", () => window.RodilloViews.showTab("library"));
+    $("#wk-start").addEventListener("click", () => { if (previewWorkout) startRide(previewWorkout); });
     window.RodilloApp = { $, el, toast, settings, store, fmtTime, showView, describeWorkout, renderLibrary };
     window.RodilloViews.init(window.RodilloApp);
+    window.RodilloMeasures.init(window.RodilloApp);
     window.RodilloViews.showTab("library");
     checkRecovery();
     H.listSummaries().then((list) => {

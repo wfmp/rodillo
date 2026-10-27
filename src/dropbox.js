@@ -108,9 +108,10 @@
   }
 
   /** Upload bytes to the app folder; returns the Dropbox path actually used (renamed if it already existed). */
-  async function upload(fileName, bytes) {
+  async function upload(fileName, bytes, opts) {
     const token = await accessToken();
-    const arg = JSON.stringify({ path: "/" + fileName, mode: "add", autorename: true, mute: true });
+    const overwrite = opts && opts.overwrite;
+    const arg = JSON.stringify({ path: "/" + fileName, mode: overwrite ? "overwrite" : "add", autorename: !overwrite, mute: true });
     const res = await fetch("https://content.dropboxapi.com/2/files/upload", {
       method: "POST",
       headers: { Authorization: "Bearer " + token, "Content-Type": "application/octet-stream", "Dropbox-API-Arg": arg },
