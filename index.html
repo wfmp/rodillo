@@ -3889,9 +3889,11 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     for (const k of days) sums.push(await daySummary(k));
     const logged = sums.filter((s) => s.items > 0 && s.balance != null);
     const net = logged.reduce((a, s) => a + s.balance, 0);
-    // Weigh-in of this week minus the weigh-in of the previous week
-    const inRange = (from, to) => { let best = null; for (const m of window.RodilloMeasures.load()) if (m.weight && m.date >= from && m.date <= to) best = m; return best; };
-    const post = inRange(ws, days[6]), pre = inRange(addDays(ws, -7), addDays(ws, -1)) || measureAt(addDays(ws, -1));
+    // The week's eating shows on the next Sunday's weigh-in: real change = weigh-in on the Sunday after the week
+    // minus the latest weigh-in at the start of the week. Until that Sunday has a measurement, show "—".
+    const nextSunday = addDays(ws, 7);
+    const post = window.RodilloMeasures.load().find((m) => m.weight && m.date === nextSunday) || null;
+    const pre = measureAt(ws);
     const real = pre && post && post.date > pre.date ? (post.weight - pre.weight) * 1000 : null;
     $("#fd-week-title").textContent = "Semana del " + fmtDay(ws) + " al " + fmtDay(days[6]);
     $("#fd-week-rows").replaceChildren(...sums.map((s) => app.el("tr", { class: s.day === day ? "sel" : "", onclick: () => { day = s.day; render(); } },
