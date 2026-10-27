@@ -134,7 +134,7 @@
     out.kj = Math.round(pSum / 1000);
     out.avgHr = hrN ? Math.round(hrSum / hrN) : 0;
     out.avgCadence = cadN ? Math.round(cadSum / cadN) : 0;
-    out.distance = samples[n - 1].distance || 0;
+    out.distance = (samples[n - 1].distance || 0) + (samples[n - 1].speed || 0);
     // Normalized power: 30 s rolling mean, 4th power average, 4th root
     if (n >= 30) {
       let window = 0, acc4 = 0, count = 0;

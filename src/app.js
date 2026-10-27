@@ -344,7 +344,8 @@
     if (audioCtx == null && settings.sounds) beep(660, 1); // unlock audio from this tap
     ride = Object.assign({
       workout, t: 0, intensity: 1, paused: true, started: false, samples: [], pauses: [],
-      startedAt: null, target: null, lastSegment: -1, autoPaused: false, idleSeconds: 0, finished: false,
+      startedAt: null, target: null, lastSegment: -1, autoPaused: false, idleSamples: 0, finished: false,
+      clockAnchor: null, clockCount: 0,
       distance: 0, manualWatts: workout.manual ? workout.segments[0][1] : null,
     }, resumeData || {});
     ride.workout = workout;
@@ -353,7 +354,8 @@
     keepAwake();
     updateRideUi();
     setTarget(currentTarget());
-    if (!ride.timer) ride.timer = setInterval(rideTick, 1000);
+    ride.idleSamples = 0; ride.clockAnchor = null;
+    if (!ride.timer) ride.timer = setInterval(rideTick, 250);
   }
 
   function currentTarget() {
@@ -370,52 +372,96 @@
       else if (ride.pauseStart) { ride.pauses.push({ start: ride.pauseStart, end: Date.now() / 1000 }); ride.pauseStart = null; }
       ride.paused = false; ride.autoPaused = false;
     } else {
-      ride.paused = true; ride.pauseStart = Date.now() / 1000;
+      pauseRecording();
+      ride.pauseStart = Date.now() / 1000;
     }
     updateRideUi();
+  }
+
+  /** Stop the recording clock and drop trailing seconds without pedaling, so no zeros are written before a stop. */
+  function pauseRecording() {
+    trimIdleTail();
+    ride.paused = true;
+    ride.clockAnchor = null;
+  }
+
+  function trimIdleTail() {
+    let n = ride.idleSamples;
+    ride.idleSamples = 0;
+    while (n-- > 0 && ride.samples.length) {
+      const s = ride.samples.pop();
+      ride.t = s.t;
+      ride.distance = s.distance;
+    }
   }
 
   function rideTick() {
     if (!ride || ride.finished) return;
     const now = Date.now();
-    const total = W.totalDuration(ride.workout);
     const powerFresh = now - live.powerAt < 3000;
     const pedaling = powerFresh && ((live.cadence || 0) > 15 || (live.power || 0) > 20);
 
-    // Auto-pause / auto-resume once the session has started
-    if (ride.started && settings.autoPause) {
-      if (!ride.paused && !pedaling) {
-        ride.idleSeconds++;
-        if (ride.idleSeconds >= 5) { ride.paused = true; ride.autoPaused = true; ride.pauseStart = now / 1000 - 5; toast("Pausa automática: no detecto pedaleo."); }
-      } else if (ride.paused && ride.autoPaused && pedaling) {
-        ride.pauses.push({ start: ride.pauseStart, end: now / 1000 }); ride.pauseStart = null;
-        ride.paused = false; ride.autoPaused = false; ride.idleSeconds = 0;
-      } else if (pedaling) ride.idleSeconds = 0;
+    // Auto-resume as soon as pedaling is detected again
+    if (ride.started && ride.paused && ride.autoPaused && pedaling) {
+      ride.pauses.push({ start: ride.pauseStart, end: now / 1000 }); ride.pauseStart = null;
+      ride.paused = false; ride.autoPaused = false; ride.idleSamples = 0;
     }
 
     if (!ride.paused) {
-      const speed = live.speedKmh != null && powerFresh ? live.speedKmh / 3.6 : 0;
-      ride.distance += speed;
-      ride.samples.push({
-        t: ride.t, ts: Math.floor(now / 1000),
-        power: powerFresh ? Math.max(0, Math.round(live.power || 0)) : 0,
-        hr: now - live.hrAt < 5000 ? live.hr : null,
-        cadence: powerFresh && live.cadence != null ? Math.round(live.cadence) : null,
-        speed, distance: ride.distance, target: ride.target,
-      });
-      ride.t++;
-      // Countdown beeps before an interval change
-      const loc = W.segmentAt(ride.workout, ride.t);
-      if (loc && !ride.workout.manual) {
-        const remaining = loc.segEnd - ride.t;
-        if (remaining <= 3 && remaining >= 1) beep(remaining === 1 ? 990 : 660, 120);
-        if (loc.index !== ride.lastSegment) { ride.lastSegment = loc.index; }
+      // The recording clock counts whole seconds since the last (re)start, so a late timer callback
+      // (common on iPad) records the missed second instead of skipping it.
+      if (ride.clockAnchor == null) { ride.clockAnchor = now; ride.clockCount = 0; }
+      let due = Math.floor((now - ride.clockAnchor) / 1000) + 1 - ride.clockCount;
+      if (due > 5) {
+        // The page was suspended: restart the clock; the time gap becomes a pause in the FIT file
+        ride.clockAnchor = now; ride.clockCount = 0; due = 1;
       }
-      if (!ride.workout.manual && ride.t >= total) { finishRide(); return; }
-      if (ride.t % 15 === 0) autosave();
+      for (let i = 0; i < due && !ride.paused && !ride.finished; i++) recordSecond(now, pedaling, powerFresh);
     }
+    if (ride.finished) return;
     setTarget(currentTarget());
     updateRideUi();
+  }
+
+  function recordSecond(now, pedaling, powerFresh) {
+    if (!pedaling && ride.started && settings.autoPause && ride.idleSamples >= 4) {
+      // Fifth second without pedaling: pause and discard the idle seconds already recorded
+      pauseRecording();
+      ride.autoPaused = true;
+      const last = ride.samples[ride.samples.length - 1];
+      ride.pauseStart = last ? last.ts + 1 : now / 1000;
+      toast("Pausa automática: no detecto pedaleo.");
+      return;
+    }
+    ride.idleSamples = pedaling ? 0 : ride.idleSamples + 1;
+
+    const last = ride.samples[ride.samples.length - 1];
+    const wallSec = Math.floor(now / 1000);
+    // Consecutive timestamps while running; after a restart, jump to wall-clock time
+    const ts = !last ? wallSec : ride.clockCount === 0 ? Math.max(last.ts + 1, wallSec) : last.ts + 1;
+    ride.clockCount++;
+
+    const total = W.totalDuration(ride.workout);
+    const loc = ride.workout.manual ? null : W.segmentAt(ride.workout, Math.min(ride.t, total - 1));
+    const speed = live.speedKmh != null && powerFresh ? live.speedKmh / 3.6 : 0;
+    ride.samples.push({
+      t: ride.t, ts, lap: loc ? loc.index : 0,
+      power: powerFresh ? Math.max(0, Math.round(live.power || 0)) : 0,
+      hr: now - live.hrAt < 5000 ? live.hr : null,
+      cadence: powerFresh && live.cadence != null ? Math.round(live.cadence) : null,
+      speed, distance: ride.distance, target: ride.target,
+    });
+    ride.distance += speed;
+    ride.t++;
+    // Countdown beeps before an interval change
+    const next = W.segmentAt(ride.workout, ride.t);
+    if (next && !ride.workout.manual) {
+      const remaining = next.segEnd - ride.t;
+      if (remaining <= 3 && remaining >= 1) beep(remaining === 1 ? 990 : 660, 120);
+      if (next.index !== ride.lastSegment) ride.lastSegment = next.index;
+    }
+    if (!ride.workout.manual && ride.t >= total) { finishRide(); return; }
+    if (ride.t % 15 === 0) autosave();
   }
 
   function adjustIntensity(deltaPct) {
@@ -516,6 +562,7 @@
   function finishRide() {
     if (!ride) return;
     clearInterval(ride.timer); ride.timer = null;
+    if (!ride.paused) trimIdleTail();
     ride.finished = true;
     if (ride.pauseStart) { ride.pauses.push({ start: ride.pauseStart, end: null }); ride.pauseStart = null; }
     if (devices.trainer) devices.trainer.setTargetPower(Math.round(settings.ftp * 0.4));

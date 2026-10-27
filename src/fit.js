@@ -40,11 +40,11 @@
       ["event_group", 4, "uint8"]]],
     record: [20, [["timestamp", 253, "uint32"], ["heart_rate", 3, "uint8"], ["cadence", 4, "uint8"],
       ["distance", 5, "uint32"], ["speed", 6, "uint16"], ["power", 7, "uint16"]]],
-    lap: [19, [["timestamp", 253, "uint32"], ["event", 0, "enum"], ["event_type", 1, "enum"],
+    lap: [19, [["timestamp", 253, "uint32"], ["message_index", 254, "uint16"], ["event", 0, "enum"], ["event_type", 1, "enum"],
       ["start_time", 2, "uint32"], ["total_elapsed_time", 7, "uint32"], ["total_timer_time", 8, "uint32"],
       ["total_distance", 9, "uint32"], ["avg_heart_rate", 15, "uint8"], ["max_heart_rate", 16, "uint8"],
       ["avg_cadence", 17, "uint8"], ["avg_power", 19, "uint16"], ["max_power", 20, "uint16"],
-      ["sport", 25, "enum"], ["sub_sport", 39, "enum"]]],
+      ["lap_trigger", 24, "enum"], ["sport", 25, "enum"], ["sub_sport", 39, "enum"], ["wkt_step_index", 71, "uint16"]]],
     session: [18, [["timestamp", 253, "uint32"], ["event", 0, "enum"], ["event_type", 1, "enum"],
       ["start_time", 2, "uint32"], ["sport", 5, "enum"], ["sub_sport", 6, "enum"],
       ["total_elapsed_time", 7, "uint32"], ["total_timer_time", 8, "uint32"], ["total_distance", 9, "uint32"],
@@ -125,29 +125,69 @@
 
   const toFitTime = (unixSeconds) => Math.round(unixSeconds) - FIT_EPOCH_OFFSET;
 
+  /** Totals for a contiguous run of samples (a lap or the whole session). */
+  function sliceStats(slice) {
+    const first = slice[0], last = slice[slice.length - 1];
+    let pSum = 0, pMax = 0, hrSum = 0, hrN = 0, hrMax = 0, cadSum = 0, cadN = 0;
+    for (const s of slice) {
+      const p = Math.max(0, s.power || 0);
+      pSum += p; if (p > pMax) pMax = p;
+      if (s.hr) { hrSum += s.hr; hrN++; if (s.hr > hrMax) hrMax = s.hr; }
+      if (s.cadence != null) { cadSum += s.cadence; cadN++; }
+    }
+    const endDistance = (last.distance || 0) + (last.speed || 0);
+    return {
+      start: first.ts, end: last.ts,
+      elapsedMs: (last.ts - first.ts + 1) * 1000, timerMs: slice.length * 1000,
+      distanceCm: Math.max(0, endDistance - (first.distance || 0)) * 100,
+      avgPower: Math.round(pSum / slice.length), maxPower: pMax,
+      avgHr: hrN ? Math.round(hrSum / hrN) : undefined, maxHr: hrMax || undefined,
+      avgCadence: cadN ? Math.round(cadSum / cadN) : undefined,
+    };
+  }
+
   /**
    * Build a FIT activity from 1 Hz samples.
-   * samples: [{ts (unix s), power, hr, cadence, speed (m/s), distance (m)}]
-   * pauses: [{start (unix s), end (unix s)}]
-   * summary: {avgPower, maxPower, avgHr, maxHr, avgCadence, np, tss, if, ftp, kj, timerSeconds, distance}
+   * samples: [{ts (unix s), power, hr, cadence, speed (m/s), distance (m, cumulative at the start of that second),
+   *            lap (workout block index)}]
+   * Pauses are derived from gaps in the timestamps, so the second argument is ignored (kept for compatibility).
+   * summary: {np, tss, if, ftp, kj}
    */
-  function buildActivityFit(samples, pauses, summary) {
+  function buildActivityFit(samples, _pauses, summary) {
+    samples = (samples || []).filter((s, i, arr) => i === 0 || s.ts > arr[i - 1].ts);
     if (!samples.length) throw new Error("No samples recorded");
     const enc = new FitEncoder();
     const SPORT_CYCLING = 2, SUB_INDOOR = 6;
+    const EVENT_TIMER = 0, TYPE_START = 0, TYPE_STOP_ALL = 4;
     const start = samples[0].ts;
     const end = samples[samples.length - 1].ts;
     enc.write("file_id", { type: 4, manufacturer: 255, product: 1, serial_number: 26102026, time_created: toFitTime(start) });
     enc.write("sport", { sport: SPORT_CYCLING, sub_sport: SUB_INDOOR });
-    enc.write("event", { timestamp: toFitTime(start), event: 0, event_type: 0, event_group: 0 });
+    enc.write("event", { timestamp: toFitTime(start), event: EVENT_TIMER, event_type: TYPE_START, event_group: 0 });
 
-    const pauseQueue = (pauses || []).slice().sort((a, b) => a.start - b.start);
-    let pi = 0;
-    for (const s of samples) {
-      while (pi < pauseQueue.length && pauseQueue[pi].start <= s.ts) {
-        const p = pauseQueue[pi++];
-        enc.write("event", { timestamp: toFitTime(p.start), event: 0, event_type: 4, event_group: 0 });
-        if (p.end) enc.write("event", { timestamp: toFitTime(p.end), event: 0, event_type: 0, event_group: 0 });
+    const laps = [];
+    const writeLap = (from, to, trigger) => {
+      const slice = samples.slice(from, to);
+      const st = sliceStats(slice);
+      enc.write("lap", {
+        timestamp: toFitTime(st.end), message_index: laps.length, event: 9, event_type: 1,
+        start_time: toFitTime(st.start), total_elapsed_time: st.elapsedMs, total_timer_time: st.timerMs,
+        total_distance: st.distanceCm, avg_heart_rate: st.avgHr, max_heart_rate: st.maxHr,
+        avg_cadence: st.avgCadence, avg_power: st.avgPower, max_power: st.maxPower,
+        lap_trigger: trigger, sport: SPORT_CYCLING, sub_sport: SUB_INDOOR,
+        wkt_step_index: slice[0].lap == null ? undefined : slice[0].lap,
+      });
+      laps.push(st);
+    };
+
+    let lapStart = 0;
+    samples.forEach((s, i) => {
+      const prev = samples[i - 1];
+      if (prev && s.lap !== prev.lap) { writeLap(lapStart, i, 1); lapStart = i; }
+      if (prev && s.ts - prev.ts > 1) {
+        // Timer was stopped between these two records
+        enc.write("event", { timestamp: toFitTime(prev.ts), event: EVENT_TIMER, event_type: TYPE_STOP_ALL, event_group: 0 });
+        enc.write("event", { timestamp: toFitTime(s.ts), event: EVENT_TIMER, event_type: TYPE_START, event_group: 0 });
       }
       enc.write("record", {
         timestamp: toFitTime(s.ts),
@@ -157,29 +197,24 @@
         speed: s.speed == null ? undefined : s.speed * 1000,
         power: s.power == null ? undefined : Math.max(0, s.power),
       });
-    }
-    enc.write("event", { timestamp: toFitTime(end), event: 0, event_type: 4, event_group: 0 });
+    });
+    enc.write("event", { timestamp: toFitTime(end), event: EVENT_TIMER, event_type: TYPE_STOP_ALL, event_group: 0 });
+    writeLap(lapStart, samples.length, 7); // session end
 
-    const elapsedMs = (end - start + 1) * 1000;
-    const timerMs = summary.timerSeconds * 1000;
-    const common = {
-      timestamp: toFitTime(end), start_time: toFitTime(start),
-      total_elapsed_time: elapsedMs, total_timer_time: timerMs,
-      total_distance: (summary.distance || 0) * 100,
-      avg_heart_rate: summary.avgHr || undefined, max_heart_rate: summary.maxHr || undefined,
-      avg_cadence: summary.avgCadence || undefined,
-      avg_power: summary.avgPower, max_power: summary.maxPower,
-    };
-    enc.write("lap", Object.assign({ event: 9, event_type: 1, sport: SPORT_CYCLING, sub_sport: SUB_INDOOR }, common));
-    enc.write("session", Object.assign({
-      event: 8, event_type: 1, sport: SPORT_CYCLING, sub_sport: SUB_INDOOR,
-      first_lap_index: 0, num_laps: 1,
+    const total = sliceStats(samples);
+    enc.write("session", {
+      timestamp: toFitTime(end), event: 8, event_type: 1, start_time: toFitTime(start),
+      sport: SPORT_CYCLING, sub_sport: SUB_INDOOR,
+      total_elapsed_time: total.elapsedMs, total_timer_time: total.timerMs, total_distance: total.distanceCm,
+      avg_heart_rate: total.avgHr, max_heart_rate: total.maxHr, avg_cadence: total.avgCadence,
+      avg_power: total.avgPower, max_power: total.maxPower,
+      first_lap_index: 0, num_laps: laps.length,
       normalized_power: summary.np, training_stress_score: summary.tss * 10,
       intensity_factor: summary.if * 1000, threshold_power: summary.ftp, total_work: summary.kj * 1000,
-    }, common));
+    });
     const tzOffset = -new Date(end * 1000).getTimezoneOffset() * 60;
     enc.write("activity", {
-      timestamp: toFitTime(end), total_timer_time: timerMs, num_sessions: 1,
+      timestamp: toFitTime(end), total_timer_time: total.timerMs, num_sessions: 1,
       type: 0, event: 26, event_type: 1, local_timestamp: toFitTime(end + tzOffset),
     });
     return enc.finish();
