@@ -264,6 +264,12 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
 .check input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--z3); }
 .check small { display: block; color: var(--muted); }
 .log-box summary { cursor: pointer; color: var(--muted); }
+.dbx { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px 14px; margin: 4px 0 12px; }
+.dbx-status { margin: 4px 0 10px; color: var(--muted); font-size: 14px; }
+.dbx-actions { display: flex; gap: 10px; margin-top: 10px; }
+.upload-status { font-size: 14px; color: var(--muted); flex-basis: 100%; }
+.upload-status[data-state="ok"] { color: var(--ok); }
+.upload-status[data-state="error"] { color: var(--bad); }
 .log-box pre {
   background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin: 8px 0;
   max-height: 220px; overflow: auto; font-size: 12px; white-space: pre-wrap; word-break: break-word;
@@ -388,6 +394,7 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
         <button class="btn" id="btn-done" type="button">Listo</button>
         <button class="btn danger" id="btn-discard" type="button">Descartar</button>
         <span class="file-name" id="summary-file"></span>
+        <span class="upload-status" id="summary-upload" role="status"></span>
       </div>
       <div class="confirm" id="confirm-discard" hidden>
         <p>¿Descartar la sesión? No se podrá recuperar.</p>
@@ -406,6 +413,15 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
     <label class="check" for="set-autopause"><input id="set-autopause" type="checkbox"><span>Pausa automática<small>Se detiene si dejas de pedalear 5 s y sigue al volver.</small></span></label>
     <label class="check" for="set-sounds"><input id="set-sounds" type="checkbox"><span>Pitidos<small>Cuenta atrás de 3 s antes de cada cambio de bloque.</small></span></label>
     <label class="check" for="set-sim"><input id="set-sim" type="checkbox"><span>Modo simulador<small>Para probar la app sin rodillo: el botón Rodillo conecta un rodillo y un pulso ficticios.</small></span></label>
+    <fieldset class="dbx">
+      <legend class="label">Dropbox</legend>
+      <p class="dbx-status" id="dbx-status"></p>
+      <label class="field" for="set-dbx-key" id="dbx-key-field"><span class="label">App key</span><input id="set-dbx-key" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="p. ej. a1b2c3d4e5f6g7h"></label>
+      <div class="dbx-actions">
+        <button class="btn" id="btn-dbx-connect" type="button">Conectar Dropbox</button>
+        <button class="btn ghost" id="btn-dbx-disconnect" type="button" hidden>Desconectar</button>
+      </div>
+    </fieldset>
     <details class="log-box">
       <summary>Registro Bluetooth</summary>
       <pre id="ble-log"></pre>
@@ -1072,6 +1088,168 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
   root.RodilloBle = { Trainer, HeartRateSensor, SimulatedRig, bluetoothAvailable, parseIndoorBikeData, bleLog, errorText };
 })(typeof window !== "undefined" ? window : globalThis);
 </script>
+<script>/* Dropbox upload with OAuth 2 PKCE (no client secret), refresh tokens and an offline retry queue. */
+(function (root) {
+  "use strict";
+
+  const KEY = "rodillo.dropbox";
+  const QUEUE_KEY = "rodillo.dropboxQueue";
+  const VERIFIER_KEY = "rodillo.dropboxPkce";
+
+  function load(key, fallback) {
+    try { const v = localStorage.getItem(key); return v == null ? fallback : JSON.parse(v); } catch (e) { return fallback; }
+  }
+  function save(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* storage full or blocked */ }
+  }
+  function remove(key) { try { localStorage.removeItem(key); } catch (e) { /* ignore */ } }
+
+  const state = () => load(KEY, {});
+  const redirectUri = () => location.origin + location.pathname;
+
+  function base64Url(bytes) {
+    let s = "";
+    for (const b of bytes) s += String.fromCharCode(b);
+    return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function bytesToBase64(bytes) {
+    let s = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(s);
+  }
+  function base64ToBytes(b64) {
+    const s = atob(b64);
+    const out = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+    return out;
+  }
+
+  function isConnected() { return !!state().refreshToken; }
+  function appKey() { return state().appKey || ""; }
+  function setAppKey(key) { const s = state(); s.appKey = (key || "").trim(); save(KEY, s); }
+
+  /** Start the OAuth flow: navigates away to Dropbox and comes back with ?code=. */
+  async function connect(key) {
+    if (key) setAppKey(key);
+    const clientId = appKey();
+    if (!clientId) throw new Error("Falta la App key de Dropbox");
+    const verifier = base64Url(crypto.getRandomValues(new Uint8Array(48)));
+    const challenge = base64Url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))));
+    const nonce = base64Url(crypto.getRandomValues(new Uint8Array(12)));
+    save(VERIFIER_KEY, { verifier, nonce });
+    const params = new URLSearchParams({
+      client_id: clientId, response_type: "code", code_challenge: challenge, code_challenge_method: "S256",
+      token_access_type: "offline", redirect_uri: redirectUri(), state: nonce,
+    });
+    location.href = "https://www.dropbox.com/oauth2/authorize?" + params;
+  }
+
+  /** Finish the OAuth flow if the page was opened by the Dropbox redirect. Returns true/false/null (not a redirect). */
+  async function handleRedirect() {
+    const params = new URLSearchParams(location.search);
+    if (!params.has("code") && !params.has("error")) return null;
+    const pkce = load(VERIFIER_KEY, null);
+    history.replaceState(null, "", redirectUri());
+    remove(VERIFIER_KEY);
+    if (params.has("error")) throw new Error(params.get("error_description") || params.get("error"));
+    if (!pkce || params.get("state") !== pkce.nonce) throw new Error("La respuesta de Dropbox no coincide; vuelve a conectar");
+    const body = new URLSearchParams({
+      code: params.get("code"), grant_type: "authorization_code", client_id: appKey(),
+      code_verifier: pkce.verifier, redirect_uri: redirectUri(),
+    });
+    const res = await fetch("https://api.dropboxapi.com/oauth2/token", { method: "POST", body });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.refresh_token) throw new Error(data.error_description || data.error || "HTTP " + res.status);
+    const s = state();
+    s.refreshToken = data.refresh_token;
+    s.accessToken = data.access_token;
+    s.expiresAt = Date.now() + (data.expires_in || 14400) * 1000 - 60000;
+    s.accountId = data.account_id;
+    save(KEY, s);
+    return true;
+  }
+
+  function disconnect() {
+    const s = state();
+    if (s.accessToken) {
+      fetch("https://api.dropboxapi.com/2/auth/token/revoke", { method: "POST", headers: { Authorization: "Bearer " + s.accessToken } }).catch(() => {});
+    }
+    save(KEY, { appKey: s.appKey });
+  }
+
+  async function accessToken() {
+    const s = state();
+    if (!s.refreshToken) throw new Error("Dropbox no está conectado");
+    if (s.accessToken && Date.now() < s.expiresAt) return s.accessToken;
+    const body = new URLSearchParams({ grant_type: "refresh_token", refresh_token: s.refreshToken, client_id: s.appKey });
+    const res = await fetch("https://api.dropboxapi.com/oauth2/token", { method: "POST", body });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (data.error === "invalid_grant") { save(KEY, { appKey: s.appKey }); throw new Error("Dropbox desconectado: vuelve a conectar en Ajustes"); }
+      throw new Error(data.error_description || data.error || "HTTP " + res.status);
+    }
+    s.accessToken = data.access_token;
+    s.expiresAt = Date.now() + (data.expires_in || 14400) * 1000 - 60000;
+    save(KEY, s);
+    return s.accessToken;
+  }
+
+  /** Upload bytes to the app folder; returns the Dropbox path actually used (renamed if it already existed). */
+  async function upload(fileName, bytes) {
+    const token = await accessToken();
+    const arg = JSON.stringify({ path: "/" + fileName, mode: "add", autorename: true, mute: true });
+    const res = await fetch("https://content.dropboxapi.com/2/files/upload", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token, "Content-Type": "application/octet-stream", "Dropbox-API-Arg": arg },
+      body: bytes,
+    });
+    const text = await res.text();
+    if (!res.ok) throw new Error("Dropbox " + res.status + ": " + text.slice(0, 160));
+    return JSON.parse(text).path_display;
+  }
+
+  async function removeFile(path) {
+    const token = await accessToken();
+    const res = await fetch("https://api.dropboxapi.com/2/files/delete_v2", {
+      method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({ path }),
+    });
+    if (!res.ok) throw new Error("Dropbox " + res.status);
+  }
+
+  // ---------- Offline queue ----------
+  function enqueue(fileName, bytes) {
+    const q = load(QUEUE_KEY, []).filter((x) => x.name !== fileName);
+    q.push({ name: fileName, b64: bytesToBase64(bytes), at: Date.now() });
+    save(QUEUE_KEY, q);
+  }
+  function dequeue(fileName) { save(QUEUE_KEY, load(QUEUE_KEY, []).filter((x) => x.name !== fileName)); }
+  function pending() { return load(QUEUE_KEY, []).map((x) => x.name); }
+
+  /** Upload, or keep the file queued for a later retry when it fails. */
+  async function uploadOrQueue(fileName, bytes) {
+    enqueue(fileName, bytes);
+    const path = await upload(fileName, bytes);
+    dequeue(fileName);
+    return path;
+  }
+
+  /** Retry queued uploads; returns the number uploaded. */
+  async function flushQueue() {
+    if (!isConnected()) return 0;
+    let done = 0;
+    for (const item of load(QUEUE_KEY, [])) {
+      try { await upload(item.name, base64ToBytes(item.b64)); dequeue(item.name); done++; } catch (e) { break; }
+    }
+    return done;
+  }
+
+  root.RodilloDropbox = {
+    isConnected, appKey, setAppKey, connect, handleRedirect, disconnect,
+    upload, uploadOrQueue, removeFile, flushQueue, pending, dequeue, redirectUri,
+  };
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
 <script>/* Rodillo app: workout library, live ERG session, recording and FIT export. */
 (function () {
   "use strict";
@@ -1079,6 +1257,7 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
   const W = window.RodilloWorkouts;
   const F = window.RodilloFit;
   const B = window.RodilloBle;
+  const D = window.RodilloDropbox;
   const PLAN = window.RODILLO_PLAN || [];
 
   const ZONE_VARS = ["--z1", "--z2", "--z3", "--z4", "--z5", "--z6"];
@@ -1646,6 +1825,28 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
     lastSummary = buildSummary(ride);
     renderSummary(lastSummary);
     showView("summary");
+    uploadSummary(lastSummary);
+  }
+
+  function fitBytes(sum) {
+    return F.buildActivityFit(sum.ride.samples, sum.ride.pauses, Object.assign({ ftp: settings.ftp }, sum.stats));
+  }
+
+  function setUploadStatus(text, state) {
+    const s = $("#summary-upload");
+    s.textContent = text; s.dataset.state = state || "";
+  }
+
+  /** Send the finished ride to Dropbox; failures stay queued and are retried later. */
+  async function uploadSummary(sum) {
+    if (!D.isConnected()) { setUploadStatus("Dropbox no está conectado (Ajustes): guarda el FIT a mano."); return; }
+    setUploadStatus("Subiendo a Dropbox…");
+    try {
+      sum.dropboxPath = await D.uploadOrQueue(sum.fileName, fitBytes(sum));
+      if (lastSummary === sum) setUploadStatus("Guardado en Dropbox: " + sum.dropboxPath, "ok");
+    } catch (e) {
+      if (lastSummary === sum) setUploadStatus("No se pudo subir (" + B.errorText(e) + "). Queda en cola y se reintenta al abrir la app.", "error");
+    }
   }
 
   function buildSummary(r) {
@@ -1680,8 +1881,7 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
   async function saveFit() {
     if (!lastSummary) return;
     const r = lastSummary.ride;
-    const bytes = F.buildActivityFit(r.samples.map((s) => s), r.pauses,
-      Object.assign({ ftp: settings.ftp }, lastSummary.stats));
+    const bytes = fitBytes(lastSummary);
     const blob = new Blob([bytes], { type: "application/vnd.ant.fit" });
     const file = new File([blob], lastSummary.fileName, { type: "application/octet-stream" });
     try {
@@ -1700,6 +1900,10 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
 
   function discardRide() {
     store.remove("recovery");
+    if (lastSummary) {
+      D.dequeue(lastSummary.fileName);
+      if (lastSummary.dropboxPath) D.removeFile(lastSummary.dropboxPath).catch((e) => toast("No se pudo borrar de Dropbox: " + B.errorText(e), "warn"));
+    }
     ride = null; lastSummary = null;
     showView("library");
     renderLibrary();
@@ -1712,6 +1916,7 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
     $("#set-sim").checked = settings.simulator;
     $("#set-sounds").checked = settings.sounds;
     $("#set-autopause").checked = settings.autoPause;
+    renderDropboxSettings();
     $("#ble-log").textContent = B.bleLog.length ? B.bleLog.join("\n") : "Todavía no hay registro. Conecta el rodillo o el pulso.";
     $("#settings").hidden = false;
   }
@@ -1729,6 +1934,18 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
     $("#ftp-label").textContent = "FTP " + settings.ftp + " W";
     renderLibrary();
     toast("Ajustes guardados.");
+  }
+
+  function renderDropboxSettings() {
+    const connected = D.isConnected();
+    const queued = D.pending().length;
+    $("#dbx-status").textContent = connected
+      ? "Conectado. Cada sesión se sube al terminar a la carpeta Aplicaciones de tu Dropbox." + (queued ? " En cola: " + queued + "." : "")
+      : "Sin conectar. Crea la app en dropbox.com/developers, pega aquí su App key y pulsa Conectar.";
+    $("#dbx-key-field").hidden = connected;
+    $("#set-dbx-key").value = D.appKey();
+    $("#btn-dbx-connect").hidden = connected;
+    $("#btn-dbx-disconnect").hidden = !connected;
   }
 
   function selectLog() {
@@ -1766,6 +1983,17 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
     $("#chip-trainer").addEventListener("click", connectTrainer);
     $("#chip-hr").addEventListener("click", connectHr);
     $("#btn-settings").addEventListener("click", openSettings);
+    $("#btn-dbx-connect").addEventListener("click", () => {
+      if (ride && !ride.finished) { toast("Termina la sesión antes de conectar Dropbox.", "warn"); return; }
+      D.connect($("#set-dbx-key").value).catch((e) => toast("Dropbox: " + B.errorText(e), "error"));
+    });
+    $("#btn-dbx-disconnect").addEventListener("click", () => { D.disconnect(); renderDropboxSettings(); toast("Dropbox desconectado."); });
+    D.handleRedirect().then((r) => {
+      if (r) { toast("Dropbox conectado. Las sesiones se subirán al terminar."); openSettings(); }
+      return D.flushQueue();
+    }).then((n) => { if (n) toast(n === 1 ? "Sesión pendiente subida a Dropbox." : n + " sesiones pendientes subidas a Dropbox."); })
+      .catch((e) => toast("Dropbox: " + B.errorText(e), "error"));
+    window.addEventListener("online", () => D.flushQueue().catch(() => {}));
     // Full screen, only where the browser lets the page request it
     const doc = document.documentElement;
     const requestFs = doc.requestFullscreen || doc.webkitRequestFullscreen;

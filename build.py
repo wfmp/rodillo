@@ -3,7 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent
 SRC = ROOT / "src"
-DIST = ROOT / "dist"  # copy dist/index.html to the repo root to publish
+DIST = ROOT / "dist"
 
 
 def build():
@@ -13,6 +13,7 @@ def build():
         "/*FIT_JS*/": (SRC / "fit.js").read_text(encoding="utf-8"),
         "/*WORKOUTS_JS*/": (SRC / "workouts.js").read_text(encoding="utf-8"),
         "/*BLE_JS*/": (SRC / "ble.js").read_text(encoding="utf-8"),
+        "/*DROPBOX_JS*/": (SRC / "dropbox.js").read_text(encoding="utf-8"),
         "/*APP_JS*/": (SRC / "app.js").read_text(encoding="utf-8"),
     }
     for marker, content in replacements.items():

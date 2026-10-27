@@ -5,6 +5,7 @@
   const W = window.RodilloWorkouts;
   const F = window.RodilloFit;
   const B = window.RodilloBle;
+  const D = window.RodilloDropbox;
   const PLAN = window.RODILLO_PLAN || [];
 
   const ZONE_VARS = ["--z1", "--z2", "--z3", "--z4", "--z5", "--z6"];
@@ -572,6 +573,28 @@
     lastSummary = buildSummary(ride);
     renderSummary(lastSummary);
     showView("summary");
+    uploadSummary(lastSummary);
+  }
+
+  function fitBytes(sum) {
+    return F.buildActivityFit(sum.ride.samples, sum.ride.pauses, Object.assign({ ftp: settings.ftp }, sum.stats));
+  }
+
+  function setUploadStatus(text, state) {
+    const s = $("#summary-upload");
+    s.textContent = text; s.dataset.state = state || "";
+  }
+
+  /** Send the finished ride to Dropbox; failures stay queued and are retried later. */
+  async function uploadSummary(sum) {
+    if (!D.isConnected()) { setUploadStatus("Dropbox no está conectado (Ajustes): guarda el FIT a mano."); return; }
+    setUploadStatus("Subiendo a Dropbox…");
+    try {
+      sum.dropboxPath = await D.uploadOrQueue(sum.fileName, fitBytes(sum));
+      if (lastSummary === sum) setUploadStatus("Guardado en Dropbox: " + sum.dropboxPath, "ok");
+    } catch (e) {
+      if (lastSummary === sum) setUploadStatus("No se pudo subir (" + B.errorText(e) + "). Queda en cola y se reintenta al abrir la app.", "error");
+    }
   }
 
   function buildSummary(r) {
@@ -606,8 +629,7 @@
   async function saveFit() {
     if (!lastSummary) return;
     const r = lastSummary.ride;
-    const bytes = F.buildActivityFit(r.samples.map((s) => s), r.pauses,
-      Object.assign({ ftp: settings.ftp }, lastSummary.stats));
+    const bytes = fitBytes(lastSummary);
     const blob = new Blob([bytes], { type: "application/vnd.ant.fit" });
     const file = new File([blob], lastSummary.fileName, { type: "application/octet-stream" });
     try {
@@ -626,6 +648,10 @@
 
   function discardRide() {
     store.remove("recovery");
+    if (lastSummary) {
+      D.dequeue(lastSummary.fileName);
+      if (lastSummary.dropboxPath) D.removeFile(lastSummary.dropboxPath).catch((e) => toast("No se pudo borrar de Dropbox: " + B.errorText(e), "warn"));
+    }
     ride = null; lastSummary = null;
     showView("library");
     renderLibrary();
@@ -638,6 +664,7 @@
     $("#set-sim").checked = settings.simulator;
     $("#set-sounds").checked = settings.sounds;
     $("#set-autopause").checked = settings.autoPause;
+    renderDropboxSettings();
     $("#ble-log").textContent = B.bleLog.length ? B.bleLog.join("\n") : "Todavía no hay registro. Conecta el rodillo o el pulso.";
     $("#settings").hidden = false;
   }
@@ -655,6 +682,18 @@
     $("#ftp-label").textContent = "FTP " + settings.ftp + " W";
     renderLibrary();
     toast("Ajustes guardados.");
+  }
+
+  function renderDropboxSettings() {
+    const connected = D.isConnected();
+    const queued = D.pending().length;
+    $("#dbx-status").textContent = connected
+      ? "Conectado. Cada sesión se sube al terminar a la carpeta Aplicaciones de tu Dropbox." + (queued ? " En cola: " + queued + "." : "")
+      : "Sin conectar. Crea la app en dropbox.com/developers, pega aquí su App key y pulsa Conectar.";
+    $("#dbx-key-field").hidden = connected;
+    $("#set-dbx-key").value = D.appKey();
+    $("#btn-dbx-connect").hidden = connected;
+    $("#btn-dbx-disconnect").hidden = !connected;
   }
 
   function selectLog() {
@@ -692,6 +731,17 @@
     $("#chip-trainer").addEventListener("click", connectTrainer);
     $("#chip-hr").addEventListener("click", connectHr);
     $("#btn-settings").addEventListener("click", openSettings);
+    $("#btn-dbx-connect").addEventListener("click", () => {
+      if (ride && !ride.finished) { toast("Termina la sesión antes de conectar Dropbox.", "warn"); return; }
+      D.connect($("#set-dbx-key").value).catch((e) => toast("Dropbox: " + B.errorText(e), "error"));
+    });
+    $("#btn-dbx-disconnect").addEventListener("click", () => { D.disconnect(); renderDropboxSettings(); toast("Dropbox desconectado."); });
+    D.handleRedirect().then((r) => {
+      if (r) { toast("Dropbox conectado. Las sesiones se subirán al terminar."); openSettings(); }
+      return D.flushQueue();
+    }).then((n) => { if (n) toast(n === 1 ? "Sesión pendiente subida a Dropbox." : n + " sesiones pendientes subidas a Dropbox."); })
+      .catch((e) => toast("Dropbox: " + B.errorText(e), "error"));
+    window.addEventListener("online", () => D.flushQueue().catch(() => {}));
     // Full screen, only where the browser lets the page request it
     const doc = document.documentElement;
     const requestFs = doc.requestFullscreen || doc.webkitRequestFullscreen;

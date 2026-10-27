@@ -264,6 +264,12 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
 .check input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--z3); }
 .check small { display: block; color: var(--muted); }
 .log-box summary { cursor: pointer; color: var(--muted); }
+.dbx { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px 14px; margin: 4px 0 12px; }
+.dbx-status { margin: 4px 0 10px; color: var(--muted); font-size: 14px; }
+.dbx-actions { display: flex; gap: 10px; margin-top: 10px; }
+.upload-status { font-size: 14px; color: var(--muted); flex-basis: 100%; }
+.upload-status[data-state="ok"] { color: var(--ok); }
+.upload-status[data-state="error"] { color: var(--bad); }
 .log-box pre {
   background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin: 8px 0;
   max-height: 220px; overflow: auto; font-size: 12px; white-space: pre-wrap; word-break: break-word;
@@ -388,6 +394,7 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
         <button class="btn" id="btn-done" type="button">Listo</button>
         <button class="btn danger" id="btn-discard" type="button">Descartar</button>
         <span class="file-name" id="summary-file"></span>
+        <span class="upload-status" id="summary-upload" role="status"></span>
       </div>
       <div class="confirm" id="confirm-discard" hidden>
         <p>¿Descartar la sesión? No se podrá recuperar.</p>
@@ -406,6 +413,15 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
     <label class="check" for="set-autopause"><input id="set-autopause" type="checkbox"><span>Pausa automática<small>Se detiene si dejas de pedalear 5 s y sigue al volver.</small></span></label>
     <label class="check" for="set-sounds"><input id="set-sounds" type="checkbox"><span>Pitidos<small>Cuenta atrás de 3 s antes de cada cambio de bloque.</small></span></label>
     <label class="check" for="set-sim"><input id="set-sim" type="checkbox"><span>Modo simulador<small>Para probar la app sin rodillo: el botón Rodillo conecta un rodillo y un pulso ficticios.</small></span></label>
+    <fieldset class="dbx">
+      <legend class="label">Dropbox</legend>
+      <p class="dbx-status" id="dbx-status"></p>
+      <label class="field" for="set-dbx-key" id="dbx-key-field"><span class="label">App key</span><input id="set-dbx-key" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="p. ej. a1b2c3d4e5f6g7h"></label>
+      <div class="dbx-actions">
+        <button class="btn" id="btn-dbx-connect" type="button">Conectar Dropbox</button>
+        <button class="btn ghost" id="btn-dbx-disconnect" type="button" hidden>Desconectar</button>
+      </div>
+    </fieldset>
     <details class="log-box">
       <summary>Registro Bluetooth</summary>
       <pre id="ble-log"></pre>
@@ -424,6 +440,7 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
 <script>/*FIT_JS*/</script>
 <script>/*WORKOUTS_JS*/</script>
 <script>/*BLE_JS*/</script>
+<script>/*DROPBOX_JS*/</script>
 <script>/*APP_JS*/</script>
 </body>
 </html>
