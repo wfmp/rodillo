@@ -199,6 +199,19 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
 .side .box { display: flex; flex-direction: column; justify-content: center; }
 .mid-val { font-family: var(--font-num); font-weight: 600; font-size: clamp(28px, min(5vw, 7vh), 60px); line-height: 1; font-variant-numeric: tabular-nums; }
 .hr-val { color: var(--hr); }
+.zone-tag {
+  position: absolute; right: clamp(12px, 3vw, 40px); top: 50%; transform: translateY(-50%);
+  font-family: var(--font-num); font-weight: 700; font-size: clamp(56px, min(10vw, 16vh), 140px); line-height: 1;
+  color: var(--pzone, var(--muted));
+}
+.hr-box { position: relative; }
+.zone-tag.small-tag { right: clamp(10px, 2vw, 24px); font-size: clamp(30px, min(5vw, 7vh), 56px); color: var(--hzone, var(--muted)); }
+.ftp-btn {
+  width: 84px; height: 84px; border-radius: 50%; border: 2px solid var(--z4); background: var(--panel-2); color: var(--fg);
+  font-family: var(--font-num); font-weight: 700; font-size: 26px; letter-spacing: 0.04em; cursor: pointer; flex: none;
+}
+.ftp-btn:hover { background: color-mix(in srgb, var(--z4) 18%, var(--panel-2)); }
+.ftp-result-val { font-family: var(--font-num); font-weight: 700; font-size: 56px; color: var(--z4); text-align: center; }
 .small-val { font-family: var(--font-num); font-weight: 600; font-size: clamp(22px, 4vh, 32px); line-height: 1.05; font-variant-numeric: tabular-nums; }
 .load-box { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; }
 .load-box > div { display: flex; flex-direction: column; gap: 2px; padding-inline: 4px; }
@@ -542,6 +555,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
         <h1>Bloque anaeróbico · 26 oct – 28 nov</h1>
         <p>Conecta el rodillo y el pulso arriba, elige la sesión del día y pulsa Empezar. Los vatios salen de tu FTP y puedes subirlos o bajarlos durante la sesión.</p>
       </div>
+      <button class="ftp-btn" id="btn-ftp-test" type="button" aria-label="Test de FTP en rampa">FTP</button>
       <div class="lib-actions">
         <label class="btn" for="import-input">Importar .mrc / .erg / .zwo
           <input id="import-input" type="file" accept=".mrc,.erg,.zwo,text/plain,application/xml" multiple>
@@ -560,6 +574,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
         <div class="ride-status" id="ride-status" role="status"></div>
       </div>
       <div class="box box-power" id="box-power">
+        <div class="zone-tag" id="m-pzone" aria-label="Zona de potencia"></div>
         <div class="label">Potencia (3 s)</div>
         <div class="power-row"><span class="big power-val" id="m-power">—</span><span class="power-unit">W</span></div>
         <div class="target-row">
@@ -573,7 +588,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
         <div class="seg-next" id="seg-next"></div>
       </div>
       <div class="side">
-        <div class="box"><div class="label">Pulso</div><div class="mid-val hr-val" id="m-hr">—</div></div>
+        <div class="box hr-box"><div class="label">Pulso</div><div class="mid-val hr-val" id="m-hr">—</div><div class="zone-tag small-tag" id="m-hzone" aria-label="Zona de pulso"></div></div>
         <div class="box"><div class="label">Cadencia</div><div class="mid-val" id="m-cadence">—</div></div>
         <div class="box"><div class="label">Tiempo</div><div class="small-val" id="m-elapsed">0:00</div><div class="label">Quedan <span id="m-remaining" class="num">—</span></div></div>
         <div class="box load-box">
@@ -946,6 +961,16 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       <button class="btn primary" type="submit">Guardar</button>
     </div>
   </form>
+</div>
+
+<div class="modal" id="ftp-result" hidden>
+  <div class="confirm" role="dialog" aria-modal="true" aria-labelledby="ftp-result-title">
+    <p id="ftp-result-title">Nuevo FTP estimado</p>
+    <span class="ftp-result-val num" id="ftp-result-val">—</span>
+    <span class="seg-next" id="ftp-result-text"></span>
+    <button class="btn primary" id="ftp-result-yes" type="button">Actualizar FTP</button>
+    <button class="btn ghost" id="ftp-result-no" type="button">Mantener el actual</button>
+  </div>
 </div>
 
 <div class="overlay" id="sport-dialog" hidden>

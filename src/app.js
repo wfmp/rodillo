@@ -277,6 +277,19 @@
       }
     }
     $("#wk-blocks").replaceChildren(...rows);
+    if (w.ramp) {
+      // The ramp lasts until failure: describe the protocol instead of totals for all 40 steps
+      const step = Math.round(settings.ftp * RAMP_STEP_PCT / 100), start = Math.round(settings.ftp * RAMP_START_PCT / 100);
+      const typical = Math.round((100 * 1.33 - RAMP_START_PCT) / RAMP_STEP_PCT); // steps until ~133 % FTP
+      $("#wk-grid").replaceChildren(...[["Calentamiento", "5:00 · " + Math.round(settings.ftp * 0.5) + " W"], ["Primer escalón", start + " W"],
+        ["Sube", "+" + step + " W/min"], ["Duración típica", (5 + typical + 5) + " min"], ["FTP actual", settings.ftp + " W"], ["Resultado", "75 % del mejor minuto"]]
+        .map(([k, v]) => el("div", { class: "stat" }, el("span", { class: "stat-k" }, k), el("span", { class: "stat-v" }, v))));
+      $("#wk-blocks").replaceChildren(
+        el("li", { class: "blk" }, el("i", { class: "zone-dot", style: "background:var(--z1)" }), el("span", { class: "num blk-dur" }, "5:00"), el("span", { class: "num" }, Math.round(settings.ftp * 0.5) + " W"), el("span", { class: "muted num" }, "50 %")),
+        el("li", { class: "blk-rep" }, "Escalones de 1:00 hasta no poder más"),
+        el("li", { class: "blk in-rep" }, el("i", { class: "zone-dot", style: "background:var(--z4)" }), el("span", { class: "num blk-dur" }, "1:00"), el("span", { class: "num" }, start + " W, " + (start + step) + " W, " + (start + 2 * step) + " W…"), el("span", { class: "muted num" }, "+" + RAMP_STEP_PCT + " %/min")),
+        el("li", { class: "blk" }, el("i", { class: "zone-dot", style: "background:var(--z1)" }), el("span", { class: "num blk-dur" }, "5:00"), el("span", { class: "num" }, Math.round(settings.ftp * 0.4) + " W"), el("span", { class: "muted num" }, "40 %")));
+    }
     showView("workout");
     window.scrollTo(0, 0);
     requestAnimationFrame(() => drawProfile($("#wk-profile"), w, {}));
@@ -398,6 +411,52 @@
     const seg = w.segments[loc.index];
     const pct = w.unit === "watts" ? Math.max(seg[1], seg[2]) / settings.ftp * 100 : Math.max(seg[1], seg[2]);
     return seg[0] <= SPRINT_MAX_SECONDS && pct >= SPRINT_MIN_PCT;
+  }
+
+  /** Heart-rate zone by heart-rate reserve (Karvonen): Z1 < 60 %, Z2 < 70 %, Z3 < 80 %, Z4 < 90 %, Z5 above. */
+  function hrZone(hr) {
+    const rest = settings.hrRest || 50, max = settings.hrMax || 182;
+    const r = (hr - rest) / (max - rest);
+    return r < 0.6 ? 1 : r < 0.7 ? 2 : r < 0.8 ? 3 : r < 0.9 ? 4 : 5;
+  }
+
+  // ---------- FTP ramp test ----------
+  const RAMP_WARMUP = 300, RAMP_COOLDOWN = 300, RAMP_START_PCT = 60, RAMP_STEP_PCT = 6, RAMP_STEPS = 40;
+  function rampWorkout() {
+    const segs = [[RAMP_WARMUP, 50, 50]];
+    for (let i = 0; i < RAMP_STEPS; i++) { const p = RAMP_START_PCT + RAMP_STEP_PCT * i; segs.push([60, p, p]); }
+    segs.push([RAMP_COOLDOWN, 40, 40]);
+    return {
+      id: "ftp-ramp", name: "Test FTP en rampa", unit: "pct", ramp: true, segments: segs,
+      description: "5 min suaves y luego escalones de 1 min que suben un " + RAMP_STEP_PCT + " % del FTP (" +
+        Math.round(settings.ftp * RAMP_STEP_PCT / 100) + " W) cada minuto, en ERG, hasta que no puedas mantener el ritmo. " +
+        "Termina cuando la cadencia baja de 55 rpm durante 5 s o al tocar «No puedo más». FTP = 75 % de tu mejor minuto.",
+    };
+  }
+  const rampCooldownStart = () => RAMP_WARMUP + 60 * RAMP_STEPS;
+
+  /** End of the ramp: estimate FTP from the best 60 s of the steps, then ride the cool-down. */
+  function endRamp(reason) {
+    if (!ride || !ride.workout.ramp || ride.rampDone) return;
+    ride.rampDone = true;
+    const steps = ride.samples.filter((s) => s.t >= RAMP_WARMUP && s.t < rampCooldownStart()).map((s) => s.power || 0);
+    let best = 0;
+    for (let i = 60; i <= steps.length; i++) {
+      let sum = 0;
+      for (let k = i - 60; k < i; k++) sum += steps[k];
+      best = Math.max(best, sum / 60);
+    }
+    ride.t = rampCooldownStart();
+    setTarget(currentTarget());
+    beep(440, 300);
+    if (best < 50) { toast("La rampa fue demasiado corta para estimar el FTP.", "warn"); return; }
+    const ftp = Math.round(best * 0.75);
+    ride.rampResult = { best: Math.round(best), ftp };
+    $("#ftp-result-val").textContent = ftp + " W";
+    $("#ftp-result-text").textContent = (reason === "cadence" ? "Cadencia por debajo de 55 rpm. " : "") +
+      "Mejor minuto: " + Math.round(best) + " W → 75 % = " + ftp + " W. FTP actual: " + settings.ftp + " W (" +
+      (ftp >= settings.ftp ? "+" : "") + (ftp - settings.ftp) + " W). Ahora 5 min suaves.";
+    $("#ftp-result").hidden = false;
   }
 
   function setTarget(watts) {
@@ -533,6 +592,12 @@
   }
 
   function recordSecond(now, pedaling, powerFresh) {
+    // Ramp test: cadence under 55 rpm for 5 s during the steps ends the ramp (checked before auto-pause)
+    if (ride.workout.ramp && !ride.rampDone && ride.t >= RAMP_WARMUP + 60 && ride.t < rampCooldownStart()) {
+      const cad = powerFresh && live.cadence != null ? live.cadence : 0;
+      ride.lowCadence = cad < 55 ? (ride.lowCadence || 0) + 1 : 0;
+      if (ride.lowCadence >= 5) { ride.idleSamples = 0; endRamp("cadence"); }
+    }
     if (!pedaling && ride.started && settings.autoPause && ride.idleSamples >= 4) {
       // Fifth second without pedaling: pause and discard the idle seconds already recorded
       pauseRecording();
@@ -586,6 +651,7 @@
 
   function skipSegment() {
     if (!ride || ride.workout.manual) return;
+    if (ride.workout.ramp && !ride.rampDone && ride.t >= RAMP_WARMUP) { endRamp("button"); return; }
     const loc = W.segmentAt(ride.workout, ride.t);
     if (!loc) return;
     // Move the workout clock to the next segment; recorded samples stay untouched
@@ -615,6 +681,14 @@
     $("#m-target").textContent = target != null ? target : "—";
     $("#m-hr").textContent = now - live.hrAt < 5000 && live.hr ? live.hr : "—";
     $("#m-cadence").textContent = powerFresh && live.cadence != null ? Math.round(live.cadence) : "—";
+    // Live zones: power vs FTP (Z1-Z6), heart rate by heart-rate reserve (Z1-Z5)
+    const pz = powerFresh && p3 != null && p3 > 0 ? W.zoneForPct(p3 / settings.ftp * 100) : null;
+    $("#m-pzone").textContent = pz ? "Z" + pz : "";
+    document.documentElement.style.setProperty("--pzone", pz ? css(ZONE_VARS[pz - 1]) : css("--muted"));
+    const hrNow = now - live.hrAt < 5000 ? live.hr : null;
+    const hz = hrNow ? hrZone(hrNow) : null;
+    $("#m-hzone").textContent = hz ? "Z" + hz : "";
+    document.documentElement.style.setProperty("--hzone", hz ? css(ZONE_VARS[hz - 1]) : css("--muted"));
 
     const pct = target ? target / settings.ftp * 100 : 0;
     document.documentElement.style.setProperty("--zone", zoneColor(pct || 50));
@@ -637,7 +711,7 @@
         const [n0, n1] = W.segmentWatts(w, next, settings.ftp).map((v) => Math.round(v * ride.intensity));
         $("#seg-next").replaceChildren("Siguiente: ", el("b", {}, fmtTime(next[0])), " a " + (n0 === n1 ? n0 + " W" : n0 + "→" + n1 + " W"));
       } else $("#seg-next").textContent = "Último bloque";
-      $("#m-remaining").textContent = fmtTime(total - ride.t);
+      $("#m-remaining").textContent = w.ramp && !ride.rampDone ? "hasta no poder más" : fmtTime(total - ride.t);
     } else {
       $("#seg-countdown").textContent = fmtTime(ride.samples.length);
       $("#seg-label").textContent = "ERG manual";
@@ -650,6 +724,7 @@
     $("#m-kj").textContent = stats.kj;
     $("#m-tss").textContent = stats.tss.toFixed(0);
 
+    $("#btn-skip").textContent = w.ramp && !ride.rampDone && ride.t >= RAMP_WARMUP ? "No puedo más" : "Saltar bloque";
     const btn = $("#btn-pause");
     btn.textContent = !ride.started ? "Empezar" : ride.paused ? "Seguir" : "Pausa";
     btn.classList.toggle("primary", ride.paused);
@@ -925,6 +1000,16 @@
     });
     if (!B.bluetoothAvailable()) $("#bt-hint").hidden = false;
     $("#wk-back").addEventListener("click", () => window.RodilloViews.showTab("library"));
+    $("#btn-ftp-test").addEventListener("click", () => openWorkout(rampWorkout()));
+    $("#ftp-result-no").addEventListener("click", () => { $("#ftp-result").hidden = true; });
+    $("#ftp-result-yes").addEventListener("click", () => {
+      $("#ftp-result").hidden = true;
+      if (!ride || !ride.rampResult) return;
+      settings.ftp = ride.rampResult.ftp;
+      store.set("settings", settings);
+      $("#ftp-label").textContent = "FTP " + settings.ftp + " W";
+      toast("FTP actualizado a " + settings.ftp + " W.");
+    });
     $("#wk-start").addEventListener("click", () => { if (previewWorkout) startRide(previewWorkout); });
     window.RodilloApp = { $, el, toast, settings, store, fmtTime, showView, describeWorkout, renderLibrary };
     window.RodilloViews.init(window.RodilloApp);

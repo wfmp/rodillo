@@ -199,6 +199,19 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
 .side .box { display: flex; flex-direction: column; justify-content: center; }
 .mid-val { font-family: var(--font-num); font-weight: 600; font-size: clamp(28px, min(5vw, 7vh), 60px); line-height: 1; font-variant-numeric: tabular-nums; }
 .hr-val { color: var(--hr); }
+.zone-tag {
+  position: absolute; right: clamp(12px, 3vw, 40px); top: 50%; transform: translateY(-50%);
+  font-family: var(--font-num); font-weight: 700; font-size: clamp(56px, min(10vw, 16vh), 140px); line-height: 1;
+  color: var(--pzone, var(--muted));
+}
+.hr-box { position: relative; }
+.zone-tag.small-tag { right: clamp(10px, 2vw, 24px); font-size: clamp(30px, min(5vw, 7vh), 56px); color: var(--hzone, var(--muted)); }
+.ftp-btn {
+  width: 84px; height: 84px; border-radius: 50%; border: 2px solid var(--z4); background: var(--panel-2); color: var(--fg);
+  font-family: var(--font-num); font-weight: 700; font-size: 26px; letter-spacing: 0.04em; cursor: pointer; flex: none;
+}
+.ftp-btn:hover { background: color-mix(in srgb, var(--z4) 18%, var(--panel-2)); }
+.ftp-result-val { font-family: var(--font-num); font-weight: 700; font-size: 56px; color: var(--z4); text-align: center; }
 .small-val { font-family: var(--font-num); font-weight: 600; font-size: clamp(22px, 4vh, 32px); line-height: 1.05; font-variant-numeric: tabular-nums; }
 .load-box { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; }
 .load-box > div { display: flex; flex-direction: column; gap: 2px; padding-inline: 4px; }
@@ -542,6 +555,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
         <h1>Bloque anaeróbico · 26 oct – 28 nov</h1>
         <p>Conecta el rodillo y el pulso arriba, elige la sesión del día y pulsa Empezar. Los vatios salen de tu FTP y puedes subirlos o bajarlos durante la sesión.</p>
       </div>
+      <button class="ftp-btn" id="btn-ftp-test" type="button" aria-label="Test de FTP en rampa">FTP</button>
       <div class="lib-actions">
         <label class="btn" for="import-input">Importar .mrc / .erg / .zwo
           <input id="import-input" type="file" accept=".mrc,.erg,.zwo,text/plain,application/xml" multiple>
@@ -560,6 +574,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
         <div class="ride-status" id="ride-status" role="status"></div>
       </div>
       <div class="box box-power" id="box-power">
+        <div class="zone-tag" id="m-pzone" aria-label="Zona de potencia"></div>
         <div class="label">Potencia (3 s)</div>
         <div class="power-row"><span class="big power-val" id="m-power">—</span><span class="power-unit">W</span></div>
         <div class="target-row">
@@ -573,7 +588,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
         <div class="seg-next" id="seg-next"></div>
       </div>
       <div class="side">
-        <div class="box"><div class="label">Pulso</div><div class="mid-val hr-val" id="m-hr">—</div></div>
+        <div class="box hr-box"><div class="label">Pulso</div><div class="mid-val hr-val" id="m-hr">—</div><div class="zone-tag small-tag" id="m-hzone" aria-label="Zona de pulso"></div></div>
         <div class="box"><div class="label">Cadencia</div><div class="mid-val" id="m-cadence">—</div></div>
         <div class="box"><div class="label">Tiempo</div><div class="small-val" id="m-elapsed">0:00</div><div class="label">Quedan <span id="m-remaining" class="num">—</span></div></div>
         <div class="box load-box">
@@ -948,6 +963,16 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
   </form>
 </div>
 
+<div class="modal" id="ftp-result" hidden>
+  <div class="confirm" role="dialog" aria-modal="true" aria-labelledby="ftp-result-title">
+    <p id="ftp-result-title">Nuevo FTP estimado</p>
+    <span class="ftp-result-val num" id="ftp-result-val">—</span>
+    <span class="seg-next" id="ftp-result-text"></span>
+    <button class="btn primary" id="ftp-result-yes" type="button">Actualizar FTP</button>
+    <button class="btn ghost" id="ftp-result-no" type="button">Mantener el actual</button>
+  </div>
+</div>
+
 <div class="overlay" id="sport-dialog" hidden>
   <div class="dialog">
     <h2>¿Qué deporte fue?</h2>
@@ -1033,7 +1058,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script>window.RODILLO_PLAN = [{"id": "2026-10-26_W1_B_VO2_4x3", "name": "2026-10-26_W1_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-10-27_W1_C_SweetSpot_Sprints", "name": "2026-10-27_W1_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-10-31_W1_A_Anaerobic_8x30s", "name": "2026-10-31_W1_A_Anaerobic_8x30s", "description": "Anaerobic 8x30s @150% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-02_W2_B_VO2_4x3", "name": "2026-11-02_W2_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-05_W2_C_SweetSpot_Short", "name": "2026-11-05_W2_C_SweetSpot_Short", "description": "Short sweet spot 20min @85% (optional)", "segments": [[600, 50, 75], [1200, 85, 85], [300, 60, 40]]}, {"id": "2026-11-13_W3_B_VO2_5x3", "name": "2026-11-13_W3_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "name": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "description": "Repeated sprints: 2 sets of 6x30s @130% / 30s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [300, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-16_W4_B_VO2_5x3", "name": "2026-11-16_W4_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-19_W4_C_SweetSpot_Sprints", "name": "2026-11-19_W4_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-11-22_W4_A_Anaerobic_6x45s", "name": "2026-11-22_W4_A_Anaerobic_6x45s", "description": "Anaerobic capacity: 6x45s @125% / 90s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-24_W5_B_VO2_5x4", "name": "2026-11-24_W5_B_VO2_5x4", "description": "VO2max 5x4min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-28_W5_FTP_Test_20min", "name": "2026-11-28_W5_FTP_Test_20min", "description": "FTP test: 20min max effort in slope/resistance mode, not ERG", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [300, 105, 105], [600, 50, 50], [1200, 100, 100], [300, 50, 50], [600, 60, 40]]}]; window.RODILLO_BUILD = "20261027222350";</script>
+<script>window.RODILLO_PLAN = [{"id": "2026-10-26_W1_B_VO2_4x3", "name": "2026-10-26_W1_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-10-27_W1_C_SweetSpot_Sprints", "name": "2026-10-27_W1_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-10-31_W1_A_Anaerobic_8x30s", "name": "2026-10-31_W1_A_Anaerobic_8x30s", "description": "Anaerobic 8x30s @150% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-02_W2_B_VO2_4x3", "name": "2026-11-02_W2_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-05_W2_C_SweetSpot_Short", "name": "2026-11-05_W2_C_SweetSpot_Short", "description": "Short sweet spot 20min @85% (optional)", "segments": [[600, 50, 75], [1200, 85, 85], [300, 60, 40]]}, {"id": "2026-11-13_W3_B_VO2_5x3", "name": "2026-11-13_W3_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "name": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "description": "Repeated sprints: 2 sets of 6x30s @130% / 30s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [300, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-16_W4_B_VO2_5x3", "name": "2026-11-16_W4_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-19_W4_C_SweetSpot_Sprints", "name": "2026-11-19_W4_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-11-22_W4_A_Anaerobic_6x45s", "name": "2026-11-22_W4_A_Anaerobic_6x45s", "description": "Anaerobic capacity: 6x45s @125% / 90s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-24_W5_B_VO2_5x4", "name": "2026-11-24_W5_B_VO2_5x4", "description": "VO2max 5x4min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-28_W5_FTP_Test_20min", "name": "2026-11-28_W5_FTP_Test_20min", "description": "FTP test: 20min max effort in slope/resistance mode, not ERG", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [300, 105, 105], [600, 50, 50], [1200, 100, 100], [300, 50, 50], [600, 60, 40]]}]; window.RODILLO_BUILD = "20261027224023";</script>
 <script>/* FIT file encoder for indoor cycling activities (power, heart rate, cadence, speed). */
 (function (root) {
   "use strict";
@@ -5035,6 +5060,19 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       }
     }
     $("#wk-blocks").replaceChildren(...rows);
+    if (w.ramp) {
+      // The ramp lasts until failure: describe the protocol instead of totals for all 40 steps
+      const step = Math.round(settings.ftp * RAMP_STEP_PCT / 100), start = Math.round(settings.ftp * RAMP_START_PCT / 100);
+      const typical = Math.round((100 * 1.33 - RAMP_START_PCT) / RAMP_STEP_PCT); // steps until ~133 % FTP
+      $("#wk-grid").replaceChildren(...[["Calentamiento", "5:00 · " + Math.round(settings.ftp * 0.5) + " W"], ["Primer escalón", start + " W"],
+        ["Sube", "+" + step + " W/min"], ["Duración típica", (5 + typical + 5) + " min"], ["FTP actual", settings.ftp + " W"], ["Resultado", "75 % del mejor minuto"]]
+        .map(([k, v]) => el("div", { class: "stat" }, el("span", { class: "stat-k" }, k), el("span", { class: "stat-v" }, v))));
+      $("#wk-blocks").replaceChildren(
+        el("li", { class: "blk" }, el("i", { class: "zone-dot", style: "background:var(--z1)" }), el("span", { class: "num blk-dur" }, "5:00"), el("span", { class: "num" }, Math.round(settings.ftp * 0.5) + " W"), el("span", { class: "muted num" }, "50 %")),
+        el("li", { class: "blk-rep" }, "Escalones de 1:00 hasta no poder más"),
+        el("li", { class: "blk in-rep" }, el("i", { class: "zone-dot", style: "background:var(--z4)" }), el("span", { class: "num blk-dur" }, "1:00"), el("span", { class: "num" }, start + " W, " + (start + step) + " W, " + (start + 2 * step) + " W…"), el("span", { class: "muted num" }, "+" + RAMP_STEP_PCT + " %/min")),
+        el("li", { class: "blk" }, el("i", { class: "zone-dot", style: "background:var(--z1)" }), el("span", { class: "num blk-dur" }, "5:00"), el("span", { class: "num" }, Math.round(settings.ftp * 0.4) + " W"), el("span", { class: "muted num" }, "40 %")));
+    }
     showView("workout");
     window.scrollTo(0, 0);
     requestAnimationFrame(() => drawProfile($("#wk-profile"), w, {}));
@@ -5156,6 +5194,52 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     const seg = w.segments[loc.index];
     const pct = w.unit === "watts" ? Math.max(seg[1], seg[2]) / settings.ftp * 100 : Math.max(seg[1], seg[2]);
     return seg[0] <= SPRINT_MAX_SECONDS && pct >= SPRINT_MIN_PCT;
+  }
+
+  /** Heart-rate zone by heart-rate reserve (Karvonen): Z1 < 60 %, Z2 < 70 %, Z3 < 80 %, Z4 < 90 %, Z5 above. */
+  function hrZone(hr) {
+    const rest = settings.hrRest || 50, max = settings.hrMax || 182;
+    const r = (hr - rest) / (max - rest);
+    return r < 0.6 ? 1 : r < 0.7 ? 2 : r < 0.8 ? 3 : r < 0.9 ? 4 : 5;
+  }
+
+  // ---------- FTP ramp test ----------
+  const RAMP_WARMUP = 300, RAMP_COOLDOWN = 300, RAMP_START_PCT = 60, RAMP_STEP_PCT = 6, RAMP_STEPS = 40;
+  function rampWorkout() {
+    const segs = [[RAMP_WARMUP, 50, 50]];
+    for (let i = 0; i < RAMP_STEPS; i++) { const p = RAMP_START_PCT + RAMP_STEP_PCT * i; segs.push([60, p, p]); }
+    segs.push([RAMP_COOLDOWN, 40, 40]);
+    return {
+      id: "ftp-ramp", name: "Test FTP en rampa", unit: "pct", ramp: true, segments: segs,
+      description: "5 min suaves y luego escalones de 1 min que suben un " + RAMP_STEP_PCT + " % del FTP (" +
+        Math.round(settings.ftp * RAMP_STEP_PCT / 100) + " W) cada minuto, en ERG, hasta que no puedas mantener el ritmo. " +
+        "Termina cuando la cadencia baja de 55 rpm durante 5 s o al tocar «No puedo más». FTP = 75 % de tu mejor minuto.",
+    };
+  }
+  const rampCooldownStart = () => RAMP_WARMUP + 60 * RAMP_STEPS;
+
+  /** End of the ramp: estimate FTP from the best 60 s of the steps, then ride the cool-down. */
+  function endRamp(reason) {
+    if (!ride || !ride.workout.ramp || ride.rampDone) return;
+    ride.rampDone = true;
+    const steps = ride.samples.filter((s) => s.t >= RAMP_WARMUP && s.t < rampCooldownStart()).map((s) => s.power || 0);
+    let best = 0;
+    for (let i = 60; i <= steps.length; i++) {
+      let sum = 0;
+      for (let k = i - 60; k < i; k++) sum += steps[k];
+      best = Math.max(best, sum / 60);
+    }
+    ride.t = rampCooldownStart();
+    setTarget(currentTarget());
+    beep(440, 300);
+    if (best < 50) { toast("La rampa fue demasiado corta para estimar el FTP.", "warn"); return; }
+    const ftp = Math.round(best * 0.75);
+    ride.rampResult = { best: Math.round(best), ftp };
+    $("#ftp-result-val").textContent = ftp + " W";
+    $("#ftp-result-text").textContent = (reason === "cadence" ? "Cadencia por debajo de 55 rpm. " : "") +
+      "Mejor minuto: " + Math.round(best) + " W → 75 % = " + ftp + " W. FTP actual: " + settings.ftp + " W (" +
+      (ftp >= settings.ftp ? "+" : "") + (ftp - settings.ftp) + " W). Ahora 5 min suaves.";
+    $("#ftp-result").hidden = false;
   }
 
   function setTarget(watts) {
@@ -5291,6 +5375,12 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
   }
 
   function recordSecond(now, pedaling, powerFresh) {
+    // Ramp test: cadence under 55 rpm for 5 s during the steps ends the ramp (checked before auto-pause)
+    if (ride.workout.ramp && !ride.rampDone && ride.t >= RAMP_WARMUP + 60 && ride.t < rampCooldownStart()) {
+      const cad = powerFresh && live.cadence != null ? live.cadence : 0;
+      ride.lowCadence = cad < 55 ? (ride.lowCadence || 0) + 1 : 0;
+      if (ride.lowCadence >= 5) { ride.idleSamples = 0; endRamp("cadence"); }
+    }
     if (!pedaling && ride.started && settings.autoPause && ride.idleSamples >= 4) {
       // Fifth second without pedaling: pause and discard the idle seconds already recorded
       pauseRecording();
@@ -5344,6 +5434,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 
   function skipSegment() {
     if (!ride || ride.workout.manual) return;
+    if (ride.workout.ramp && !ride.rampDone && ride.t >= RAMP_WARMUP) { endRamp("button"); return; }
     const loc = W.segmentAt(ride.workout, ride.t);
     if (!loc) return;
     // Move the workout clock to the next segment; recorded samples stay untouched
@@ -5373,6 +5464,14 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     $("#m-target").textContent = target != null ? target : "—";
     $("#m-hr").textContent = now - live.hrAt < 5000 && live.hr ? live.hr : "—";
     $("#m-cadence").textContent = powerFresh && live.cadence != null ? Math.round(live.cadence) : "—";
+    // Live zones: power vs FTP (Z1-Z6), heart rate by heart-rate reserve (Z1-Z5)
+    const pz = powerFresh && p3 != null && p3 > 0 ? W.zoneForPct(p3 / settings.ftp * 100) : null;
+    $("#m-pzone").textContent = pz ? "Z" + pz : "";
+    document.documentElement.style.setProperty("--pzone", pz ? css(ZONE_VARS[pz - 1]) : css("--muted"));
+    const hrNow = now - live.hrAt < 5000 ? live.hr : null;
+    const hz = hrNow ? hrZone(hrNow) : null;
+    $("#m-hzone").textContent = hz ? "Z" + hz : "";
+    document.documentElement.style.setProperty("--hzone", hz ? css(ZONE_VARS[hz - 1]) : css("--muted"));
 
     const pct = target ? target / settings.ftp * 100 : 0;
     document.documentElement.style.setProperty("--zone", zoneColor(pct || 50));
@@ -5395,7 +5494,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
         const [n0, n1] = W.segmentWatts(w, next, settings.ftp).map((v) => Math.round(v * ride.intensity));
         $("#seg-next").replaceChildren("Siguiente: ", el("b", {}, fmtTime(next[0])), " a " + (n0 === n1 ? n0 + " W" : n0 + "→" + n1 + " W"));
       } else $("#seg-next").textContent = "Último bloque";
-      $("#m-remaining").textContent = fmtTime(total - ride.t);
+      $("#m-remaining").textContent = w.ramp && !ride.rampDone ? "hasta no poder más" : fmtTime(total - ride.t);
     } else {
       $("#seg-countdown").textContent = fmtTime(ride.samples.length);
       $("#seg-label").textContent = "ERG manual";
@@ -5408,6 +5507,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     $("#m-kj").textContent = stats.kj;
     $("#m-tss").textContent = stats.tss.toFixed(0);
 
+    $("#btn-skip").textContent = w.ramp && !ride.rampDone && ride.t >= RAMP_WARMUP ? "No puedo más" : "Saltar bloque";
     const btn = $("#btn-pause");
     btn.textContent = !ride.started ? "Empezar" : ride.paused ? "Seguir" : "Pausa";
     btn.classList.toggle("primary", ride.paused);
@@ -5683,6 +5783,16 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     });
     if (!B.bluetoothAvailable()) $("#bt-hint").hidden = false;
     $("#wk-back").addEventListener("click", () => window.RodilloViews.showTab("library"));
+    $("#btn-ftp-test").addEventListener("click", () => openWorkout(rampWorkout()));
+    $("#ftp-result-no").addEventListener("click", () => { $("#ftp-result").hidden = true; });
+    $("#ftp-result-yes").addEventListener("click", () => {
+      $("#ftp-result").hidden = true;
+      if (!ride || !ride.rampResult) return;
+      settings.ftp = ride.rampResult.ftp;
+      store.set("settings", settings);
+      $("#ftp-label").textContent = "FTP " + settings.ftp + " W";
+      toast("FTP actualizado a " + settings.ftp + " W.");
+    });
     $("#wk-start").addEventListener("click", () => { if (previewWorkout) startRide(previewWorkout); });
     window.RodilloApp = { $, el, toast, settings, store, fmtTime, showView, describeWorkout, renderLibrary };
     window.RodilloViews.init(window.RodilloApp);
