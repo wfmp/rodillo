@@ -3747,11 +3747,11 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 
   /** Energy and macros of one entry: database food x quantity, or free values. */
   function itemValues(item, list) {
-    if (item.libre) return Object.assign({ missing: false }, item.libre);
+    if (item.libre) return Object.assign({ missing: false }, item.libre, { fiber: Math.abs(item.libre.fiber || 0) });
     const f = findFood(item.food, list);
     if (!f) return { kcal: null, protein: null, carbs: null, fat: null, fiber: null, missing: true };
     const q = item.qty || 0;
-    return { kcal: f.kcal * q, protein: f.protein * q, carbs: f.carbs * q, fat: f.fat * q, fiber: (f.fiber || 0) * q, missing: false, unit: f.unit };
+    return { kcal: f.kcal * q, protein: f.protein * q, carbs: f.carbs * q, fat: f.fat * q, fiber: Math.abs(f.fiber || 0) * q, missing: false, unit: f.unit };
   }
 
   /** Latest measurement on or before a date (the spreadsheet's XLOOKUP(..., -1)). */
@@ -3809,8 +3809,8 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       balance: entry.items.length && base != null ? t.kcal - base - exercise : null,
       weight: m ? m.weight : null,
       // Net carbs as in the spreadsheet: fibre is stored negative in the food base
-      netCarbs: t.carbs + t.fiber,
-      perKg: m ? { protein: fat != null ? t.protein / (m.weight * (1 - fat / 100)) : null, carbs: (t.carbs + t.fiber) / m.weight, fat: t.fat / m.weight } : null,
+      netCarbs: t.carbs - t.fiber,
+      perKg: m ? { protein: fat != null ? t.protein / (m.weight * (1 - fat / 100)) : null, carbs: (t.carbs - t.fiber) / m.weight, fat: t.fat / m.weight } : null,
     };
   }
 
@@ -3984,6 +3984,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     ev.preventDefault();
     const libre = { name: $("#fd-libre-name").value.trim() };
     for (const k of ["kcal", "protein", "carbs", "fat", "fiber"]) libre[k] = r1(num($("#fd-libre-" + k).value));
+    if (libre.fiber != null) libre.fiber = Math.abs(libre.fiber);
     if (libre.kcal == null) { app.toast("Pon al menos las kcal.", "error"); return; }
     const entry = dayEntry(day);
     if (editing.type === "item") entry.items[editing.index] = { libre }; else entry.items.push({ libre });
@@ -4033,6 +4034,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     ev.preventDefault();
     const f = { name: $("#fd-f-name").value.trim(), unit: $("#fd-f-unit").value.trim() };
     for (const k of ["kcal", "protein", "carbs", "fat", "fiber"]) f[k] = num($("#fd-f-" + k).value);
+    if (f.fiber != null) f.fiber = Math.abs(f.fiber);
     if (!f.name || f.kcal == null) { app.toast("Hacen falta el nombre y las kcal por unidad.", "error"); return; }
     let list = foods().filter((x) => norm(x.name) !== norm(editing.name || f.name) && norm(x.name) !== norm(f.name));
     list.push(f);
@@ -4067,7 +4069,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
           const row = db.rows[r];
           const name = val(row, 0);
           if (!name || /^libre$/i.test(String(name).trim()) || typeof val(row, 2) !== "number") continue;
-          const f = { name: String(name).trim(), unit: val(row, 1) ? String(val(row, 1)) : "", kcal: val(row, 2), protein: val(row, 3), carbs: val(row, 4), fat: val(row, 5), fiber: val(row, 6) };
+          const f = { name: String(name).trim(), unit: val(row, 1) ? String(val(row, 1)) : "", kcal: val(row, 2), protein: val(row, 3), carbs: val(row, 4), fat: val(row, 5), fiber: typeof val(row, 6) === "number" ? Math.abs(val(row, 6)) : null };
           const i = list.findIndex((x) => norm(x.name) === norm(f.name));
           if (i >= 0) list[i] = f; else list.push(f);
           nFoods++;
@@ -4106,13 +4108,13 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
           const name = val(row, 3);
           if (!name) continue;
           if (/^libre$/i.test(String(name).trim())) {
-            if (typeof val(row, 4) === "number") cur.items.push({ libre: { name: "", kcal: r1(val(row, 4)), protein: r1(val(row, 5)), carbs: r1(val(row, 6)), fat: r1(val(row, 7)), fiber: r1(val(row, 8)) } });
+            if (typeof val(row, 4) === "number") cur.items.push({ libre: { name: "", kcal: r1(val(row, 4)), protein: r1(val(row, 5)), carbs: r1(val(row, 6)), fat: r1(val(row, 7)), fiber: typeof val(row, 8) === "number" ? r1(Math.abs(val(row, 8))) : null } });
             continue;
           }
           const qty = val(row, 2);
           if (typeof qty !== "number" || qty <= 0) continue;
           if (findFood(name, list)) cur.items.push({ food: findFood(name, list).name, qty: Math.round(qty * 1000) / 1000 });
-          else if (typeof val(row, 4) === "number") cur.items.push({ libre: { name: String(name), kcal: r1(val(row, 4)), protein: r1(val(row, 5)), carbs: r1(val(row, 6)), fat: r1(val(row, 7)), fiber: r1(val(row, 8)) } });
+          else if (typeof val(row, 4) === "number") cur.items.push({ libre: { name: String(name), kcal: r1(val(row, 4)), protein: r1(val(row, 5)), carbs: r1(val(row, 6)), fat: r1(val(row, 7)), fiber: typeof val(row, 8) === "number" ? r1(Math.abs(val(row, 8))) : null } });
         }
         saveJson(LOG_KEY, all);
         backup();
@@ -4135,7 +4137,8 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       const v = itemValues(it, list);
       const f = it.libre ? null : findFood(it.food, list);
       entryRows.push([dateOf(k), it.libre ? "libre" : "alimento", it.libre ? it.libre.name || "Libre" : it.food, it.libre ? null : it.qty, f ? f.unit : null,
-        r1(v.kcal), r1(v.protein), r1(v.carbs), r1(v.fat), r1(v.fiber)]);
+        r1(v.kcal), r1(v.protein), r1(v.carbs), r1(v.fat), r1(v.fiber),
+        v.carbs != null ? { formula: "H{r}-J{r}", value: r1(v.carbs - (v.fiber || 0)) } : null]);
     }
     const dayRows = keys.map((k) => {
       const e = all[k];
@@ -4146,7 +4149,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     });
     return X.write([
       { name: "comidas", columns: [{ header: "fecha", type: "date" }, { header: "tipo" }, { header: "alimento", width: 24 }, { header: "cantidad", decimals: 1 }, { header: "unidad" },
-        { header: "calorias", decimals: 1 }, { header: "gr proteina", decimals: 1 }, { header: "gr carbs", decimals: 1 }, { header: "gr grasa", decimals: 1 }, { header: "gr fibra", decimals: 1 }], rows: entryRows },
+        { header: "calorias", decimals: 1 }, { header: "gr proteina", decimals: 1 }, { header: "gr carbs", decimals: 1 }, { header: "gr grasa", decimals: 1 }, { header: "gr fibra", decimals: 1 }, { header: "gr carbs netos", decimals: 1 }], rows: entryRows },
       { name: "dias", columns: [{ header: "fecha", type: "date" }, { header: "calorias", decimals: 1 }, { header: "calorias sin ejercicio" , width: 20 }, { header: "calorias ejercicio", width: 18 }, { header: "balance" }], rows: dayRows },
       { name: "DB", columns: [{ header: "Alimento", width: 24 }, { header: "und" }, { header: "calorias" }, { header: "gr proteina" }, { header: "gr carbs" }, { header: "gr grasa" }, { header: "gr fibra" }],
         rows: list.map((f) => [f.name, f.unit, f.kcal, f.protein, f.carbs, f.fat, f.fiber]) },
@@ -4177,8 +4180,21 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
   }
 
   // ---------- Wire up ----------
+  /** Older data stored fibre as a negative number (the spreadsheet convention); make it positive once. */
+  function migrateFiber() {
+    if (localStorage.getItem("rodillo.fiberPositive")) return;
+    const list = foods();
+    if (list.some((x) => x.fiber < 0)) { for (const x of list) if (x.fiber != null) x.fiber = Math.abs(x.fiber); saveJson(FOODS_KEY, list); }
+    const all = log();
+    let changed = false;
+    for (const k of Object.keys(all)) for (const it of all[k].items) if (it.libre && it.libre.fiber < 0) { it.libre.fiber = Math.abs(it.libre.fiber); changed = true; }
+    if (changed) saveJson(LOG_KEY, all);
+    try { localStorage.setItem("rodillo.fiberPositive", "1"); } catch (e) { /* ignore */ }
+  }
+
   function init(helpers) {
     app = helpers;
+    migrateFiber();
     $("#fd-add").addEventListener("submit", addFromBar);
     $("#fd-food").addEventListener("input", () => { const f = findFood($("#fd-food").value); $("#fd-unit").textContent = f ? f.unit || "" : ""; });
     $("#fd-prev").addEventListener("click", () => { day = addDays(day, -1); render(); });
