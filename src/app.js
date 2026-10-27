@@ -318,13 +318,17 @@
   }
 
   function wireTrainer(dev) {
+    // Only the current trainer may update the readings: a replaced device (e.g. the simulator) is ignored
+    const current = () => devices.trainer === dev;
     dev.on("connected", (info) => {
+      if (!current()) return;
       setChip("trainer", "on", info.name + (info.canControl ? " · ERG" : " · solo lectura"));
       if (ride && ride.target != null) dev.setTargetPower(ride.target);
     });
-    dev.on("disconnected", () => setChip("trainer", "warn", "Reconectando…"));
-    dev.on("warning", (msg) => toast(msg, "warn"));
+    dev.on("disconnected", () => { if (current()) setChip("trainer", "warn", "Reconectando…"); });
+    dev.on("warning", (msg) => { if (current()) toast(msg, "warn"); });
     dev.on("data", (d) => {
+      if (!current()) return;
       const now = Date.now();
       if (d.power != null) { live.power = d.power; live.powerAt = now; }
       if (d.cadence != null) live.cadence = d.cadence;
@@ -334,10 +338,17 @@
     });
   }
 
+  /** Stop and forget the current trainer (real or simulated) before another one takes over. */
+  function releaseTrainer() {
+    const old = devices.trainer;
+    devices.trainer = null;
+    if (old) { try { old.disconnect(); } catch (e) { /* already gone */ } }
+  }
+
   async function connectTrainer() {
     try {
+      releaseTrainer();
       if (settings.simulator) {
-        if (devices.trainer) devices.trainer.disconnect();
         const sim = new B.SimulatedRig(settings.ftp);
         devices.trainer = sim; wireTrainer(sim);
         await sim.connect();
@@ -349,10 +360,11 @@
       }
       setChip("trainer", "warn", "Buscando…");
       const t = new B.Trainer();
+      devices.trainer = t;
       wireTrainer(t);
       await t.connect();
-      devices.trainer = t;
     } catch (e) {
+      devices.trainer = null;
       setChip("trainer", "off", "Rodillo");
       if (e && e.name !== "NotFoundError") toast("No se pudo conectar el rodillo. " + B.errorText(e) + " (detalles en Ajustes → Registro)", "error");
     }
@@ -419,7 +431,7 @@
       connectTrainer().then(() => { if (devices.trainer instanceof B.SimulatedRig) startRide(workout, resumeData); });
       return;
     }
-    if (!settings.simulator && usingSim) { devices.trainer.disconnect(); devices.trainer = null; setChip("trainer", "off", "Rodillo"); }
+    if (!settings.simulator && usingSim) { releaseTrainer(); setChip("trainer", "off", "Rodillo"); }
     if (!devices.trainer && !resumeData) {
       toast("Conecta primero el rodillo (o activa el simulador en Ajustes).", "warn");
       return;
@@ -778,6 +790,8 @@
     settings.simulator = $("#set-sim").checked;
     settings.sounds = $("#set-sounds").checked;
     settings.autoPause = $("#set-autopause").checked;
+    // Turning the simulator off must stop it, or its fake data would mix with the real trainer
+    if (!settings.simulator && devices.trainer instanceof B.SimulatedRig) { releaseTrainer(); setChip("trainer", "off", "Rodillo"); }
     document.body.classList.toggle("no-trainer", !B.bluetoothAvailable() && !settings.simulator);
     settings.height = parseFloat($("#set-height").value) || null;
     settings.birthDate = $("#set-birth").value || null;
