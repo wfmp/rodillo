@@ -79,6 +79,15 @@
     return Math.min(...values) * 1.2;
   }
 
+  /** Say exactly what the base-calorie formula is missing. */
+  function missingForBase(k) {
+    const miss = [];
+    if (!app.settings.height) miss.push("la altura (Ajustes)");
+    if (!app.settings.birthDate) miss.push("la fecha de nacimiento (Ajustes)");
+    if (!measureAt(k)) miss.push(window.RodilloMeasures.load().length ? "una medida de peso anterior a este día" : "tus medidas (pestaña Medidas: importa el Excel o añade un peso)");
+    return "Para la basal falta " + miss.join(", ") + ".";
+  }
+
   async function daySummary(k, entry) {
     entry = entry || dayEntry(k);
     const list = foods();
@@ -147,7 +156,7 @@
     bal.textContent = s.balance == null ? "—" : (s.balance > 0 ? "+" : "−") + fmt0(Math.abs(s.balance));
     bal.dataset.state = s.balance == null ? "" : s.balance > 0 ? "surplus" : "deficit";
     $("#fd-balance-label").textContent = s.balance == null
-      ? (s.base == null ? "Faltan altura y fecha de nacimiento (Ajustes) o una medida de peso" : "Sin comidas registradas")
+      ? (s.base == null ? missingForBase(day) : "Sin comidas registradas")
       : s.balance > 0 ? "kcal de superávit" : "kcal de déficit";
     $("#fd-in").textContent = fmt0(s.totals.kcal);
     $("#fd-base").textContent = fmt0(s.base);
