@@ -43,6 +43,9 @@
     if (key) setAppKey(key);
     const clientId = appKey();
     if (!clientId) throw new Error("Falta la App key de Dropbox");
+    if (!/^[a-z0-9]{10,20}$/i.test(clientId)) {
+      throw new Error("La App key debe ser un código de unos 15 letras y números, sin espacios (" + clientId.length + " caracteres pegados). Copia solo el App key, no el App secret.");
+    }
     const verifier = base64Url(crypto.getRandomValues(new Uint8Array(48)));
     const challenge = base64Url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))));
     const nonce = base64Url(crypto.getRandomValues(new Uint8Array(12)));
