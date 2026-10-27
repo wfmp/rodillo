@@ -901,6 +901,7 @@
     window.RodilloViews.init(window.RodilloApp);
     window.RodilloMeasures.init(window.RodilloApp);
     window.RodilloFood.init(window.RodilloApp);
+    window.RodilloSync.init(window.RodilloApp);
     window.RodilloViews.showTab("library");
     checkRecovery();
     H.listSummaries().then((list) => {

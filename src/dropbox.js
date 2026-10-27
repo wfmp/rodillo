@@ -110,16 +110,41 @@
   /** Upload bytes to the app folder; returns the Dropbox path actually used (renamed if it already existed). */
   async function upload(fileName, bytes, opts) {
     const token = await accessToken();
-    const overwrite = opts && opts.overwrite;
-    const arg = JSON.stringify({ path: "/" + fileName, mode: overwrite ? "overwrite" : "add", autorename: !overwrite, mute: true });
+    opts = opts || {};
+    // mode: add (rename on clash), overwrite, or update a known revision (fails with a conflict if it changed)
+    const mode = opts.rev ? { ".tag": "update", update: opts.rev } : opts.overwrite ? "overwrite" : "add";
+    const arg = JSON.stringify({ path: "/" + fileName, mode, autorename: !opts.overwrite && !opts.rev, mute: true });
     const res = await fetch("https://content.dropboxapi.com/2/files/upload", {
       method: "POST",
       headers: { Authorization: "Bearer " + token, "Content-Type": "application/octet-stream", "Dropbox-API-Arg": arg },
       body: bytes,
     });
     const text = await res.text();
-    if (!res.ok) throw new Error("Dropbox " + res.status + ": " + text.slice(0, 160));
-    return JSON.parse(text).path_display;
+    if (!res.ok) {
+      const err = new Error("Dropbox " + res.status + ": " + text.slice(0, 160));
+      err.conflict = res.status === 409 && /conflict/.test(text);
+      throw err;
+    }
+    const meta = JSON.parse(text);
+    return opts.meta ? meta : meta.path_display;
+  }
+
+  /** Download a file from the app folder: {bytes, rev}, or null if it does not exist. */
+  async function download(fileName) {
+    const token = await accessToken();
+    const res = await fetch("https://content.dropboxapi.com/2/files/download", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token, "Dropbox-API-Arg": JSON.stringify({ path: "/" + fileName }) },
+    });
+    if (res.status === 409) {
+      const text = await res.text();
+      if (/not_found/.test(text)) return null;
+      throw new Error("Dropbox 409: " + text.slice(0, 160));
+    }
+    if (!res.ok) throw new Error("Dropbox " + res.status);
+    let rev = null;
+    try { rev = JSON.parse(res.headers.get("Dropbox-API-Result") || "{}").rev || null; } catch (e) { rev = null; }
+    return { bytes: new Uint8Array(await res.arrayBuffer()), rev };
   }
 
   async function removeFile(path) {
@@ -160,6 +185,6 @@
 
   root.RodilloDropbox = {
     isConnected, appKey, setAppKey, connect, handleRedirect, disconnect,
-    upload, uploadOrQueue, removeFile, flushQueue, pending, dequeue, redirectUri,
+    upload, download, uploadOrQueue, removeFile, flushQueue, pending, dequeue, redirectUri,
   };
 })(typeof window !== "undefined" ? window : globalThis);

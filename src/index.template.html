@@ -423,7 +423,8 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
 .log-box summary { cursor: pointer; color: var(--muted); }
 .dbx { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px 14px; margin: 4px 0 12px; }
 .dbx-status { margin: 4px 0 10px; color: var(--muted); font-size: 14px; }
-.dbx-actions { display: flex; gap: 10px; margin-top: 10px; }
+.dbx-actions { display: flex; gap: 10px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+.sync-check { margin-top: 12px; }
 .upload-status { font-size: 14px; color: var(--muted); flex-basis: 100%; }
 .upload-status[data-state="ok"] { color: var(--ok); }
 .upload-status[data-state="error"] { color: var(--bad); }
@@ -843,6 +844,8 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
         <button class="btn" id="btn-dbx-connect" type="button">Conectar Dropbox</button>
         <button class="btn ghost" id="btn-dbx-disconnect" type="button" hidden>Desconectar</button>
       </div>
+      <label class="check sync-check" for="sync-enabled"><input id="sync-enabled" type="checkbox" checked><span>Sincronizar datos entre dispositivos<small>Medidas, comidas, alimentos, sesiones y ajustes se guardan en Dropbox y se combinan con el iPhone, el iPad o el Mac.</small></span></label>
+      <div class="dbx-actions"><button class="btn" id="sync-now" type="button">Sincronizar ahora</button><span class="muted small" id="sync-status"></span></div>
     </fieldset>
     <fieldset class="dbx">
       <legend class="label">intervals.icu</legend>
@@ -976,6 +979,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
 <script>/*XLSX_JS*/</script>
 <script>/*MEASURES_JS*/</script>
 <script>/*FOOD_JS*/</script>
+<script>/*SYNC_JS*/</script>
 <script>/*APP_JS*/</script>
 </body>
 </html>
