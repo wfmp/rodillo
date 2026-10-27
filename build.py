@@ -25,6 +25,9 @@ def build():
         "/*SYNC_JS*/": (SRC / "sync.js").read_text(encoding="utf-8"),
         "/*APP_JS*/": (SRC / "app.js").read_text(encoding="utf-8"),
     }
+    # Build stamp lets the running app notice that a newer version has been published
+    import time
+    html = html.replace("/*BUILD_ID*/", time.strftime("%Y%m%d%H%M%S"))
     for marker, content in replacements.items():
         if marker not in html:
             raise ValueError(f"Marker {marker} missing from template")

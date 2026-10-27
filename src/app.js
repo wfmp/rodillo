@@ -903,6 +903,20 @@
     window.RodilloMeasures.init(window.RodilloApp);
     window.RodilloFood.init(window.RodilloApp);
     window.RodilloSync.init(window.RodilloApp);
+    // Reload when a newer version is published (iOS may keep the old page cached for minutes)
+    const checkUpdate = async () => {
+      if (ride && !ride.finished) return;
+      try {
+        const res = await fetch(location.pathname + "?v=" + Date.now(), { cache: "no-store" });
+        const m = (await res.text()).match(/RODILLO_BUILD = "(\d+)"/);
+        if (m && window.RODILLO_BUILD && m[1] !== window.RODILLO_BUILD && !/BUILD_ID/.test(window.RODILLO_BUILD)) {
+          toast("Hay una versión nueva: actualizando…");
+          setTimeout(() => location.reload(), 800);
+        }
+      } catch (e) { /* offline */ }
+    };
+    setTimeout(checkUpdate, 3000);
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkUpdate(); });
     // Without Web Bluetooth (iPhone/Mac Safari) the app is a viewer and logbook: no training tab
     const noTrainer = !B.bluetoothAvailable() && !settings.simulator;
     document.body.classList.toggle("no-trainer", noTrainer);
