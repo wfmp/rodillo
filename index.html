@@ -1773,6 +1773,11 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
     const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
     if (requestFs && (document.fullscreenEnabled || document.webkitFullscreenEnabled)) {
       $("#btn-fullscreen").hidden = false;
+      // Browsers only allow full screen after a tap, so enter it on the first tap anywhere
+      const autoFs = () => {
+        if (!fsElement()) { try { const r = requestFs.call(doc); if (r && r.catch) r.catch(() => {}); } catch (e) { /* ignore */ } }
+      };
+      document.addEventListener("pointerup", autoFs, { once: true, capture: true });
       $("#btn-fullscreen").addEventListener("click", () => {
         try {
           const r = fsElement() ? exitFs.call(document) : requestFs.call(doc);
