@@ -86,23 +86,30 @@
       for (const t of spec.x.ticks || []) ctx.fillText(t.label, xs(t.v), H - m.b + 6);
     }
 
-    // Stacked bars (2px surface gap between segments, rounded data end)
+    // Stacked bars (2px surface gap between segments, rounded data end); negative values stack downward from zero
     if (band && spec.stacks) {
       const barW = Math.max(2, Math.min(36, bw * 0.62));
       for (let i = 0; i < n; i++) {
-        let acc = 0;
-        const segs = spec.stacks.map((s) => ({ s, v: s.values[i] || 0 })).filter((x) => x.v > 0);
-        segs.forEach((seg, k) => {
-          const yBottom = ys(acc), yTop = ys(acc + seg.v);
-          acc += seg.v;
-          const last = k === segs.length - 1;
-          const top = last ? yTop : yTop + 2; // 2px surface gap above every lower segment
-          const h = yBottom - top;
-          if (h <= 0.5) return;
-          ctx.fillStyle = seg.s.color;
-          if (last) { roundedTop(ctx, xs(i) - barW / 2, top, barW, h, 4); ctx.fill(); }
-          else ctx.fillRect(xs(i) - barW / 2, top, barW, h);
-        });
+        for (const sign of [1, -1]) {
+          let acc = 0;
+          const segs = spec.stacks.map((st) => ({ st, v: st.values[i] || 0 })).filter((x) => x.v * sign > 0);
+          segs.forEach((seg, k) => {
+            const y0 = ys(acc), y1 = ys(acc + seg.v);
+            acc += seg.v;
+            const last = k === segs.length - 1;
+            let top = Math.min(y0, y1), bottom = Math.max(y0, y1);
+            if (!last) { if (sign > 0) top += 2; else bottom -= 2; }
+            const h = bottom - top;
+            if (h <= 0.5) return;
+            ctx.fillStyle = seg.st.color;
+            if (last) {
+              ctx.save();
+              if (sign < 0) { ctx.translate(0, top + bottom); ctx.scale(1, -1); }
+              roundedTop(ctx, xs(i) - barW / 2, top, barW, h, 4); ctx.fill();
+              ctx.restore();
+            } else ctx.fillRect(xs(i) - barW / 2, top, barW, h);
+          });
+        }
       }
     }
 

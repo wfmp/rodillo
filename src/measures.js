@@ -138,7 +138,7 @@
     backupTimer = setTimeout(async () => {
       try {
         const bytes = new Uint8Array(await buildExcel().arrayBuffer());
-        await D.upload("medidas/medidas.xlsx", bytes, { overwrite: true });
+        await D.upload("datos/medidas.xlsx", bytes, { overwrite: true });
         $("#ms-backup").textContent = "Copia en Dropbox actualizada " + new Date().toLocaleTimeString("es").slice(0, 5) + ".";
       } catch (e) {
         $("#ms-backup").textContent = "No se pudo copiar a Dropbox: " + (e.message || e);
@@ -217,7 +217,7 @@
     const all = load().map(derive);
     $("#ms-empty").hidden = all.length > 0;
     $("#ms-content").hidden = all.length === 0;
-    $("#ms-backup").textContent = D.isConnected() ? "Cada cambio se copia a Dropbox (carpeta medidas)." : "Conecta Dropbox en Ajustes para tener una copia fuera del iPad.";
+    $("#ms-backup").textContent = D.isConnected() ? "Cada cambio se copia a Dropbox (carpeta datos)." : "Conecta Dropbox en Ajustes para tener una copia fuera del iPad.";
     if (!all.length) return;
 
     renderCards(all);

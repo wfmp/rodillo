@@ -68,7 +68,7 @@
   }
 
   // ---------- Tabs ----------
-  const TABS = ["library", "activities", "form", "power", "measures"];
+  const TABS = ["library", "activities", "form", "power", "measures", "food"];
   function showTab(name) {
     app.showView(name);
     for (const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
@@ -81,6 +81,7 @@
     else if (name === "power") renderPower();
     else if (name === "form") renderForm();
     else if (name === "measures") window.RodilloMeasures.render();
+    else if (name === "food") window.RodilloFood.render();
     else if (name === "library") app.renderLibrary();
   }
 
@@ -426,6 +427,7 @@
       id: "icu-" + a.id, start, end: start + (a.elapsed_time || seconds), seconds, name: a.name, type: a.type || "Actividad",
       load: Math.round((load || 0) * 10) / 10, hasPower, avgHr: a.average_heartrate ? Math.round(a.average_heartrate) : null,
       icuId: a.id, ftp: a.icu_ftp || null, bike: BIKE_TYPES.test(a.type || ""),
+      calories: a.calories != null ? Math.round(a.calories) : null,
     };
   }
 
@@ -645,6 +647,22 @@
     });
   }
 
-  /** Called by app.js after a ride is saved, so lists refresh next time they are shown. */
-  window.RodilloViews = { init, showTab, loadData, summariesCache: () => summaries };
+  /**
+   * Activities of one local day with their energy: kJ of mechanical work for rides with power
+   * (≈ kcal burned at ~24 % efficiency), the device calories for the rest.
+   */
+  async function dayActivities(day) {
+    await loadData();
+    const out = [];
+    for (const s of summaries) {
+      if (A.dayKey(s.start) !== day) continue;
+      const ext = external.find((x) => x.id === s.id);
+      const kcal = s.stats && s.stats.kj ? s.stats.kj : ext && ext.calories ? ext.calories : null;
+      out.push({ name: s.name, kcal });
+    }
+    for (const x of externalOnly()) if (A.dayKey(x.start) === day) out.push({ name: x.name || x.type, kcal: x.calories });
+    return out;
+  }
+
+  window.RodilloViews = { init, showTab, loadData, dayActivities, summariesCache: () => summaries };
 })();

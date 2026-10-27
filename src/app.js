@@ -763,6 +763,8 @@
     $("#set-sim").checked = settings.simulator;
     $("#set-sounds").checked = settings.sounds;
     $("#set-autopause").checked = settings.autoPause;
+    $("#set-height").value = settings.height || "";
+    $("#set-birth").value = settings.birthDate || "";
     renderDropboxSettings();
     $("#ble-log").textContent = B.bleLog.length ? B.bleLog.join("\n") : "Todavía no hay registro. Conecta el rodillo o el pulso.";
     $("#settings").hidden = false;
@@ -776,6 +778,8 @@
     settings.simulator = $("#set-sim").checked;
     settings.sounds = $("#set-sounds").checked;
     settings.autoPause = $("#set-autopause").checked;
+    settings.height = parseFloat($("#set-height").value) || null;
+    settings.birthDate = $("#set-birth").value || null;
     store.set("settings", settings);
     $("#settings").hidden = true;
     $("#ftp-label").textContent = "FTP " + settings.ftp + " W";
@@ -896,6 +900,7 @@
     window.RodilloApp = { $, el, toast, settings, store, fmtTime, showView, describeWorkout, renderLibrary };
     window.RodilloViews.init(window.RodilloApp);
     window.RodilloMeasures.init(window.RodilloApp);
+    window.RodilloFood.init(window.RodilloApp);
     window.RodilloViews.showTab("library");
     checkRecovery();
     H.listSummaries().then((list) => {

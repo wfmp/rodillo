@@ -21,6 +21,7 @@ def build():
         "/*VIEWS_JS*/": (SRC / "views.js").read_text(encoding="utf-8"),
         "/*XLSX_JS*/": (SRC / "xlsx.js").read_text(encoding="utf-8"),
         "/*MEASURES_JS*/": (SRC / "measures.js").read_text(encoding="utf-8"),
+        "/*FOOD_JS*/": (SRC / "food.js").read_text(encoding="utf-8"),
         "/*APP_JS*/": (SRC / "app.js").read_text(encoding="utf-8"),
     }
     for marker, content in replacements.items():

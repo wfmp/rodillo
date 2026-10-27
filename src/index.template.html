@@ -241,12 +241,13 @@ body[data-view="ride"] main { flex: 1; min-height: 0; }
 /* ---------- Tabs ---------- */
 .tabs { display: flex; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
 .tabs button {
-  border: 0; background: transparent; color: var(--muted); border-radius: 999px; padding: 6px 14px;
+  border: 0; background: transparent; color: var(--muted); border-radius: 999px; padding: 6px 12px;
   font-size: 14px; font-weight: 600; cursor: pointer; min-height: 34px;
 }
 .tabs button[aria-selected="true"] { background: var(--fg); color: var(--bg); }
 body[data-view="ride"] .tabs, body[data-view="summary"] .tabs { display: none; }
-@media (max-width: 1000px) { .tabs { order: 5; width: 100%; justify-content: space-between; } .tabs button { flex: 1; } }
+@media (max-width: 1240px) { .ftp-label { display: none; } .topbar .chips { gap: 6px; } .topbar .chip, .topbar .icon-btn { padding: 7px 11px; } }
+@media (max-width: 1000px) { .tabs { order: 5; width: 100%; justify-content: space-between; } .tabs button { flex: 1; padding: 6px 4px; } }
 .seg { display: inline-flex; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 3px; }
 .seg button { border: 0; background: transparent; color: var(--muted); border-radius: 6px; padding: 6px 12px; font-weight: 600; cursor: pointer; min-height: 36px; }
 .seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--fg); box-shadow: inset 0 0 0 1px var(--grid); }
@@ -350,6 +351,46 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
 .ms-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .field input[type=date] { background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 16px; }
 .dialog-actions .spacer { flex: 1; }
+.settings-note { margin: -4px 0 6px; }
+.fd-nav { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 0 12px; }
+.fd-nav input[type=date] { background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font: inherit; min-height: 44px; }
+.fd-day { font-family: var(--font-num); font-weight: 600; font-size: 22px; text-transform: capitalize; margin-left: 6px; }
+.fd-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; margin-bottom: 12px; align-items: start; }
+@media (max-width: 860px) { .fd-grid { grid-template-columns: minmax(0, 1fr); } }
+.fd-add { display: grid; grid-template-columns: minmax(0, 1fr) 130px auto auto; gap: 8px; margin-bottom: 8px; }
+.fd-add input, .fd-db-tools input, .fd-ex {
+  background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 16px; min-height: 44px; width: 100%; min-width: 0;
+}
+.fd-qty { position: relative; }
+.fd-qty span { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+@media (max-width: 560px) { .fd-add { grid-template-columns: 1fr 1fr; } .fd-add input#fd-food { grid-column: 1 / -1; } }
+.fd-items tbody tr, .fd-week tbody tr, .fd-db-table tbody tr { cursor: pointer; }
+.fd-items tbody tr:hover td, .fd-db-table tbody tr:hover td { background: var(--panel-2); }
+.tag { display: inline-block; margin-left: 8px; font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--panel-2); color: var(--muted); }
+.tag.warn { color: var(--warn); }
+.fd-summary { display: flex; flex-direction: column; gap: 10px; }
+.fd-balance-wrap { display: flex; flex-direction: column; }
+.fd-balance { font-family: var(--font-num); font-weight: 700; font-size: clamp(44px, 7vw, 64px); line-height: 1; }
+.fd-balance[data-state="deficit"] { color: var(--z2); }
+.fd-balance[data-state="surplus"] { color: var(--z5); }
+.fd-terms { margin: 0; display: grid; gap: 6px; }
+.fd-terms > div { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); padding: 4px 0; }
+.fd-terms dt { color: var(--muted); }
+.fd-terms dd { margin: 0; font-weight: 600; font-size: 17px; }
+.fd-ex { width: 110px; text-align: right; }
+.fd-macros { display: grid; gap: 10px; }
+.macro-head { display: flex; justify-content: space-between; font-size: 14px; }
+.macro-bar { height: 8px; background: var(--panel-2); border-radius: 4px; overflow: hidden; margin: 4px 0 2px; }
+.macro-bar i { display: block; height: 100%; border-radius: 4px; }
+.m-protein { background: #e63971; } .m-carbs { background: #f2c94c; } .m-fat { background: #3f8cff; }
+.fd-week tr.sel td { background: var(--panel-2); }
+.fd-week td.bal.deficit { color: var(--z2); } .fd-week td.bal.surplus { color: var(--z5); }
+.dialog.dialog-wide { width: min(860px, calc(100vw - 32px)); max-width: none; }
+.fd-db-head { display: flex; justify-content: space-between; align-items: center; }
+.fd-db-tools { display: flex; gap: 8px; }
+.fd-db-table { max-height: 55vh; overflow-y: auto; }
+.fd-db-table th { position: sticky; top: 0; background: var(--panel); }
+#fd-empty .btn input, #fd-add input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
 #ms-empty .btn input, .lib-actions .btn input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
 
 /* ---------- Summary ---------- */
@@ -418,6 +459,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
       <button type="button" data-tab="form" aria-selected="false">Forma</button>
       <button type="button" data-tab="power" aria-selected="false">Potencia</button>
       <button type="button" data-tab="measures" aria-selected="false">Medidas</button>
+      <button type="button" data-tab="food" aria-selected="false">Comidas</button>
     </nav>
     <div class="chips">
       <button class="chip" id="chip-trainer" data-state="off" type="button"><span class="chip-label">Rodillo</span></button>
@@ -703,6 +745,81 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
       </div>
     </div>
   </section>
+
+  <section class="view wrap" id="view-food" hidden>
+    <div class="lib-head">
+      <div>
+        <h1>Comidas</h1>
+        <p>Busca el alimento en tu base y pon la cantidad, o mete valores libres. El balance usa tus medidas y la actividad del día.</p>
+      </div>
+      <div class="lib-actions">
+        <button class="btn" id="fd-db-open" type="button">Base de alimentos</button>
+        <label class="btn" for="fd-import">Importar Excel<input id="fd-import" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+        <button class="btn" id="fd-export" type="button">Exportar Excel</button>
+      </div>
+    </div>
+    <p class="muted small" id="fd-backup"></p>
+    <div class="empty" id="fd-empty" hidden>
+      <p>Importa tu Excel: la app toma la hoja <b>DB</b> (base de alimentos) y la hoja del año más reciente (p. ej. <b>2026</b>).</p>
+      <label class="btn primary" for="fd-import-empty">Importar Excel<input id="fd-import-empty" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+    </div>
+    <div id="fd-content">
+      <div class="fd-nav">
+        <button class="btn" id="fd-prev" type="button" aria-label="Día anterior">‹</button>
+        <input type="date" id="fd-date" aria-label="Fecha">
+        <button class="btn" id="fd-next" type="button" aria-label="Día siguiente">›</button>
+        <button class="btn ghost" id="fd-today" type="button">Hoy</button>
+        <span class="fd-day" id="fd-day-label"></span>
+      </div>
+      <div class="fd-grid">
+        <div class="box">
+          <form class="fd-add" id="fd-add" autocomplete="off">
+            <input id="fd-food" list="fd-foodlist" placeholder="Alimento" aria-label="Alimento" autocapitalize="off" spellcheck="false">
+            <datalist id="fd-foodlist"></datalist>
+            <div class="fd-qty"><input id="fd-qty" inputmode="decimal" placeholder="Cantidad" aria-label="Cantidad"><span class="muted small" id="fd-unit"></span></div>
+            <button class="btn primary" type="submit">Añadir</button>
+            <button class="btn" id="fd-libre-open" type="button">Libre</button>
+          </form>
+          <div class="table-scroll">
+            <table class="laps fd-items">
+              <thead><tr><th>Alimento</th><th>Cantidad</th><th>kcal</th><th>Prot.</th><th>Carb.</th><th>Grasa</th></tr></thead>
+              <tbody id="fd-rows"></tbody>
+            </table>
+          </div>
+          <p class="muted small" id="fd-noitems">Nada registrado este día.</p>
+          <button class="btn ghost" id="fd-copy" type="button">Copiar el último día con comidas</button>
+        </div>
+        <div class="box fd-summary">
+          <div class="fd-balance-wrap">
+            <span class="fd-balance num" id="fd-balance">—</span>
+            <span class="muted small" id="fd-balance-label"></span>
+          </div>
+          <dl class="fd-terms">
+            <div><dt>Consumidas</dt><dd class="num" id="fd-in">—</dd></div>
+            <div><dt>Sin ejercicio (basal × 1,2)</dt><dd class="num" id="fd-base">—</dd></div>
+            <div><dt><label for="fd-exercise">Ejercicio</label></dt><dd><input id="fd-exercise" inputmode="numeric" class="fd-ex"></dd></div>
+          </dl>
+          <p class="muted small" id="fd-acts"></p>
+          <div class="fd-macros" id="fd-macros"></div>
+        </div>
+      </div>
+      <div class="fd-grid">
+        <div class="box">
+          <div class="chart-title" id="fd-week-title">Semana</div>
+          <table class="laps fd-week">
+            <thead><tr><th>Día</th><th>Consumidas</th><th>Gasto</th><th>Balance</th></tr></thead>
+            <tbody id="fd-week-rows"></tbody>
+          </table>
+          <dl class="fd-terms">
+            <div><dt>Neto de la semana</dt><dd class="num" id="fd-week-net">—</dd></div>
+            <div><dt>Gramos teóricos (÷ 7700)</dt><dd class="num" id="fd-week-theory">—</dd></div>
+            <div><dt>Gramos reales (báscula)</dt><dd class="num" id="fd-week-real">—</dd></div>
+          </dl>
+        </div>
+        <div class="box chart-box"><div class="chart-title">Balance diario · 28 días</div><div class="legend" id="fd-legend"></div><div class="chart-holder"><canvas id="fd-chart"></canvas></div></div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <div class="overlay" id="settings" hidden>
@@ -710,6 +827,11 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
     <h2>Ajustes</h2>
     <label class="field" for="set-ftp"><span class="label">FTP (W)</span><input id="set-ftp" type="number" min="50" max="600" step="1" inputmode="numeric"></label>
     <label class="field" for="set-weight"><span class="label">Peso (kg)</span><input id="set-weight" type="number" min="30" max="200" step="0.1" inputmode="decimal"></label>
+    <div class="ms-fields">
+      <label class="field" for="set-height"><span class="label">Altura (cm)</span><input id="set-height" type="number" min="100" max="230" step="1" inputmode="numeric"></label>
+      <label class="field" for="set-birth"><span class="label">Fecha de nacimiento</span><input id="set-birth" type="date"></label>
+    </div>
+    <p class="muted small settings-note">Altura y fecha de nacimiento sirven para las calorías basales de Comidas. Se guardan solo en este dispositivo.</p>
     <label class="check" for="set-autopause"><input id="set-autopause" type="checkbox"><span>Pausa automática<small>Se detiene si dejas de pedalear 5 s y sigue al volver.</small></span></label>
     <label class="check" for="set-sounds"><input id="set-sounds" type="checkbox"><span>Pitidos<small>Cuenta atrás de 3 s antes de cada cambio de bloque.</small></span></label>
     <label class="check" for="set-sim"><input id="set-sim" type="checkbox"><span>Modo simulador<small>Para probar la app sin rodillo: el botón Rodillo conecta un rodillo y un pulso ficticios.</small></span></label>
@@ -766,6 +888,80 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
   </form>
 </div>
 
+<div class="overlay" id="fd-item" hidden>
+  <form class="dialog" id="fd-item-form">
+    <h2 id="fd-item-title"></h2>
+    <label class="field" for="fd-item-qty"><span class="label" id="fd-item-qty-label">Cantidad</span><input id="fd-item-qty" type="text" inputmode="decimal"></label>
+    <div class="dialog-actions">
+      <button class="btn danger" id="fd-item-delete" type="button">Quitar</button>
+      <span class="spacer"></span>
+      <button class="btn ghost" id="fd-item-cancel" type="button">Cancelar</button>
+      <button class="btn primary" type="submit">Guardar</button>
+    </div>
+  </form>
+</div>
+
+<div class="overlay" id="fd-libre" hidden>
+  <form class="dialog" id="fd-libre-form">
+    <h2 id="fd-libre-title">Valores libres</h2>
+    <label class="field" for="fd-libre-name"><span class="label">Descripción (opcional)</span><input id="fd-libre-name" type="text"></label>
+    <div class="ms-fields">
+      <label class="field" for="fd-libre-kcal"><span class="label">kcal</span><input id="fd-libre-kcal" type="text" inputmode="decimal"></label>
+      <label class="field" for="fd-libre-protein"><span class="label">Proteína [g]</span><input id="fd-libre-protein" type="text" inputmode="decimal"></label>
+      <label class="field" for="fd-libre-carbs"><span class="label">Carbohidratos [g]</span><input id="fd-libre-carbs" type="text" inputmode="decimal"></label>
+      <label class="field" for="fd-libre-fat"><span class="label">Grasa [g]</span><input id="fd-libre-fat" type="text" inputmode="decimal"></label>
+      <label class="field" for="fd-libre-fiber"><span class="label">Fibra [g]</span><input id="fd-libre-fiber" type="text" inputmode="decimal"></label>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn danger" id="fd-libre-delete" type="button" hidden>Quitar</button>
+      <span class="spacer"></span>
+      <button class="btn ghost" id="fd-libre-cancel" type="button">Cancelar</button>
+      <button class="btn primary" type="submit">Guardar</button>
+    </div>
+  </form>
+</div>
+
+<div class="overlay" id="fd-db" hidden>
+  <div class="dialog dialog-wide">
+    <div class="fd-db-head">
+      <h2>Base de alimentos</h2>
+      <button class="btn ghost" id="fd-db-close" type="button">Cerrar</button>
+    </div>
+    <div class="fd-db-tools">
+      <input id="fd-db-search" type="search" placeholder="Buscar" aria-label="Buscar alimento" autocapitalize="off">
+      <button class="btn primary" id="fd-db-new" type="button">+ Alimento</button>
+    </div>
+    <p class="muted small" id="fd-db-count"></p>
+    <div class="table-scroll fd-db-table">
+      <table class="laps">
+        <thead><tr><th>Alimento</th><th>Unidad</th><th>kcal</th><th>Prot.</th><th>Carb.</th><th>Grasa</th><th>Fibra</th></tr></thead>
+        <tbody id="fd-db-rows"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="fd-foodform" hidden>
+  <form class="dialog" id="fd-food-form">
+    <h2 id="fd-food-title">Alimento</h2>
+    <div class="ms-fields">
+      <label class="field" for="fd-f-name"><span class="label">Nombre</span><input id="fd-f-name" type="text"></label>
+      <label class="field" for="fd-f-unit"><span class="label">Unidad (gr, und, ml…)</span><input id="fd-f-unit" type="text" autocapitalize="off"></label>
+      <label class="field" for="fd-f-kcal"><span class="label">kcal por unidad</span><input id="fd-f-kcal" type="text" inputmode="decimal"></label>
+      <label class="field" for="fd-f-protein"><span class="label">Proteína [g/unidad]</span><input id="fd-f-protein" type="text" inputmode="decimal"></label>
+      <label class="field" for="fd-f-carbs"><span class="label">Carbohidratos [g/unidad]</span><input id="fd-f-carbs" type="text" inputmode="decimal"></label>
+      <label class="field" for="fd-f-fat"><span class="label">Grasa [g/unidad]</span><input id="fd-f-fat" type="text" inputmode="decimal"></label>
+      <label class="field" for="fd-f-fiber"><span class="label">Fibra [g/unidad]</span><input id="fd-f-fiber" type="text" inputmode="decimal"></label>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn danger" id="fd-f-delete" type="button" hidden>Borrar</button>
+      <span class="spacer"></span>
+      <button class="btn ghost" id="fd-f-cancel" type="button">Cancelar</button>
+      <button class="btn primary" type="submit">Guardar</button>
+    </div>
+  </form>
+</div>
+
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>window.RODILLO_PLAN = /*PLAN_JSON*/;</script>
@@ -780,6 +976,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
 <script>/*VIEWS_JS*/</script>
 <script>/*XLSX_JS*/</script>
 <script>/*MEASURES_JS*/</script>
+<script>/*FOOD_JS*/</script>
 <script>/*APP_JS*/</script>
 </body>
 </html>
