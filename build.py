@@ -23,6 +23,7 @@ def build():
         "/*MEASURES_JS*/": (SRC / "measures.js").read_text(encoding="utf-8"),
         "/*FOOD_JS*/": (SRC / "food.js").read_text(encoding="utf-8"),
         "/*SYNC_JS*/": (SRC / "sync.js").read_text(encoding="utf-8"),
+        "/*GCEXPORT_JS*/": (SRC / "gcexport.js").read_text(encoding="utf-8"),
         "/*APP_JS*/": (SRC / "app.js").read_text(encoding="utf-8"),
     }
     # Build stamp lets the running app notice that a newer version has been published

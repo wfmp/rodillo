@@ -13,7 +13,7 @@
   const SNAP_KEY = "rodillo.sync";
   const SETTINGS_KEYS = ["ftp", "weight", "height", "birthDate", "hrMax", "hrRest", "autoPause", "sounds"];
   // localStorage keys whose changes should trigger a sync
-  const WATCHED = ["rodillo.medidas", "rodillo.foods", "rodillo.foodlog", "rodillo.imported", "rodillo.settings", "rodillo.intervals"];
+  const WATCHED = ["rodillo.medidas", "rodillo.foods", "rodillo.foodlog", "rodillo.imported", "rodillo.settings", "rodillo.intervals", "rodillo.sportfix"];
   let app = null;
   let running = null, again = false, applying = false, timer = null;
 
@@ -44,6 +44,8 @@
     const icu = readJson("rodillo.intervals", {});
     if (icu.apiKey) out.set("i/main", { apiKey: icu.apiKey, athleteId: icu.athleteId || "" });
     for (const r of await H.listSummaries()) out.set("r/" + r.id, r);
+    const fixes = readJson("rodillo.sportfix", {});
+    for (const id of Object.keys(fixes)) out.set("x/" + id, fixes[id]);
     return out;
   }
 
@@ -67,6 +69,11 @@
         writeJson("rodillo.foodlog", log);
       }
       if (changed.has("w")) writeJson("rodillo.imported", pick("w"));
+      if (changed.has("x")) {
+        const fixes = {};
+        for (const [k, r] of merged) if (k.startsWith("x/") && r.d != null) fixes[k.slice(2)] = r.d;
+        writeJson("rodillo.sportfix", fixes);
+      }
       if (changed.has("s")) {
         for (const k of SETTINGS_KEYS) { const r = merged.get("s/" + k); if (r && r.d != null) app.settings[k] = r.d; }
         writeJson("rodillo.settings", app.settings);

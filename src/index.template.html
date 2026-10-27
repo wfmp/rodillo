@@ -273,6 +273,11 @@ body[data-view="ride"] .tabs, body[data-view="summary"] .tabs { display: none; }
 button.act-row { cursor: pointer; }
 button.act-row:hover { border-color: var(--grid); }
 .act-row.ext { background: transparent; }
+.act-pending { border: 1px solid var(--warn); border-radius: var(--radius); }
+.act-pending .act-row { border: 0; }
+.sport-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 0 14px 10px; }
+.chip-btn { border: 1px solid var(--line); background: var(--panel-2); color: var(--fg); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; min-height: 36px; }
+.sport-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 8px 0 4px; }
 .act-row small { display: block; color: var(--muted); font-size: 12px; }
 .act-date { text-transform: capitalize; }
 .act-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
@@ -943,6 +948,15 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
   </form>
 </div>
 
+<div class="overlay" id="sport-dialog" hidden>
+  <div class="dialog">
+    <h2>¿Qué deporte fue?</h2>
+    <p class="muted small" id="sport-title"></p>
+    <div class="sport-grid" id="sport-choices"></div>
+    <div class="dialog-actions"><button class="btn ghost" type="button" onclick="this.closest('.overlay').hidden = true">Cancelar</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="fd-item" hidden>
   <form class="dialog" id="fd-item-form">
     <h2 id="fd-item-title"></h2>
@@ -1033,6 +1047,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 <script>/*MEASURES_JS*/</script>
 <script>/*FOOD_JS*/</script>
 <script>/*SYNC_JS*/</script>
+<script>/*GCEXPORT_JS*/</script>
 <script>/*APP_JS*/</script>
 </body>
 </html>

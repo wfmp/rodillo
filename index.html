@@ -273,6 +273,11 @@ body[data-view="ride"] .tabs, body[data-view="summary"] .tabs { display: none; }
 button.act-row { cursor: pointer; }
 button.act-row:hover { border-color: var(--grid); }
 .act-row.ext { background: transparent; }
+.act-pending { border: 1px solid var(--warn); border-radius: var(--radius); }
+.act-pending .act-row { border: 0; }
+.sport-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 0 14px 10px; }
+.chip-btn { border: 1px solid var(--line); background: var(--panel-2); color: var(--fg); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; min-height: 36px; }
+.sport-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 8px 0 4px; }
 .act-row small { display: block; color: var(--muted); font-size: 12px; }
 .act-date { text-transform: capitalize; }
 .act-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
@@ -943,6 +948,15 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
   </form>
 </div>
 
+<div class="overlay" id="sport-dialog" hidden>
+  <div class="dialog">
+    <h2>¿Qué deporte fue?</h2>
+    <p class="muted small" id="sport-title"></p>
+    <div class="sport-grid" id="sport-choices"></div>
+    <div class="dialog-actions"><button class="btn ghost" type="button" onclick="this.closest('.overlay').hidden = true">Cancelar</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="fd-item" hidden>
   <form class="dialog" id="fd-item-form">
     <h2 id="fd-item-title"></h2>
@@ -1019,7 +1033,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script>window.RODILLO_PLAN = [{"id": "2026-10-26_W1_B_VO2_4x3", "name": "2026-10-26_W1_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-10-27_W1_C_SweetSpot_Sprints", "name": "2026-10-27_W1_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-10-31_W1_A_Anaerobic_8x30s", "name": "2026-10-31_W1_A_Anaerobic_8x30s", "description": "Anaerobic 8x30s @150% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-02_W2_B_VO2_4x3", "name": "2026-11-02_W2_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-05_W2_C_SweetSpot_Short", "name": "2026-11-05_W2_C_SweetSpot_Short", "description": "Short sweet spot 20min @85% (optional)", "segments": [[600, 50, 75], [1200, 85, 85], [300, 60, 40]]}, {"id": "2026-11-13_W3_B_VO2_5x3", "name": "2026-11-13_W3_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "name": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "description": "Repeated sprints: 2 sets of 6x30s @130% / 30s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [300, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-16_W4_B_VO2_5x3", "name": "2026-11-16_W4_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-19_W4_C_SweetSpot_Sprints", "name": "2026-11-19_W4_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-11-22_W4_A_Anaerobic_6x45s", "name": "2026-11-22_W4_A_Anaerobic_6x45s", "description": "Anaerobic capacity: 6x45s @125% / 90s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-24_W5_B_VO2_5x4", "name": "2026-11-24_W5_B_VO2_5x4", "description": "VO2max 5x4min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-28_W5_FTP_Test_20min", "name": "2026-11-28_W5_FTP_Test_20min", "description": "FTP test: 20min max effort in slope/resistance mode, not ERG", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [300, 105, 105], [600, 50, 50], [1200, 100, 100], [300, 50, 50], [600, 60, 40]]}]; window.RODILLO_BUILD = "20261027221543";</script>
+<script>window.RODILLO_PLAN = [{"id": "2026-10-26_W1_B_VO2_4x3", "name": "2026-10-26_W1_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-10-27_W1_C_SweetSpot_Sprints", "name": "2026-10-27_W1_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-10-31_W1_A_Anaerobic_8x30s", "name": "2026-10-31_W1_A_Anaerobic_8x30s", "description": "Anaerobic 8x30s @150% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-02_W2_B_VO2_4x3", "name": "2026-11-02_W2_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-05_W2_C_SweetSpot_Short", "name": "2026-11-05_W2_C_SweetSpot_Short", "description": "Short sweet spot 20min @85% (optional)", "segments": [[600, 50, 75], [1200, 85, 85], [300, 60, 40]]}, {"id": "2026-11-13_W3_B_VO2_5x3", "name": "2026-11-13_W3_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "name": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "description": "Repeated sprints: 2 sets of 6x30s @130% / 30s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [300, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-16_W4_B_VO2_5x3", "name": "2026-11-16_W4_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-19_W4_C_SweetSpot_Sprints", "name": "2026-11-19_W4_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-11-22_W4_A_Anaerobic_6x45s", "name": "2026-11-22_W4_A_Anaerobic_6x45s", "description": "Anaerobic capacity: 6x45s @125% / 90s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-24_W5_B_VO2_5x4", "name": "2026-11-24_W5_B_VO2_5x4", "description": "VO2max 5x4min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-28_W5_FTP_Test_20min", "name": "2026-11-28_W5_FTP_Test_20min", "description": "FTP test: 20min max effort in slope/resistance mode, not ERG", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [300, 105, 105], [600, 50, 50], [1200, 100, 100], [300, 50, 50], [600, 60, 40]]}]; window.RODILLO_BUILD = "20261027222350";</script>
 <script>/* FIT file encoder for indoor cycling activities (power, heart rate, cadence, speed). */
 (function (root) {
   "use strict";
@@ -2604,6 +2618,54 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     list.replaceChildren(...nodes);
   }
 
+  // ---------- Sport correction for watch activities recorded as a generic "Training" ----------
+  const FIX_KEY = "rodillo.sportfix";
+  const SPORT_CHOICES = [
+    ["Badminton", "Bádminton"], ["Soccer", "Fútbol"], ["Tennis", "Tenis"], ["Swim", "Natación"],
+    ["WeightTraining", "Gimnasio"], ["Run", "Carrera"], ["Other", "Otro"],
+  ];
+  const SPORT_LABEL = Object.fromEntries(SPORT_CHOICES.concat([["Ride", "Bici"], ["VirtualRide", "Rodillo"], ["Walk", "Caminata"], ["Hike", "Excursión"]]));
+  const GENERIC_TYPE = /^(workout|training|other|activity|generic)?$/i;
+  const sportFixes = () => { try { return JSON.parse(localStorage.getItem(FIX_KEY) || "{}"); } catch (e) { return {}; } };
+
+  /** Effective sport of an intervals.icu activity: the user's correction wins. */
+  function sportOf(x) { return sportFixes()[x.id] || x.type || ""; }
+  function sportLabel(type) { return SPORT_LABEL[type] || type || "Actividad"; }
+
+  async function setSport(x, type) {
+    const fixes = sportFixes();
+    fixes[x.id] = type;
+    try { localStorage.setItem(FIX_KEY, JSON.stringify(fixes)); } catch (e) { /* ignore */ }
+    renderActivities();
+    // Also correct it in intervals.icu (best effort; the local correction is kept either way)
+    const cfg = intervalsCfg();
+    if (cfg.apiKey && x.icuId) {
+      try {
+        const res = await fetch("https://intervals.icu/api/v1/activity/" + encodeURIComponent(x.icuId), {
+          method: "PUT",
+          headers: { Authorization: "Basic " + btoa("API_KEY:" + cfg.apiKey), "Content-Type": "application/json" },
+          body: JSON.stringify({ type }),
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+      } catch (e) { app.toast("Guardado en la app; intervals.icu no se pudo actualizar (" + (e.message || e) + ").", "warn"); }
+      // And send it to GoldenCheetah through Dropbox with the right sport
+      if (!x.hasPower && D.isConnected()) {
+        try {
+          const path = await window.RodilloGcExport.exportActivity(x, type, cfg.apiKey, true);
+          if (path) app.toast("Enviada a GoldenCheetah: " + path);
+        } catch (e) { app.toast("No se pudo enviar a GoldenCheetah: " + (e.message || e), "warn"); }
+      }
+    }
+  }
+
+  function openSportPicker(x) {
+    const dlg = $("#sport-dialog");
+    $("#sport-title").textContent = (x.name || "Actividad") + " · " + fmtDate(x.start) + " " + fmtTimeOfDay(x.start);
+    $("#sport-choices").replaceChildren(...SPORT_CHOICES.map(([type, label]) =>
+      app.el("button", { class: "btn" + (sportOf(x) === type ? " primary" : ""), type: "button", onclick: () => { dlg.hidden = true; setSport(x, type); } }, label)));
+    dlg.hidden = false;
+  }
+
   function activityRow(it) {
     if (it.kind === "local") {
       const s = it.s, st = s.stats || {};
@@ -2620,11 +2682,19 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     const x = it.x;
     const metrics = ["carga " + Math.round(x.load || 0)];
     if (x.avgHr) metrics.push(x.avgHr + " ppm");
-    return app.el("div", { class: "act-row ext" },
+    const sport = sportOf(x);
+    const unclassified = GENERIC_TYPE.test(sport) && !sportFixes()[x.id];
+    const title = sportFixes()[x.id] ? sportLabel(sport) : x.name || sportLabel(sport);
+    const row = app.el("button", { class: "act-row ext", type: "button", onclick: () => openSportPicker(x) },
       app.el("span", { class: "act-date" }, fmtDate(x.start), app.el("small", {}, fmtTimeOfDay(x.start))),
-      app.el("span", { class: "act-name" }, x.name || x.type, app.el("small", {}, x.type + " · intervals.icu")),
+      app.el("span", { class: "act-name" }, title, app.el("small", {}, sportLabel(sport) + " · Garmin")),
       app.el("span", { class: "act-dur num" }, fmtDur(x.seconds)),
       app.el("span", { class: "act-metrics num" }, metrics.join(" · ")));
+    if (!unclassified) return row;
+    // One tap to say what it was
+    const chips = app.el("div", { class: "sport-chips" }, app.el("span", { class: "muted small" }, "¿Qué fue?"),
+      ...SPORT_CHOICES.map(([type, label]) => app.el("button", { class: "chip-btn", type: "button", onclick: () => setSport(x, type) }, label)));
+    return app.el("div", { class: "act-pending" }, row, chips);
   }
 
   async function importFitFiles(files) {
@@ -2946,6 +3016,10 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       if (!auto) app.toast(list.length + " actividades de intervals.icu.");
       else if (fresh && before.size) app.toast(fresh === 1 ? "1 actividad nueva de Garmin." : fresh + " actividades nuevas de Garmin.");
       const got = await downloadPowerRides(list, cfg, status);
+      // Watch activities with a known sport go to GoldenCheetah (Dropbox), skipping recordings of trainer sessions
+      await loadData();
+      const sent = await window.RodilloGcExport.exportPending(externalOnly(), sportOf, cfg.apiKey);
+      if (sent) app.toast(sent === 1 ? "1 actividad enviada a GoldenCheetah." : sent + " actividades enviadas a GoldenCheetah.");
       if (got && !auto) app.toast(got === 1 ? "1 salida con potencia descargada." : got + " salidas con potencia descargadas.");
       renderIcuStatus(cfg);
       // Refresh whichever data tab is open
@@ -3174,7 +3248,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       const kcal = s.stats && s.stats.kj ? s.stats.kj : ext && ext.calories ? ext.calories : null;
       out.push({ name: s.name, kcal, seconds: s.timerSeconds || (ext && ext.seconds) || 0 });
     }
-    for (const x of externalOnly()) if (A.dayKey(x.start) === day) out.push({ name: x.name || x.type, kcal: x.calories, seconds: x.seconds || 0 });
+    for (const x of externalOnly()) if (A.dayKey(x.start) === day) out.push({ name: sportFixes()[x.id] ? sportLabel(sportOf(x)) : x.name || sportLabel(x.type), kcal: x.calories, seconds: x.seconds || 0 });
     return out;
   }
 
@@ -4292,7 +4366,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
   const SNAP_KEY = "rodillo.sync";
   const SETTINGS_KEYS = ["ftp", "weight", "height", "birthDate", "hrMax", "hrRest", "autoPause", "sounds"];
   // localStorage keys whose changes should trigger a sync
-  const WATCHED = ["rodillo.medidas", "rodillo.foods", "rodillo.foodlog", "rodillo.imported", "rodillo.settings", "rodillo.intervals"];
+  const WATCHED = ["rodillo.medidas", "rodillo.foods", "rodillo.foodlog", "rodillo.imported", "rodillo.settings", "rodillo.intervals", "rodillo.sportfix"];
   let app = null;
   let running = null, again = false, applying = false, timer = null;
 
@@ -4323,6 +4397,8 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     const icu = readJson("rodillo.intervals", {});
     if (icu.apiKey) out.set("i/main", { apiKey: icu.apiKey, athleteId: icu.athleteId || "" });
     for (const r of await H.listSummaries()) out.set("r/" + r.id, r);
+    const fixes = readJson("rodillo.sportfix", {});
+    for (const id of Object.keys(fixes)) out.set("x/" + id, fixes[id]);
     return out;
   }
 
@@ -4346,6 +4422,11 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
         writeJson("rodillo.foodlog", log);
       }
       if (changed.has("w")) writeJson("rodillo.imported", pick("w"));
+      if (changed.has("x")) {
+        const fixes = {};
+        for (const [k, r] of merged) if (k.startsWith("x/") && r.d != null) fixes[k.slice(2)] = r.d;
+        writeJson("rodillo.sportfix", fixes);
+      }
       if (changed.has("s")) {
         for (const k of SETTINGS_KEYS) { const r = merged.get("s/" + k); if (r && r.d != null) app.settings[k] = r.d; }
         writeJson("rodillo.settings", app.settings);
@@ -4525,6 +4606,154 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
   }
 
   window.RodilloSync = { init, sync };
+})();
+</script>
+<script>/*
+ * Send watch activities to GoldenCheetah through Dropbox: download the original FIT from intervals.icu,
+ * set the corrected sport, drop speed/distance/altitude (the watch's GPS-less estimates break GC's
+ * "time moving" and TRIMP), fix the CRC and upload it next to the trainer rides.
+ */
+(function () {
+  "use strict";
+
+  const D = window.RodilloDropbox;
+  const DONE_KEY = "rodillo.gcexported";
+  const SINCE_KEY = "rodillo.gcsince";
+
+  // intervals.icu type -> FIT sport / sub_sport
+  const FIT_SPORT = {
+    Badminton: [64, 95], Soccer: [7, 0], Tennis: [8, 0], Swim: [5, 17], Run: [1, 0],
+    WeightTraining: [10, 20], Walk: [11, 0], Hike: [17, 0], Other: [0, 0],
+  };
+  // Record fields cleared: altitude, distance, speed, enhanced speed, enhanced altitude
+  const CLEAR_RECORD_FIELDS = new Set([2, 5, 6, 73, 78]);
+
+  const CRC_TABLE = [0x0000, 0xcc01, 0xd801, 0x1400, 0xf001, 0x3c00, 0x2800, 0xe401,
+    0xa001, 0x6c00, 0x7800, 0xb401, 0x5000, 0x9c01, 0x8801, 0x4400];
+  function fitCrc(bytes, end) {
+    let crc = 0;
+    for (let i = 0; i < end; i++) {
+      const b = bytes[i];
+      let tmp = CRC_TABLE[crc & 0xf]; crc = (crc >> 4) & 0x0fff; crc = crc ^ tmp ^ CRC_TABLE[b & 0xf];
+      tmp = CRC_TABLE[crc & 0xf]; crc = (crc >> 4) & 0x0fff; crc = crc ^ tmp ^ CRC_TABLE[(b >> 4) & 0xf];
+    }
+    return crc;
+  }
+
+  const INVALID = { 1: 0xff, 2: 0xffff, 4: 0xffffffff };
+
+  /** Patch a FIT file in place: sport/sub_sport in sport, session and lap messages; clear speed-type record fields. */
+  function patchFit(src, sport, subSport) {
+    const bytes = new Uint8Array(src);
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const headerSize = bytes[0];
+    const dataEnd = headerSize + dv.getUint32(4, true);
+    const defs = {};
+    const setField = (offset, size, value) => {
+      if (size === 1) bytes[offset] = value;
+      else if (size === 2) dv.setUint16(offset, value, defs.little);
+      else if (size === 4) dv.setUint32(offset, value, defs.little);
+    };
+    let p = headerSize;
+    while (p < dataEnd) {
+      const header = bytes[p++];
+      let local;
+      if (header & 0x80) local = (header >> 5) & 0x03;
+      else {
+        local = header & 0x0f;
+        if (header & 0x40) {
+          const little = bytes[p + 1] === 0;
+          const globalNum = little ? dv.getUint16(p + 2, true) : dv.getUint16(p + 2, false);
+          const n = bytes[p + 4];
+          p += 5;
+          const fields = [];
+          for (let i = 0; i < n; i++) { fields.push({ num: bytes[p], size: bytes[p + 1] }); p += 3; }
+          let devSize = 0;
+          if (header & 0x20) { const nd = bytes[p++]; for (let i = 0; i < nd; i++) { devSize += bytes[p + 1]; p += 3; } }
+          defs[local] = { globalNum, little, fields, devSize };
+          continue;
+        }
+      }
+      const def = defs[local];
+      if (!def) throw new Error("FIT dañado");
+      defs.little = def.little;
+      let o = p;
+      for (const f of def.fields) {
+        const g = def.globalNum;
+        if (f.size === 1 && ((g === 12 && f.num === 0) || (g === 18 && f.num === 5) || (g === 19 && f.num === 25))) bytes[o] = sport;
+        if (f.size === 1 && ((g === 12 && f.num === 1) || (g === 18 && f.num === 6) || (g === 19 && f.num === 39))) bytes[o] = subSport;
+        if (g === 20 && CLEAR_RECORD_FIELDS.has(f.num) && INVALID[f.size] != null) setField(o, f.size, INVALID[f.size]);
+        o += f.size;
+      }
+      p = o + def.devSize;
+    }
+    const crc = fitCrc(bytes, dataEnd);
+    bytes[dataEnd] = crc & 0xff; bytes[dataEnd + 1] = crc >> 8;
+    return bytes;
+  }
+
+  async function maybeGunzip(bytes) {
+    if (bytes[0] !== 0x1f || bytes[1] !== 0x8b) return bytes;
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+
+  const loadDone = () => { try { return JSON.parse(localStorage.getItem(DONE_KEY) || "{}"); } catch (e) { return {}; } };
+  function markDone(id, path) {
+    const done = loadDone();
+    done[id] = path;
+    try { localStorage.setItem(DONE_KEY, JSON.stringify(done)); } catch (e) { /* ignore */ }
+  }
+
+  /** Only activities from the last days before this feature started, plus everything after, are sent. */
+  function since() {
+    let s = null;
+    try { s = +localStorage.getItem(SINCE_KEY); } catch (e) { s = null; }
+    if (!s) { s = Math.floor(Date.now() / 1000) - 3 * 86400; try { localStorage.setItem(SINCE_KEY, String(s)); } catch (e) { /* ignore */ } }
+    return s;
+  }
+
+  function fileName(x, type) {
+    const d = new Date(x.start * 1000);
+    const pad = (n) => String(n).padStart(2, "0");
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "_" + pad(d.getHours()) + pad(d.getMinutes()) + "_" + type + ".fit";
+  }
+
+  /** Export one activity (x from intervals.icu, type = intervals.icu sport). Returns the Dropbox path or null. */
+  async function exportActivity(x, type, apiKey, force) {
+    if (!D.isConnected() || !FIT_SPORT[type] || !x.icuId) return null;
+    const done = loadDone();
+    if (done[x.id] && done[x.id].endsWith("_" + type + ".fit") && !force) return done[x.id];
+    const res = await fetch("https://intervals.icu/api/v1/activity/" + encodeURIComponent(x.icuId) + "/file", {
+      headers: { Authorization: "Basic " + btoa("API_KEY:" + apiKey) },
+    });
+    if (!res.ok) throw new Error("intervals.icu HTTP " + res.status);
+    const raw = await maybeGunzip(new Uint8Array(await res.arrayBuffer()));
+    if (String.fromCharCode(raw[8], raw[9], raw[10], raw[11]) !== ".FIT") throw new Error("el archivo original no es FIT");
+    const [sport, sub] = FIT_SPORT[type];
+    const patched = patchFit(raw, sport, sub);
+    // A previous export with another sport is replaced
+    if (done[x.id] && done[x.id] !== "/" + fileName(x, type)) D.removeFile(done[x.id]).catch(() => {});
+    const path = await D.upload(fileName(x, type), patched, { overwrite: true });
+    markDone(x.id, path);
+    return path;
+  }
+
+  /** Export every classified, non-bike watch activity since the start date that is not in Dropbox yet. */
+  async function exportPending(list, typeOf, apiKey) {
+    if (!D.isConnected()) return 0;
+    const from = since(), done = loadDone();
+    let n = 0;
+    for (const x of list) {
+      const type = typeOf(x);
+      if (x.start < from || x.hasPower || !FIT_SPORT[type] || type === "Other") continue;
+      if (done[x.id] && done[x.id].endsWith("_" + type + ".fit")) continue;
+      try { if (await exportActivity(x, type, apiKey)) n++; } catch (e) { /* retried on the next sync */ }
+    }
+    return n;
+  }
+
+  window.RodilloGcExport = { patchFit, exportActivity, exportPending, FIT_SPORT };
 })();
 </script>
 <script>/* Rodillo app: workout library, live ERG session, recording and FIT export. */

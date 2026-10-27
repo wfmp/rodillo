@@ -114,6 +114,54 @@
     list.replaceChildren(...nodes);
   }
 
+  // ---------- Sport correction for watch activities recorded as a generic "Training" ----------
+  const FIX_KEY = "rodillo.sportfix";
+  const SPORT_CHOICES = [
+    ["Badminton", "Bádminton"], ["Soccer", "Fútbol"], ["Tennis", "Tenis"], ["Swim", "Natación"],
+    ["WeightTraining", "Gimnasio"], ["Run", "Carrera"], ["Other", "Otro"],
+  ];
+  const SPORT_LABEL = Object.fromEntries(SPORT_CHOICES.concat([["Ride", "Bici"], ["VirtualRide", "Rodillo"], ["Walk", "Caminata"], ["Hike", "Excursión"]]));
+  const GENERIC_TYPE = /^(workout|training|other|activity|generic)?$/i;
+  const sportFixes = () => { try { return JSON.parse(localStorage.getItem(FIX_KEY) || "{}"); } catch (e) { return {}; } };
+
+  /** Effective sport of an intervals.icu activity: the user's correction wins. */
+  function sportOf(x) { return sportFixes()[x.id] || x.type || ""; }
+  function sportLabel(type) { return SPORT_LABEL[type] || type || "Actividad"; }
+
+  async function setSport(x, type) {
+    const fixes = sportFixes();
+    fixes[x.id] = type;
+    try { localStorage.setItem(FIX_KEY, JSON.stringify(fixes)); } catch (e) { /* ignore */ }
+    renderActivities();
+    // Also correct it in intervals.icu (best effort; the local correction is kept either way)
+    const cfg = intervalsCfg();
+    if (cfg.apiKey && x.icuId) {
+      try {
+        const res = await fetch("https://intervals.icu/api/v1/activity/" + encodeURIComponent(x.icuId), {
+          method: "PUT",
+          headers: { Authorization: "Basic " + btoa("API_KEY:" + cfg.apiKey), "Content-Type": "application/json" },
+          body: JSON.stringify({ type }),
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+      } catch (e) { app.toast("Guardado en la app; intervals.icu no se pudo actualizar (" + (e.message || e) + ").", "warn"); }
+      // And send it to GoldenCheetah through Dropbox with the right sport
+      if (!x.hasPower && D.isConnected()) {
+        try {
+          const path = await window.RodilloGcExport.exportActivity(x, type, cfg.apiKey, true);
+          if (path) app.toast("Enviada a GoldenCheetah: " + path);
+        } catch (e) { app.toast("No se pudo enviar a GoldenCheetah: " + (e.message || e), "warn"); }
+      }
+    }
+  }
+
+  function openSportPicker(x) {
+    const dlg = $("#sport-dialog");
+    $("#sport-title").textContent = (x.name || "Actividad") + " · " + fmtDate(x.start) + " " + fmtTimeOfDay(x.start);
+    $("#sport-choices").replaceChildren(...SPORT_CHOICES.map(([type, label]) =>
+      app.el("button", { class: "btn" + (sportOf(x) === type ? " primary" : ""), type: "button", onclick: () => { dlg.hidden = true; setSport(x, type); } }, label)));
+    dlg.hidden = false;
+  }
+
   function activityRow(it) {
     if (it.kind === "local") {
       const s = it.s, st = s.stats || {};
@@ -130,11 +178,19 @@
     const x = it.x;
     const metrics = ["carga " + Math.round(x.load || 0)];
     if (x.avgHr) metrics.push(x.avgHr + " ppm");
-    return app.el("div", { class: "act-row ext" },
+    const sport = sportOf(x);
+    const unclassified = GENERIC_TYPE.test(sport) && !sportFixes()[x.id];
+    const title = sportFixes()[x.id] ? sportLabel(sport) : x.name || sportLabel(sport);
+    const row = app.el("button", { class: "act-row ext", type: "button", onclick: () => openSportPicker(x) },
       app.el("span", { class: "act-date" }, fmtDate(x.start), app.el("small", {}, fmtTimeOfDay(x.start))),
-      app.el("span", { class: "act-name" }, x.name || x.type, app.el("small", {}, x.type + " · intervals.icu")),
+      app.el("span", { class: "act-name" }, title, app.el("small", {}, sportLabel(sport) + " · Garmin")),
       app.el("span", { class: "act-dur num" }, fmtDur(x.seconds)),
       app.el("span", { class: "act-metrics num" }, metrics.join(" · ")));
+    if (!unclassified) return row;
+    // One tap to say what it was
+    const chips = app.el("div", { class: "sport-chips" }, app.el("span", { class: "muted small" }, "¿Qué fue?"),
+      ...SPORT_CHOICES.map(([type, label]) => app.el("button", { class: "chip-btn", type: "button", onclick: () => setSport(x, type) }, label)));
+    return app.el("div", { class: "act-pending" }, row, chips);
   }
 
   async function importFitFiles(files) {
@@ -456,6 +512,10 @@
       if (!auto) app.toast(list.length + " actividades de intervals.icu.");
       else if (fresh && before.size) app.toast(fresh === 1 ? "1 actividad nueva de Garmin." : fresh + " actividades nuevas de Garmin.");
       const got = await downloadPowerRides(list, cfg, status);
+      // Watch activities with a known sport go to GoldenCheetah (Dropbox), skipping recordings of trainer sessions
+      await loadData();
+      const sent = await window.RodilloGcExport.exportPending(externalOnly(), sportOf, cfg.apiKey);
+      if (sent) app.toast(sent === 1 ? "1 actividad enviada a GoldenCheetah." : sent + " actividades enviadas a GoldenCheetah.");
       if (got && !auto) app.toast(got === 1 ? "1 salida con potencia descargada." : got + " salidas con potencia descargadas.");
       renderIcuStatus(cfg);
       // Refresh whichever data tab is open
@@ -684,7 +744,7 @@
       const kcal = s.stats && s.stats.kj ? s.stats.kj : ext && ext.calories ? ext.calories : null;
       out.push({ name: s.name, kcal, seconds: s.timerSeconds || (ext && ext.seconds) || 0 });
     }
-    for (const x of externalOnly()) if (A.dayKey(x.start) === day) out.push({ name: x.name || x.type, kcal: x.calories, seconds: x.seconds || 0 });
+    for (const x of externalOnly()) if (A.dayKey(x.start) === day) out.push({ name: sportFixes()[x.id] ? sportLabel(sportOf(x)) : x.name || sportLabel(x.type), kcal: x.calories, seconds: x.seconds || 0 });
     return out;
   }
 
