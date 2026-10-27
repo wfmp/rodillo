@@ -14,8 +14,8 @@
 
   // Field definitions: key, label, unit, decimals
   const FIELDS = [
-    ["weight", "Peso", "kg", 1], ["waist", "Cintura", "cm", 1], ["neck", "Cuello", "cm", 1], ["ribs", "Costillas", "cm", 1],
-    ["fatPct", "Grasa", "%", 1], ["waterPct", "Agua", "%", 1], ["musclePct", "Músculo", "%", 1], ["boneKg", "Hueso", "kg", 1],
+    ["weight", "Peso", "kg", 1], ["fatPct", "Grasa", "%", 1], ["musclePct", "Músculo", "%", 1], ["waterPct", "Agua", "%", 1],
+    ["boneKg", "Hueso", "kg", 1], ["waist", "Cintura", "cm", 1], ["neck", "Cuello", "cm", 1],
   ];
 
   const $ = (s) => document.querySelector(s);
@@ -55,7 +55,7 @@
 
   // ---------- Import / export ----------
   const HEADER_MAP = [
-    [/^fecha/, "date"], [/^peso/, "weight"], [/^cintura/, "waist"], [/^cuello/, "neck"], [/^costillas/, "ribs"],
+    [/^fecha/, "date"], [/^peso/, "weight"], [/^cintura/, "waist"], [/^cuello/, "neck"],
     [/%\s*grasa|grasa\s*\[%\]/, "fatPct"], [/^agua/, "waterPct"], [/^m[uú]sculo\s*\[%\]/, "musclePct"], [/^hueso/, "boneKg"],
   ];
 
@@ -103,18 +103,18 @@
   function buildExcel() {
     const list = load();
     const columns = [
-      { header: "fecha", type: "date", width: 12 }, { header: "peso [kg]", decimals: 1 }, { header: "cintura [cm]", decimals: 1 },
-      { header: "cuello [cm]", decimals: 1 }, { header: "costillas [cm]", decimals: 1 }, { header: "% grasa", decimals: 1 },
-      { header: "agua [%]", decimals: 1 }, { header: "musculo [%]", decimals: 1 }, { header: "hueso [kg]", decimals: 1 },
+      { header: "fecha", type: "date", width: 12 }, { header: "peso [kg]", decimals: 1 }, { header: "% grasa", decimals: 1 },
+      { header: "musculo [%]", decimals: 1 }, { header: "agua [%]", decimals: 1 }, { header: "hueso [kg]", decimals: 1 },
+      { header: "cintura [cm]", decimals: 1 }, { header: "cuello [cm]", decimals: 1 },
       { header: "grasa [kg]", decimals: 1 }, { header: "musculo [kg]", decimals: 1 },
     ];
     const rows = list.map((m) => {
       const d = derive(m);
       // Estimated fat stays a formula so a later re-import recognises it
-      const fat = m.fatPct != null ? m.fatPct : m.fatEstimated && m.waist ? { formula: 'IF(C{r}<>"",0.4868*C{r}-18.987,"")', value: d.fat } : null;
-      return [parseKey(m.date), m.weight, m.waist, m.neck, m.ribs, fat, m.waterPct, m.musclePct, m.boneKg,
-        d.fat != null && m.weight ? { formula: "B{r}*F{r}/100", value: d.fatKg } : null,
-        m.musclePct != null && m.weight ? { formula: "B{r}*H{r}/100", value: d.muscleKg } : null];
+      const fat = m.fatPct != null ? m.fatPct : m.fatEstimated && m.waist ? { formula: 'IF(G{r}<>"",0.4868*G{r}-18.987,"")', value: d.fat } : null;
+      return [parseKey(m.date), m.weight, fat, m.musclePct, m.waterPct, m.boneKg, m.waist, m.neck,
+        d.fat != null && m.weight ? { formula: "B{r}*C{r}/100", value: d.fatKg } : null,
+        m.musclePct != null && m.weight ? { formula: "B{r}*D{r}/100", value: d.muscleKg } : null];
     });
     return X.write("medidas", columns, rows);
   }
@@ -320,9 +320,9 @@
   function renderTable(all) {
     const rows = [...all].reverse().map((m) => app.el("tr", { onclick: () => openForm(load().find((x) => x.id === m.id)) },
       app.el("td", {}, fmtDate(m.date)),
-      ...["weight", "waist", "neck"].map((k) => app.el("td", { class: "num" }, fmt(m[k]))),
+      app.el("td", { class: "num" }, fmt(m.weight)),
       app.el("td", { class: "num" + (m.fatEstimated ? " est" : "") }, fmt(m.fat) + (m.fatEstimated ? "*" : "")),
-      ...["waterPct", "musclePct", "boneKg", "fatKg", "muscleKg"].map((k) => app.el("td", { class: "num" }, fmt(m[k])))));
+      ...["musclePct", "waterPct", "boneKg", "waist", "neck", "fatKg", "muscleKg"].map((k) => app.el("td", { class: "num" }, fmt(m[k])))));
     $("#ms-rows").replaceChildren(...rows);
   }
 

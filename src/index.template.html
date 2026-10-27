@@ -738,7 +738,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
         <div class="chart-title">Todas las medidas <span class="muted small">· toca una fila para editarla · * grasa estimada por cintura</span></div>
         <div class="table-scroll ms-table">
           <table class="laps">
-            <thead><tr><th>Fecha</th><th>Peso</th><th>Cintura</th><th>Cuello</th><th>Grasa %</th><th>Agua %</th><th>Músculo %</th><th>Hueso</th><th>Grasa kg</th><th>Músculo kg</th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Peso</th><th>Grasa %</th><th>Músculo %</th><th>Agua %</th><th>Hueso</th><th>Cintura</th><th>Cuello</th><th>Grasa kg</th><th>Músculo kg</th></tr></thead>
             <tbody id="ms-rows"></tbody>
           </table>
         </div>
@@ -871,13 +871,12 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
     <label class="field" for="ms-date"><span class="label">Fecha</span><input id="ms-date" type="date" required></label>
     <div class="ms-fields">
       <label class="field" for="ms-weight"><span class="label">Peso [kg]</span><input id="ms-weight" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-fatPct"><span class="label">Grasa [%]</span><input id="ms-fatPct" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-musclePct"><span class="label">Músculo [%]</span><input id="ms-musclePct" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-waterPct"><span class="label">Agua [%]</span><input id="ms-waterPct" type="text" inputmode="decimal"></label>
+      <label class="field" for="ms-boneKg"><span class="label">Hueso [kg]</span><input id="ms-boneKg" type="text" inputmode="decimal"></label>
       <label class="field" for="ms-waist"><span class="label">Cintura [cm]</span><input id="ms-waist" type="text" inputmode="decimal"></label>
       <label class="field" for="ms-neck"><span class="label">Cuello [cm]</span><input id="ms-neck" type="text" inputmode="decimal"></label>
-      <label class="field" for="ms-ribs"><span class="label">Costillas [cm]</span><input id="ms-ribs" type="text" inputmode="decimal"></label>
-      <label class="field" for="ms-fatPct"><span class="label">Grasa [%]</span><input id="ms-fatPct" type="text" inputmode="decimal"></label>
-      <label class="field" for="ms-waterPct"><span class="label">Agua [%]</span><input id="ms-waterPct" type="text" inputmode="decimal"></label>
-      <label class="field" for="ms-musclePct"><span class="label">Músculo [%]</span><input id="ms-musclePct" type="text" inputmode="decimal"></label>
-      <label class="field" for="ms-boneKg"><span class="label">Hueso [kg]</span><input id="ms-boneKg" type="text" inputmode="decimal"></label>
     </div>
     <div class="dialog-actions">
       <button class="btn danger" id="ms-delete" type="button" hidden>Borrar</button>

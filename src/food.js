@@ -177,7 +177,9 @@
     for (const k of days) sums.push(await daySummary(k));
     const logged = sums.filter((s) => s.items > 0 && s.balance != null);
     const net = logged.reduce((a, s) => a + s.balance, 0);
-    const pre = measureAt(days[6]), post = measureAt(days[6], true);
+    // Weigh-in of this week minus the weigh-in of the previous week
+    const inRange = (from, to) => { let best = null; for (const m of window.RodilloMeasures.load()) if (m.weight && m.date >= from && m.date <= to) best = m; return best; };
+    const post = inRange(ws, days[6]), pre = inRange(addDays(ws, -7), addDays(ws, -1)) || measureAt(addDays(ws, -1));
     const real = pre && post && post.date > pre.date ? (post.weight - pre.weight) * 1000 : null;
     $("#fd-week-title").textContent = "Semana del " + fmtDay(ws) + " al " + fmtDay(days[6]);
     $("#fd-week-rows").replaceChildren(...sums.map((s) => app.el("tr", { class: s.day === day ? "sel" : "", onclick: () => { day = s.day; render(); } },
