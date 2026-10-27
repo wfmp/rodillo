@@ -217,7 +217,7 @@
     const all = load().map(derive);
     $("#ms-empty").hidden = all.length > 0;
     $("#ms-content").hidden = all.length === 0;
-    $("#ms-backup").textContent = D.isConnected() ? "Cada cambio se copia a Dropbox (carpeta datos)." : "Conecta Dropbox en Ajustes para tener una copia fuera del iPad.";
+    $("#ms-backup").textContent = D.isConnected() ? "Cada cambio se copia a Dropbox (carpeta datos)." : "Conecta Dropbox en Ajustes para tener una copia y usar tus datos en otros dispositivos.";
     if (!all.length) return;
 
     renderCards(all);

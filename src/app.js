@@ -778,6 +778,7 @@
     settings.simulator = $("#set-sim").checked;
     settings.sounds = $("#set-sounds").checked;
     settings.autoPause = $("#set-autopause").checked;
+    document.body.classList.toggle("no-trainer", !B.bluetoothAvailable() && !settings.simulator);
     settings.height = parseFloat($("#set-height").value) || null;
     settings.birthDate = $("#set-birth").value || null;
     store.set("settings", settings);
@@ -902,7 +903,14 @@
     window.RodilloMeasures.init(window.RodilloApp);
     window.RodilloFood.init(window.RodilloApp);
     window.RodilloSync.init(window.RodilloApp);
-    window.RodilloViews.showTab("library");
+    // Without Web Bluetooth (iPhone/Mac Safari) the app is a viewer and logbook: no training tab
+    const noTrainer = !B.bluetoothAvailable() && !settings.simulator;
+    document.body.classList.toggle("no-trainer", noTrainer);
+    let startTab = null;
+    try { startTab = localStorage.getItem("rodillo.tab"); } catch (e) { startTab = null; }
+    const tabs = ["library", "activities", "form", "power", "measures", "food"];
+    if (!tabs.includes(startTab) || (noTrainer && startTab === "library")) startTab = noTrainer ? "food" : "library";
+    window.RodilloViews.showTab(startTab);
     checkRecovery();
     H.listSummaries().then((list) => {
       for (const s of list) if (s.workoutId) doneWorkouts.add(s.workoutId);

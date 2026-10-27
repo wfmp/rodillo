@@ -30,6 +30,9 @@ def build():
             raise ValueError(f"Marker {marker} missing from template")
         html = html.replace(marker, content)
     DIST.mkdir(exist_ok=True)
+    # Home-screen icons and web manifest are served next to index.html
+    for asset in (ROOT / "static").iterdir():
+        (DIST / asset.name).write_bytes(asset.read_bytes())
     out = DIST / "index.html"
     out.write_text(html, encoding="utf-8")
     return out

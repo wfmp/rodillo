@@ -111,7 +111,7 @@
     const hasFoods = foods().length > 0, hasLog = Object.keys(log()).length > 0;
     $("#fd-empty").hidden = hasFoods || hasLog;
     $("#fd-content").hidden = !(hasFoods || hasLog);
-    $("#fd-backup").textContent = D.isConnected() ? "Cada cambio se copia a Dropbox (carpeta datos)." : "Conecta Dropbox en Ajustes para tener una copia fuera del iPad.";
+    $("#fd-backup").textContent = D.isConnected() ? "Cada cambio se copia a Dropbox (carpeta datos)." : "Conecta Dropbox en Ajustes para tener una copia y usar tus datos en otros dispositivos.";
     if ($("#fd-content").hidden) return;
     $("#fd-date").value = day;
     $("#fd-day-label").textContent = fmtDay(day) + (day === keyOf(new Date()) ? " · hoy" : "");
