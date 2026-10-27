@@ -658,9 +658,9 @@
       if (A.dayKey(s.start) !== day) continue;
       const ext = external.find((x) => x.id === s.id);
       const kcal = s.stats && s.stats.kj ? s.stats.kj : ext && ext.calories ? ext.calories : null;
-      out.push({ name: s.name, kcal });
+      out.push({ name: s.name, kcal, seconds: s.timerSeconds || (ext && ext.seconds) || 0 });
     }
-    for (const x of externalOnly()) if (A.dayKey(x.start) === day) out.push({ name: x.name || x.type, kcal: x.calories });
+    for (const x of externalOnly()) if (A.dayKey(x.start) === day) out.push({ name: x.name || x.type, kcal: x.calories, seconds: x.seconds || 0 });
     return out;
   }
 

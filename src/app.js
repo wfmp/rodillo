@@ -323,7 +323,7 @@
     dev.on("connected", (info) => {
       if (!current()) return;
       setChip("trainer", "on", info.name + (info.canControl ? " · ERG" : " · solo lectura"));
-      if (ride && ride.target != null) dev.setTargetPower(ride.target);
+      if (ride && ride.target != null) setTarget(ride.target);
     });
     dev.on("disconnected", () => { if (current()) setChip("trainer", "warn", "Reconectando…"); });
     dev.on("warning", (msg) => { if (current()) toast(msg, "warn"); });
@@ -389,10 +389,24 @@
     }
   }
 
+  /** Short all-out efforts are ridden without ERG: the trainer cannot reach the target in a few seconds. */
+  const SPRINT_MAX_SECONDS = 20, SPRINT_MIN_PCT = 150, SPRINT_GRADE = 3;
+  function isSprint(w, t) {
+    if (!w || w.manual) return false;
+    const loc = W.segmentAt(w, Math.min(t, W.totalDuration(w) - 1));
+    if (!loc) return false;
+    const seg = w.segments[loc.index];
+    const pct = w.unit === "watts" ? Math.max(seg[1], seg[2]) / settings.ftp * 100 : Math.max(seg[1], seg[2]);
+    return seg[0] <= SPRINT_MAX_SECONDS && pct >= SPRINT_MIN_PCT;
+  }
+
   function setTarget(watts) {
     if (!ride) return;
     ride.target = watts;
-    if (devices.trainer && watts != null) devices.trainer.setTargetPower(watts);
+    ride.freeMode = isSprint(ride.workout, ride.t);
+    if (!devices.trainer || watts == null) return;
+    if (ride.freeMode && devices.trainer.setSimulation) devices.trainer.setSimulation(SPRINT_GRADE);
+    else devices.trainer.setTargetPower(watts);
   }
 
   // ---------- Sound cues ----------
@@ -604,7 +618,7 @@
 
     const pct = target ? target / settings.ftp * 100 : 0;
     document.documentElement.style.setProperty("--zone", zoneColor(pct || 50));
-    $("#m-target-pct").textContent = target ? Math.round(pct) + " % FTP" : "";
+    $("#m-target-pct").textContent = ride.freeMode ? "SPRINT · sin ERG, cambia de piñón y dale" : target ? Math.round(pct) + " % FTP" : "";
     const diff = powerFresh && p3 != null && target ? p3 - target : null;
     const powerBox = $("#box-power");
     powerBox.dataset.delta = diff == null ? "" : Math.abs(diff) <= Math.max(10, target * 0.05) ? "ok" : diff > 0 ? "high" : "low";

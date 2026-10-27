@@ -96,10 +96,14 @@
       const v = itemValues(it, list);
       for (const key of Object.keys(t)) t[key] += v[key] || 0;
     }
-    const acts = await window.RodilloViews.dayActivities(k).catch(() => []);
-    const autoExercise = acts.reduce((a, x) => a + (x.kcal || 0), 0);
-    const exercise = entry.exercise != null ? entry.exercise : autoExercise;
     const base = baseKcal(k);
+    // Activity calories are gross; the base expenditure for that time is already in "sin ejercicio", so subtract it
+    const acts = (await window.RodilloViews.dayActivities(k).catch(() => [])).map((a) => {
+      const basePart = base != null && a.seconds ? base / 1440 * (a.seconds / 60) : 0;
+      return Object.assign({}, a, { basePart, net: a.kcal != null ? Math.max(0, a.kcal - basePart) : null });
+    });
+    const autoExercise = acts.reduce((a, x) => a + (x.net || 0), 0);
+    const exercise = entry.exercise != null ? entry.exercise : autoExercise;
     const m = measureAt(k), fat = fatAt(k);
     return {
       day: k, items: entry.items.length, totals: t, acts, autoExercise, exercise, base,
@@ -164,7 +168,7 @@
     ex.value = dayEntry(day).exercise != null ? dayEntry(day).exercise : "";
     ex.placeholder = s.autoExercise ? String(Math.round(s.autoExercise)) : "0";
     $("#fd-acts").textContent = s.acts.length
-      ? "Automático: " + s.acts.map((a) => a.name + (a.kcal ? " " + Math.round(a.kcal) : " (sin dato)")).join(" · ")
+      ? "Automático (total − basal de ese tiempo): " + s.acts.map((a) => a.name + (a.kcal != null ? " " + Math.round(a.kcal) + (a.basePart ? " − " + Math.round(a.basePart) + " = " + Math.round(a.net) : "") : " (sin dato)")).join(" · ")
       : "Sin actividades registradas este día.";
     // Macros: grams, share of energy, grams per kg
     const kcalMacros = MACROS.reduce((a, [k, , f]) => a + s.totals[k] * f, 0);

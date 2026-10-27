@@ -45,7 +45,7 @@
     }
   }
 
-  const FTMS_OP = { requestControl: 0x00, reset: 0x01, setTargetPower: 0x05, startResume: 0x07, stopPause: 0x08 };
+  const FTMS_OP = { requestControl: 0x00, reset: 0x01, setTargetPower: 0x05, startResume: 0x07, stopPause: 0x08, setSimulation: 0x11 };
 
   /** Parse the FTMS Indoor Bike Data characteristic. */
   function parseIndoorBikeData(dv) {
@@ -157,7 +157,7 @@
         this.mode = "power";
         this.emit("warning", "Este dispositivo solo envía potencia: no se puede controlar la resistencia.");
       }
-      this.lastTarget = null;
+      this.lastTarget = null; this.lastGrade = null;
       this.emit("connected", { name: this.name, canControl: this.canControl });
     }
     handleControlResponse(dv) {
@@ -174,11 +174,26 @@
       this.queue = task.catch(() => {});
       return task;
     }
+    /**
+     * Leave ERG and simulate a road at the given grade (%): the rider sets the power with legs and gears.
+     * FTMS "Set Indoor Bike Simulation Parameters": wind 0 m/s, grade in 0.01 %, Crr 0.004, CdA-like Cw 0.51.
+     */
+    setSimulation(gradePct) {
+      if (!this.canControl || !this.controlPoint) return;
+      const g = Math.round(gradePct * 100);
+      if (this.lastGrade === g && this.lastTarget === null) return;
+      this.lastGrade = g; this.lastTarget = null;
+      log("Modo libre: pendiente " + gradePct + " %");
+      this.sendControl([FTMS_OP.setSimulation, 0, 0, g & 0xff, (g >> 8) & 0xff, 40, 51]).catch((e) => {
+        log("Modo libre ✗ " + errorText(e));
+        this.emit("warning", "El rodillo no aceptó el modo libre: " + errorText(e));
+      });
+    }
     setTargetPower(watts) {
       if (!this.canControl || !this.controlPoint) return;
       const w = Math.max(0, Math.min(2000, Math.round(watts)));
       if (w === this.lastTarget) return;
-      this.lastTarget = w;
+      this.lastTarget = w; this.lastGrade = null;
       this.sendControl([FTMS_OP.setTargetPower, w & 0xff, (w >> 8) & 0xff]).catch((e) => {
         log("Objetivo " + w + " W ✗ " + errorText(e));
         this.emit("warning", "No se pudo enviar la potencia objetivo: " + errorText(e));
@@ -249,6 +264,7 @@
       this.emit("data", { power, cadence: Math.round(86 + Math.random() * 6), speedKmh: 18 + power / 12, hr: Math.round(this.hr) });
     }
     setTargetPower(w) { this.target = w; }
+    setSimulation() { this.target = this.ftp * 2; }
     disconnect() { clearInterval(this.timer); this.timer = null; this.emit("disconnected"); }
   }
 
