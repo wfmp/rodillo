@@ -363,7 +363,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
 .fd-nav input[type=date] { background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font: inherit; min-height: 44px; }
 .fd-day { font-family: var(--font-num); font-weight: 600; font-size: 22px; text-transform: capitalize; margin-left: 6px; }
 .fd-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; margin-bottom: 12px; align-items: start; }
-@media (max-width: 860px) { .fd-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 860px) { .fd-grid { grid-template-columns: minmax(0, 1fr); } .fd-summary { order: -1; } }
 .fd-add { display: grid; grid-template-columns: minmax(0, 1fr) 130px auto auto; gap: 8px; margin-bottom: 8px; }
 .fd-add input, .fd-db-tools input, .fd-ex {
   background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 16px; min-height: 44px; width: 100%; min-width: 0;
