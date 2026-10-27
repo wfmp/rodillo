@@ -431,9 +431,14 @@
     };
   }
 
-  async function syncIntervals() {
+  let icuRunning = false;
+  async function syncIntervals(opts) {
+    const auto = opts && opts.auto;
     const cfg = intervalsCfg();
-    if (!cfg.apiKey) { app.toast("Pega primero tu API key de intervals.icu.", "warn"); return; }
+    if (!cfg.apiKey) { if (!auto) app.toast("Pega primero tu API key de intervals.icu.", "warn"); return; }
+    if (icuRunning) return;
+    icuRunning = true;
+    const before = new Set(external.map((x) => x.id));
     const status = { set textContent(t) { for (const n of document.querySelectorAll(".icu-status")) n.textContent = t; } };
     status.textContent = "Sincronizando…";
     const newest = A.dayKey(Date.now() / 1000);
@@ -447,16 +452,32 @@
       const list = (await res.json()).filter((a) => a && a.start_date_local).map(mapIntervals);
       await H.saveExternal(list);
       cfg.lastSync = Date.now(); saveIntervalsCfg(cfg);
-      app.toast(list.length + " actividades de intervals.icu.");
+      const fresh = list.filter((x) => !before.has(x.id)).length;
+      if (!auto) app.toast(list.length + " actividades de intervals.icu.");
+      else if (fresh && before.size) app.toast(fresh === 1 ? "1 actividad nueva de Garmin." : fresh + " actividades nuevas de Garmin.");
       const got = await downloadPowerRides(list, cfg, status);
-      if (got) app.toast(got === 1 ? "1 salida con potencia descargada." : got + " salidas con potencia descargadas.");
-      renderForm();
+      if (got && !auto) app.toast(got === 1 ? "1 salida con potencia descargada." : got + " salidas con potencia descargadas.");
+      renderIcuStatus(cfg);
+      // Refresh whichever data tab is open
+      const view = document.body.dataset.view;
+      if ((fresh || got) && ["activities", "form", "power", "food"].includes(view)) render(view);
     } catch (e) {
       const cors = e instanceof TypeError;
       status.textContent = cors
         ? "No se pudo conectar: intervals.icu no acepta llamadas directas desde esta página (o no hay red)."
         : "No se pudo sincronizar: " + (e.message || e);
+    } finally {
+      icuRunning = false;
     }
+  }
+
+  /** Pull new Garmin activities from intervals.icu on start, on return to the app and every 30 min. */
+  function autoSyncIntervals() {
+    const cfg = intervalsCfg();
+    if (!cfg.apiKey || document.visibilityState !== "visible") return;
+    if (document.body.dataset.view === "ride") return; // not during a session
+    if (cfg.lastSync && Date.now() - cfg.lastSync < 5 * 60 * 1000) return;
+    syncIntervals({ auto: true });
   }
 
   /** Pull second-by-second streams for rides with power that are not yet in the local history. */
@@ -628,7 +649,10 @@
       renderForm();
     });
     $("#btn-settings").addEventListener("click", fillIcuSettings);
-    $("#icu-sync").addEventListener("click", syncIntervals);
+    $("#icu-sync").addEventListener("click", () => syncIntervals());
+    setTimeout(autoSyncIntervals, 2500);
+    setInterval(autoSyncIntervals, 30 * 60 * 1000);
+    document.addEventListener("visibilitychange", autoSyncIntervals);
     $("#icu-save").addEventListener("click", () => {
       const cfg = intervalsCfg();
       cfg.apiKey = $("#icu-key").value.trim();
