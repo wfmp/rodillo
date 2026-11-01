@@ -143,5 +143,30 @@
     return n;
   }
 
-  window.RodilloGcExport = { patchFit, exportActivity, exportPending, FIT_SPORT };
+  /**
+   * Bike rides with power that came from intervals.icu (e.g. the Wahoo ELEMNT): the original FIT goes to Dropbox
+   * untouched (GPS, speed and distance are real for outdoor rides). rides: [{id, icuId, start, name}]
+   */
+  async function exportRides(rides, apiKey) {
+    if (!D.isConnected()) return 0;
+    const from = since(), done = loadDone();
+    let n = 0;
+    for (const r of rides) {
+      if (r.start < from || done[r.id] || !r.icuId) continue;
+      try {
+        const res = await fetch("https://intervals.icu/api/v1/activity/" + encodeURIComponent(r.icuId) + "/file", {
+          headers: { Authorization: "Basic " + btoa("API_KEY:" + apiKey) },
+        });
+        if (!res.ok) throw new Error("intervals.icu HTTP " + res.status);
+        const raw = await maybeGunzip(new Uint8Array(await res.arrayBuffer()));
+        if (String.fromCharCode(raw[8], raw[9], raw[10], raw[11]) !== ".FIT") continue;
+        const path = await D.upload(fileName(r, "Bici"), raw, { overwrite: true });
+        markDone(r.id, path);
+        n++;
+      } catch (e) { /* retried on the next sync */ }
+    }
+    return n;
+  }
+
+  window.RodilloGcExport = { patchFit, exportActivity, exportPending, exportRides, FIT_SPORT };
 })();

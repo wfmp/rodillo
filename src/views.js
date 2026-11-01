@@ -545,7 +545,11 @@
       const got = await downloadPowerRides(list, cfg, status);
       // Watch activities with a known sport go to GoldenCheetah (Dropbox), skipping recordings of trainer sessions
       await loadData();
-      const sent = await window.RodilloGcExport.exportPending(externalOnly(), sportOf, cfg.apiKey);
+      let sent = await window.RodilloGcExport.exportPending(externalOnly(), sportOf, cfg.apiKey);
+      // Rides with power downloaded from intervals.icu (Wahoo) also go to GoldenCheetah, as their original FIT
+      sent += await window.RodilloGcExport.exportRides(
+        summaries.filter((s) => s.source === "icu").map((s) => ({ id: s.id, icuId: s.id.replace(/^icu-/, ""), start: s.start, name: s.name })),
+        cfg.apiKey);
       if (sent) app.toast(sent === 1 ? "1 actividad enviada a GoldenCheetah." : sent + " actividades enviadas a GoldenCheetah.");
       if (got && !auto) app.toast(got === 1 ? "1 salida con potencia descargada." : got + " salidas con potencia descargadas.");
       renderIcuStatus(cfg);
@@ -575,7 +579,9 @@
   async function downloadPowerRides(list, cfg, status) {
     await loadData();
     const have = new Set(summaries.map((s) => s.id));
-    const todo = list.filter((x) => x.hasPower && !have.has(x.id));
+    // Skip rides already in the history under another source (e.g. a FIT imported and sent to intervals.icu)
+    const overlapsLocal = (x) => summaries.some((s) => s.id !== x.id && x.start < s.end + 600 && x.end > s.start - 600);
+    const todo = list.filter((x) => x.hasPower && !have.has(x.id) && !overlapsLocal(x));
     let got = 0;
     for (let i = 0; i < todo.length; i++) {
       const x = todo[i];
