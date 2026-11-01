@@ -366,6 +366,7 @@ table.laps { width: 100%; border-collapse: collapse; font-size: 15px; }
 .blk-rep { font-family: var(--font-num); font-weight: 700; font-size: 18px; padding-top: 8px; }
 .badge-done { background: var(--ok); }
 .badge { white-space: nowrap; }
+.fit-forward { align-items: center; font-size: 14px; color: var(--muted); }
 .stat-d { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .ms-range { display: flex; justify-content: flex-end; padding: 12px 0; }
 .ms-table { max-height: 420px; overflow-y: auto; }
@@ -678,6 +679,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       </div>
       <div class="lib-actions">
         <label class="btn" for="fit-import">Importar FIT<input id="fit-import" type="file" accept=".fit,application/octet-stream" multiple></label>
+        <label class="check fit-forward" for="fit-forward"><input id="fit-forward" type="checkbox" checked><span>Enviar a GoldenCheetah e intervals.icu</span></label>
       </div>
     </div>
     <div class="activity-list" id="activity-list"></div>
@@ -929,22 +931,6 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       </div>
       <div class="dbx-actions"><button class="btn" id="icu-save" type="button">Guardar y sincronizar</button></div>
     </fieldset>
-    <fieldset class="dbx">
-      <legend class="label">Ride with GPS (Bryton)</legend>
-      <p class="dbx-status rw-status"></p>
-      <div id="rw-fields">
-        <label class="field" for="rw-key"><span class="label">API key</span><input id="rw-key" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-        <div class="icu-fields">
-          <label class="field" for="rw-email"><span class="label">Email de Ride with GPS</span><input id="rw-email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
-          <label class="field" for="rw-password"><span class="label">Contraseña (no se guarda)</span><input id="rw-password" type="password" autocomplete="current-password"></label>
-        </div>
-      </div>
-      <div class="dbx-actions">
-        <button class="btn" id="rw-connect" type="button">Conectar Ride with GPS</button>
-        <button class="btn" id="rw-sync" type="button" hidden>Buscar salidas ahora</button>
-        <button class="btn ghost" id="rw-disconnect" type="button" hidden>Desconectar</button>
-      </div>
-    </fieldset>
     <details class="log-box">
       <summary>Registro Bluetooth</summary>
       <pre id="ble-log"></pre>
@@ -1089,7 +1075,6 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 <script>/*FOOD_JS*/</script>
 <script>/*SYNC_JS*/</script>
 <script>/*GCEXPORT_JS*/</script>
-<script>/*RWGPS_JS*/</script>
 <script>/*APP_JS*/</script>
 </body>
 </html>
