@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bryton test</title>
+<style>
+  body { font: 16px -apple-system, system-ui, sans-serif; margin: 0; padding: 16px; background: #111; color: #eee; }
+  input, button { font: inherit; padding: 10px; margin: 4px 0; width: 100%; box-sizing: border-box; border-radius: 8px; border: 1px solid #444; background: #222; color: #eee; }
+  button { background: #2a6; border: 0; font-weight: 600; }
+  pre { white-space: pre-wrap; word-break: break-word; background: #000; padding: 12px; border-radius: 8px; font-size: 13px; }
+  .ok { color: #6d6; } .bad { color: #f66; }
+  p.note { color: #aaa; font-size: 14px; }
+</style>
+</head>
+<body>
+<h2>Prueba de conexión con Bryton</h2>
+<p class="note">Nothing is stored. The password is hashed (SHA-256) in the browser and sent only to Bryton.
+Based on the protocol documented by github.com/jorge-huxley/intervalssync (MIT).</p>
+<input id="email" type="email" placeholder="email Bryton Active" autocomplete="username">
+<input id="pass" type="password" placeholder="contraseña" autocomplete="current-password">
+<select id="host" style="width:100%;padding:10px;margin:4px 0;border-radius:8px;background:#222;color:#eee">
+  <option value="m3.brytonactive.com">Internacional</option>
+  <option value="active.cn.brytonactive.com">China</option>
+</select>
+<button id="go">Probar</button>
+<pre id="log"></pre>
+<script>
+"use strict";
+const API_KEY = "UHIJdntFZFkZaVJsInRHfRcYES08Fwp0Bwkf";
+const logEl = document.getElementById("log");
+function log(text, cls) {
+  const span = document.createElement("span");
+  if (cls) span.className = cls;
+  span.textContent = text + "\n";
+  logEl.appendChild(span);
+}
+
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Minimal Meteor DDP client over a raw WebSocket (Meteor serves DDP at /websocket). */
+function ddpConnect(host) {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket("wss://" + host + "/websocket");
+    let nextId = 1;
+    const pending = {}, subs = {}, collections = {};
+    const timer = setTimeout(() => reject(new Error("WebSocket timeout")), 20000);
+    const client = {
+      collections,
+      call(method, params) {
+        const id = String(nextId++);
+        ws.send(JSON.stringify({ msg: "method", method, params, id }));
+        return new Promise((res, rej) => { pending[id] = { res, rej }; });
+      },
+      subscribe(name, params) {
+        const id = String(nextId++);
+        ws.send(JSON.stringify({ msg: "sub", id, name, params: params || [] }));
+        return new Promise((res, rej) => { subs[id] = { res, rej }; });
+      },
+      close() { try { ws.close(); } catch (e) { /* ignore */ } },
+    };
+    ws.onopen = () => ws.send(JSON.stringify({ msg: "connect", version: "1", support: ["1", "pre2", "pre1"] }));
+    ws.onerror = () => { clearTimeout(timer); reject(new Error("WebSocket error (blocked or unreachable)")); };
+    ws.onmessage = (ev) => {
+      const m = JSON.parse(ev.data);
+      if (m.msg === "ping") ws.send(JSON.stringify({ msg: "pong", id: m.id }));
+      else if (m.msg === "connected") { clearTimeout(timer); resolve(client); }
+      else if (m.msg === "failed") reject(new Error("DDP connect failed"));
+      else if (m.msg === "result" && pending[m.id]) {
+        const p = pending[m.id]; delete pending[m.id];
+        if (m.error) p.rej(new Error(m.error.reason || m.error.message || JSON.stringify(m.error)));
+        else p.res(m.result);
+      } else if (m.msg === "added") {
+        (collections[m.collection] = collections[m.collection] || {})[m.id] = m.fields || {};
+      } else if (m.msg === "ready") {
+        for (const id of m.subs || []) if (subs[id]) { subs[id].res(); delete subs[id]; }
+      } else if (m.msg === "nosub" && subs[m.id]) {
+        subs[m.id].rej(new Error("subscription refused")); delete subs[m.id];
+      }
+    };
+  });
+}
+
+document.getElementById("go").onclick = async () => {
+  logEl.textContent = "";
+  const email = document.getElementById("email").value.trim();
+  const pass = document.getElementById("pass").value;
+  const host = document.getElementById("host").value;
+  if (!email || !pass) { log("Falta email o contraseña", "bad"); return; }
+  log("Origen: " + location.origin + " → " + host);
+  let client;
+  try {
+    client = await ddpConnect(host);
+    log("1. WebSocket: OK", "ok");
+  } catch (e) { log("1. WebSocket: FALLA — " + e.message, "bad"); return; }
+
+  let session;
+  try {
+    const r = await client.call("login", [{ user: { email }, password: { digest: await sha256Hex(pass), algorithm: "sha-256" } }]);
+    session = { userId: r.id, token: r.token };
+    log("2. Login: OK", "ok");
+  } catch (e) { log("2. Login: FALLA — " + e.message, "bad"); client.close(); return; }
+
+  let acts = [];
+  try {
+    await client.subscribe("activityList", []);
+    const docs = client.collections.userActivities || {};
+    acts = Object.entries(docs).map(([id, f]) => ({ id, ...f }))
+      .filter((a) => !a._deleted && (a.name || a.title) !== "_deleted")
+      .sort((a, b) => (b.local_start_time || 0) - (a.local_start_time || 0));
+    log("3. Lista: OK — " + acts.length + " actividades", "ok");
+    for (const a of acts.slice(0, 5)) {
+      log("   " + new Date((a.local_start_time || 0) * 1000).toISOString().slice(0, 16) + "  " + (a.name || a.title || a.id));
+    }
+    if (acts[0]) log("   campos: " + Object.keys(acts[0]).join(", "));
+  } catch (e) { log("3. Lista: FALLA — " + e.message, "bad"); }
+  client.close();
+
+  if (!acts.length) { log("4. Descarga FIT: sin actividades para probar"); return; }
+  try {
+    const res = await fetch("https://" + host + "/api/activity?id=" + encodeURIComponent(acts[0].id), {
+      headers: { "X-User-Id": session.userId, "X-Auth-Token": session.token, "x-api-key": API_KEY },
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    const sig = String.fromCharCode(...bytes.slice(8, 12));
+    if (sig === ".FIT") log("4. Descarga FIT: OK — " + bytes.length + " bytes", "ok");
+    else log("4. Descarga FIT: respuesta no es FIT (" + bytes.length + " bytes)", "bad");
+  } catch (e) {
+    log("4. Descarga FIT: FALLA — " + e.message + " (probablemente bloqueo CORS → necesitaría el intermediario)", "bad");
+  }
+};
+</script>
+</body>
+</html>
