@@ -929,6 +929,22 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       </div>
       <div class="dbx-actions"><button class="btn" id="icu-save" type="button">Guardar y sincronizar</button></div>
     </fieldset>
+    <fieldset class="dbx">
+      <legend class="label">Ride with GPS (Bryton)</legend>
+      <p class="dbx-status rw-status"></p>
+      <div id="rw-fields">
+        <label class="field" for="rw-key"><span class="label">API key</span><input id="rw-key" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <div class="icu-fields">
+          <label class="field" for="rw-email"><span class="label">Email de Ride with GPS</span><input id="rw-email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
+          <label class="field" for="rw-password"><span class="label">Contraseña (no se guarda)</span><input id="rw-password" type="password" autocomplete="current-password"></label>
+        </div>
+      </div>
+      <div class="dbx-actions">
+        <button class="btn" id="rw-connect" type="button">Conectar Ride with GPS</button>
+        <button class="btn" id="rw-sync" type="button" hidden>Buscar salidas ahora</button>
+        <button class="btn ghost" id="rw-disconnect" type="button" hidden>Desconectar</button>
+      </div>
+    </fieldset>
     <details class="log-box">
       <summary>Registro Bluetooth</summary>
       <pre id="ble-log"></pre>
@@ -1073,6 +1089,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 <script>/*FOOD_JS*/</script>
 <script>/*SYNC_JS*/</script>
 <script>/*GCEXPORT_JS*/</script>
+<script>/*RWGPS_JS*/</script>
 <script>/*APP_JS*/</script>
 </body>
 </html>

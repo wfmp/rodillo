@@ -929,6 +929,22 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       </div>
       <div class="dbx-actions"><button class="btn" id="icu-save" type="button">Guardar y sincronizar</button></div>
     </fieldset>
+    <fieldset class="dbx">
+      <legend class="label">Ride with GPS (Bryton)</legend>
+      <p class="dbx-status rw-status"></p>
+      <div id="rw-fields">
+        <label class="field" for="rw-key"><span class="label">API key</span><input id="rw-key" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <div class="icu-fields">
+          <label class="field" for="rw-email"><span class="label">Email de Ride with GPS</span><input id="rw-email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
+          <label class="field" for="rw-password"><span class="label">Contraseña (no se guarda)</span><input id="rw-password" type="password" autocomplete="current-password"></label>
+        </div>
+      </div>
+      <div class="dbx-actions">
+        <button class="btn" id="rw-connect" type="button">Conectar Ride with GPS</button>
+        <button class="btn" id="rw-sync" type="button" hidden>Buscar salidas ahora</button>
+        <button class="btn ghost" id="rw-disconnect" type="button" hidden>Desconectar</button>
+      </div>
+    </fieldset>
     <details class="log-box">
       <summary>Registro Bluetooth</summary>
       <pre id="ble-log"></pre>
@@ -1058,7 +1074,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script>window.RODILLO_PLAN = [{"id": "2026-10-26_W1_B_VO2_4x3", "name": "2026-10-26_W1_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-10-27_W1_C_SweetSpot_Sprints", "name": "2026-10-27_W1_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-10-31_W1_A_Anaerobic_8x30s", "name": "2026-10-31_W1_A_Anaerobic_8x30s", "description": "Anaerobic 8x30s @150% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-02_W2_B_VO2_4x3", "name": "2026-11-02_W2_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-05_W2_C_SweetSpot_Short", "name": "2026-11-05_W2_C_SweetSpot_Short", "description": "Short sweet spot 20min @85% (optional)", "segments": [[600, 50, 75], [1200, 85, 85], [300, 60, 40]]}, {"id": "2026-11-13_W3_B_VO2_5x3", "name": "2026-11-13_W3_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "name": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "description": "Repeated sprints: 2 sets of 6x30s @130% / 30s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [300, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-16_W4_B_VO2_5x3", "name": "2026-11-16_W4_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-19_W4_C_SweetSpot_Sprints", "name": "2026-11-19_W4_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-11-22_W4_A_Anaerobic_6x45s", "name": "2026-11-22_W4_A_Anaerobic_6x45s", "description": "Anaerobic capacity: 6x45s @125% / 90s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-24_W5_B_VO2_5x4", "name": "2026-11-24_W5_B_VO2_5x4", "description": "VO2max 5x4min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-28_W5_FTP_Test_20min", "name": "2026-11-28_W5_FTP_Test_20min", "description": "FTP test: 20min max effort in slope/resistance mode, not ERG", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [300, 105, 105], [600, 50, 50], [1200, 100, 100], [300, 50, 50], [600, 60, 40]]}]; window.RODILLO_BUILD = "20261027235210";</script>
+<script>window.RODILLO_PLAN = [{"id": "2026-10-26_W1_B_VO2_4x3", "name": "2026-10-26_W1_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-10-27_W1_C_SweetSpot_Sprints", "name": "2026-10-27_W1_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-10-31_W1_A_Anaerobic_8x30s", "name": "2026-10-31_W1_A_Anaerobic_8x30s", "description": "Anaerobic 8x30s @150% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-02_W2_B_VO2_4x3", "name": "2026-11-02_W2_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-05_W2_C_SweetSpot_Short", "name": "2026-11-05_W2_C_SweetSpot_Short", "description": "Short sweet spot 20min @85% (optional)", "segments": [[600, 50, 75], [1200, 85, 85], [300, 60, 40]]}, {"id": "2026-11-13_W3_B_VO2_5x3", "name": "2026-11-13_W3_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "name": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "description": "Repeated sprints: 2 sets of 6x30s @130% / 30s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [300, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-16_W4_B_VO2_5x3", "name": "2026-11-16_W4_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-19_W4_C_SweetSpot_Sprints", "name": "2026-11-19_W4_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-11-22_W4_A_Anaerobic_6x45s", "name": "2026-11-22_W4_A_Anaerobic_6x45s", "description": "Anaerobic capacity: 6x45s @125% / 90s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-24_W5_B_VO2_5x4", "name": "2026-11-24_W5_B_VO2_5x4", "description": "VO2max 5x4min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-28_W5_FTP_Test_20min", "name": "2026-11-28_W5_FTP_Test_20min", "description": "FTP test: 20min max effort in slope/resistance mode, not ERG", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [300, 105, 105], [600, 50, 50], [1200, 100, 100], [300, 50, 50], [600, 60, 40]]}]; window.RODILLO_BUILD = "20261101092804";</script>
 <script>/* FIT file encoder for indoor cycling activities (power, heart rate, cadence, speed). */
 (function (root) {
   "use strict";
@@ -1089,6 +1105,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     sint16: [0x83, 2, 0x7fff],
     uint16: [0x84, 2, 0xffff],
     uint32: [0x86, 4, 0xffffffff],
+    sint32: [0x85, 4, 0x7fffffff],
     uint32z: [0x8c, 4, 0],
   };
 
@@ -1100,6 +1117,10 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     event: [21, [["timestamp", 253, "uint32"], ["event", 0, "enum"], ["event_type", 1, "enum"],
       ["event_group", 4, "uint8"]]],
     record: [20, [["timestamp", 253, "uint32"], ["heart_rate", 3, "uint8"], ["cadence", 4, "uint8"],
+      ["distance", 5, "uint32"], ["speed", 6, "uint16"], ["power", 7, "uint16"]]],
+    // Outdoor rides: same record with position (semicircles) and altitude (scale 5, offset 500 m)
+    record_gps: [20, [["timestamp", 253, "uint32"], ["position_lat", 0, "sint32"], ["position_long", 1, "sint32"],
+      ["altitude", 2, "uint16"], ["heart_rate", 3, "uint8"], ["cadence", 4, "uint8"],
       ["distance", 5, "uint32"], ["speed", 6, "uint16"], ["power", 7, "uint16"]]],
     lap: [19, [["timestamp", 253, "uint32"], ["message_index", 254, "uint16"], ["event", 0, "enum"], ["event_type", 1, "enum"],
       ["start_time", 2, "uint32"], ["total_elapsed_time", 7, "uint32"], ["total_timer_time", 8, "uint32"],
@@ -1223,7 +1244,9 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     const start = samples[0].ts;
     const end = samples[samples.length - 1].ts;
     enc.write("file_id", { type: 4, manufacturer: 255, product: 1, serial_number: 26102026, time_created: toFitTime(start) });
-    enc.write("sport", { sport: SPORT_CYCLING, sub_sport: SUB_INDOOR });
+    const outdoor = !!(summary && summary.outdoor);
+    const SUB = outdoor ? 7 : SUB_INDOOR; // 7 = road
+    enc.write("sport", { sport: SPORT_CYCLING, sub_sport: SUB });
     enc.write("event", { timestamp: toFitTime(start), event: EVENT_TIMER, event_type: TYPE_START, event_group: 0 });
 
     const laps = [];
@@ -1235,7 +1258,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
         start_time: toFitTime(st.start), total_elapsed_time: st.elapsedMs, total_timer_time: st.timerMs,
         total_distance: st.distanceCm, avg_heart_rate: st.avgHr, max_heart_rate: st.maxHr,
         avg_cadence: st.avgCadence, avg_power: st.avgPower, max_power: st.maxPower,
-        lap_trigger: trigger, sport: SPORT_CYCLING, sub_sport: SUB_INDOOR,
+        lap_trigger: trigger, sport: SPORT_CYCLING, sub_sport: SUB,
         wkt_step_index: slice[0].lap == null ? undefined : slice[0].lap,
       });
       laps.push(st);
@@ -1250,8 +1273,12 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
         enc.write("event", { timestamp: toFitTime(prev.ts), event: EVENT_TIMER, event_type: TYPE_STOP_ALL, event_group: 0 });
         enc.write("event", { timestamp: toFitTime(s.ts), event: EVENT_TIMER, event_type: TYPE_START, event_group: 0 });
       }
-      enc.write("record", {
+      const semi = (deg) => Math.round(deg * 2147483648 / 180);
+      const gps = s.lat != null && s.lon != null;
+      enc.write(gps ? "record_gps" : "record", {
         timestamp: toFitTime(s.ts),
+        position_lat: gps ? semi(s.lat) : undefined, position_long: gps ? semi(s.lon) : undefined,
+        altitude: s.alt != null ? (s.alt + 500) * 5 : undefined,
         heart_rate: s.hr || undefined,
         cadence: s.cadence == null ? undefined : s.cadence,
         distance: s.distance == null ? undefined : s.distance * 100,
@@ -1265,7 +1292,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     const total = sliceStats(samples);
     enc.write("session", {
       timestamp: toFitTime(end), event: 8, event_type: 1, start_time: toFitTime(start),
-      sport: SPORT_CYCLING, sub_sport: SUB_INDOOR,
+      sport: SPORT_CYCLING, sub_sport: SUB,
       total_elapsed_time: total.elapsedMs, total_timer_time: total.timerMs, total_distance: total.distanceCm,
       avg_heart_rate: total.avgHr, max_heart_rate: total.maxHr, avg_cadence: total.avgCadence,
       avg_power: total.avgPower, max_power: total.maxPower,
@@ -2707,7 +2734,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       if (st.avgHr) metrics.push(st.avgHr + " ppm");
       return app.el("button", { class: "act-row", type: "button", onclick: () => openActivity(s.id) },
         app.el("span", { class: "act-date" }, fmtDate(s.start), app.el("small", {}, fmtTimeOfDay(s.start))),
-        app.el("span", { class: "act-name" }, s.name, app.el("small", {}, s.source === "app" ? "Rodillo" : s.source === "icu" ? (s.sport || "Bici") + " · intervals.icu" : "FIT importado")),
+        app.el("span", { class: "act-name" }, s.name, app.el("small", {}, s.source === "app" ? "Rodillo" : s.source === "rwgps" ? "Bryton · Ride with GPS" : s.source === "icu" ? (s.sport || "Bici") + " · intervals.icu" : "FIT importado")),
         app.el("span", { class: "act-dur num" }, fmtDur(s.timerSeconds)),
         app.el("span", { class: "act-metrics num" }, metrics.join(" · ")));
     }
@@ -2769,7 +2796,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     app.showView("activity");
     const s = ride.stats || {};
     $("#act-title").textContent = ride.name;
-    $("#act-date").textContent = fmtDate(ride.columns.ts[0]) + " · " + fmtTimeOfDay(ride.columns.ts[0]) + " · " + (ride.source === "app" ? "Rodillo" : ride.source === "icu" ? "intervals.icu" : "FIT importado");
+    $("#act-date").textContent = fmtDate(ride.columns.ts[0]) + " · " + fmtTimeOfDay(ride.columns.ts[0]) + " · " + (ride.source === "app" ? "Rodillo" : ride.source === "rwgps" ? "Bryton" : ride.source === "icu" ? "intervals.icu" : "FIT importado");
     const hasPower = ride.columns.power.some((p) => p > 0);
     const items = [["Tiempo", fmtDur(ride.columns.ts.length)]];
     if (hasPower) items.push(["Potencia media", s.avgPower + " W"], ["NP", s.np + " W"], ["IF", (s.if || 0).toFixed(2)], ["TSS", Math.round(s.tss || 0)], ["Trabajo", s.kj + " kJ"], ["Potencia máx.", s.maxPower + " W"]);
@@ -4787,6 +4814,214 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
   window.RodilloGcExport = { patchFit, exportActivity, exportPending, FIT_SPORT };
 })();
 </script>
+<script>/*
+ * Ride with GPS (where the Bryton uploads outdoor rides): fetch new trips, turn the track points into a FIT,
+ * keep the ride in the history, upload the FIT to Dropbox for GoldenCheetah and to intervals.icu for Forma.
+ */
+(function () {
+  "use strict";
+
+  const H = window.RodilloHistory;
+  const F = window.RodilloFit;
+  const W = window.RodilloWorkouts;
+  const D = window.RodilloDropbox;
+  const KEY = "rodillo.rwgps";
+  const BASE = "https://ridewithgps.com";
+  let app = null;
+  let running = false;
+
+  const $ = (s) => document.querySelector(s);
+  const cfg = () => { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { return {}; } };
+  const saveCfg = (c) => { try { localStorage.setItem(KEY, JSON.stringify(c)); } catch (e) { /* ignore */ } };
+  const headers = (c) => ({ "x-rwgps-api-key": c.apiKey, "x-rwgps-auth-token": c.authToken, Accept: "application/json" });
+
+  function setStatus(text) { for (const n of document.querySelectorAll(".rw-status")) n.textContent = text; }
+
+  /** Exchange email + password for an auth token once; the password is not stored. */
+  async function connect(apiKey, email, password) {
+    const res = await fetch(BASE + "/api/v1/auth_tokens.json", {
+      method: "POST",
+      headers: { "x-rwgps-api-key": apiKey, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ user: { email, password } }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(res.status === 401 ? "email o contraseña incorrectos" : "HTTP " + res.status);
+    const tok = data.auth_token || data;
+    if (!tok.auth_token) throw new Error("Ride with GPS no devolvió un token");
+    const c = cfg();
+    Object.assign(c, { apiKey, authToken: tok.auth_token, userId: tok.user && tok.user.id, since: c.since || Math.floor(Date.now() / 1000) - 7 * 86400 });
+    saveCfg(c);
+  }
+
+  async function getJson(path) {
+    const c = cfg();
+    const res = await fetch(BASE + path, { headers: headers(c) });
+    if (res.status === 401) throw new Error("la conexión con Ride with GPS caducó: vuelve a conectar en Ajustes");
+    if (!res.ok) throw new Error("Ride with GPS HTTP " + res.status);
+    return res.json();
+  }
+
+  /** Trips newer than the start date, newest first, following pagination while they are recent enough. */
+  async function recentTrips(since) {
+    const out = [];
+    for (let page = 1; page <= 10; page++) {
+      const data = await getJson("/api/v1/trips.json?page=" + page);
+      const list = data.trips || data.results || (Array.isArray(data) ? data : []);
+      if (!list.length) break;
+      let older = false;
+      for (const t of list) {
+        const start = Math.floor(new Date(t.departed_at || t.created_at).getTime() / 1000);
+        if (start >= since) out.push(Object.assign({ start }, t)); else older = true;
+      }
+      const next = data.meta && data.meta.pagination && data.meta.pagination.next_page_url;
+      if (older || !next) break;
+    }
+    return out;
+  }
+
+  /** Track points (t, x, y, e, d, s km/h, h, c, p, lap) -> 1 Hz samples; gaps up to 5 s are filled. */
+  function toSamples(points) {
+    const pts = points.filter((p) => p.t != null).sort((a, b) => a.t - b.t);
+    const out = [];
+    let lap = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i], next = pts[i + 1];
+      if (p.lap && out.length) lap++;
+      const span = next && next.t - p.t > 0 && next.t - p.t <= 5 ? next.t - p.t : 1;
+      for (let k = 0; k < span; k++) {
+        const ts = Math.round(p.t) + k;
+        if (out.length && ts <= out[out.length - 1].ts) continue;
+        out.push({
+          ts, lap, power: p.p == null ? null : Math.round(p.p), hr: p.h || null, cadence: p.c == null ? null : Math.round(p.c),
+          speed: p.s == null ? null : p.s / 3.6, distance: p.d == null ? null : p.d,
+          lat: p.y, lon: p.x, alt: p.e == null ? null : p.e,
+        });
+      }
+    }
+    return out;
+  }
+
+  function fileName(start, name) {
+    const d = new Date(start * 1000);
+    const pad = (n) => String(n).padStart(2, "0");
+    const clean = String(name || "Salida").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w.-]+/g, "_").slice(0, 40);
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "_" + pad(d.getHours()) + pad(d.getMinutes()) + "_" + clean + ".fit";
+  }
+
+  async function uploadToIntervals(bytes, name, fname) {
+    let icu = {};
+    try { icu = JSON.parse(localStorage.getItem("rodillo.intervals") || "{}"); } catch (e) { icu = {}; }
+    if (!icu.apiKey) return false;
+    const form = new FormData();
+    form.append("file", new Blob([bytes], { type: "application/octet-stream" }), fname);
+    const res = await fetch("https://intervals.icu/api/v1/athlete/" + encodeURIComponent(icu.athleteId || "0") + "/activities?name=" + encodeURIComponent(name), {
+      method: "POST", headers: { Authorization: "Basic " + btoa("API_KEY:" + icu.apiKey) }, body: form,
+    });
+    if (!res.ok) throw new Error("intervals.icu HTTP " + res.status);
+    return true;
+  }
+
+  /** Bring one trip in. Returns true if it was new. */
+  async function importTrip(trip, have) {
+    const id = "rwgps-" + trip.id;
+    if (have.has(id)) return false;
+    const data = await getJson("/api/v1/trips/" + trip.id + ".json");
+    const full = data.trip || data;
+    const samples = toSamples(full.track_points || []);
+    if (samples.length < 60) return false;
+    const ftp = app.settings.ftp;
+    const stats = W.rideStats(samples, ftp);
+    const name = full.name || trip.name || "Salida";
+    const fname = fileName(samples[0].ts, name);
+    const bytes = F.buildActivityFit(samples, [], Object.assign({ ftp, outdoor: true }, stats));
+    const hasPower = samples.some((s) => s.power > 0);
+    let load = stats.tss;
+    if (!hasPower) {
+      stats.np = 0; stats.tss = 0; stats.if = 0;
+      load = Math.round(window.RodilloAnalysis.trimp(samples.map((s) => s.hr), app.settings.hrRest, app.settings.hrMax) * 0.56 * 10) / 10;
+    }
+    let dropboxPath = null;
+    if (D.isConnected()) dropboxPath = await D.uploadOrQueue(fname, bytes);
+    await H.saveRide({ id, source: "rwgps", name, sport: "Bici", ftp, stats, load, fileName: fname, dropboxPath, samples });
+    try { await uploadToIntervals(bytes, name, fname); } catch (e) { app.toast("Salida guardada; intervals.icu no la aceptó (" + (e.message || e) + ").", "warn"); }
+    return true;
+  }
+
+  async function sync(opts) {
+    const auto = opts && opts.auto;
+    const c = cfg();
+    if (!c.apiKey || !c.authToken) { if (!auto) app.toast("Conecta primero Ride with GPS en Ajustes.", "warn"); return; }
+    if (running) return;
+    running = true;
+    setStatus("Buscando salidas nuevas…");
+    try {
+      const trips = await recentTrips(c.since || 0);
+      const have = new Set((await H.listSummaries()).map((s) => s.id));
+      let n = 0;
+      for (const t of trips) {
+        setStatus("Bajando " + (t.name || "salida") + "…");
+        if (await importTrip(t, have)) n++;
+      }
+      c.lastSync = Date.now(); saveCfg(c);
+      renderStatus();
+      if (n) {
+        app.toast(n === 1 ? "1 salida del Bryton importada (Dropbox e intervals.icu)." : n + " salidas del Bryton importadas.");
+        const view = document.body.dataset.view;
+        if (["activities", "form", "power", "food"].includes(view)) window.RodilloViews.showTab(view);
+      }
+    } catch (e) {
+      setStatus(e instanceof TypeError
+        ? "No se pudo conectar: Ride with GPS no acepta llamadas directas desde esta página (o no hay red)."
+        : "No se pudo sincronizar: " + (e.message || e));
+    } finally { running = false; }
+  }
+
+  function renderStatus() {
+    const c = cfg();
+    setStatus(!c.authToken ? "Sin conectar. Crea una API key en Ride with GPS (Ajustes → Developers) y conecta aquí."
+      : c.lastSync ? "Conectado. Última búsqueda: " + new Date(c.lastSync).toLocaleString("es") : "Conectado, todavía sin buscar salidas.");
+    const connected = !!c.authToken;
+    $("#rw-fields").hidden = connected;
+    $("#rw-connect").hidden = connected;
+    $("#rw-sync").hidden = !connected;
+    $("#rw-disconnect").hidden = !connected;
+    $("#rw-key").value = c.apiKey || "";
+  }
+
+  function autoSync() {
+    const c = cfg();
+    if (!c.authToken || document.visibilityState !== "visible" || document.body.dataset.view === "ride") return;
+    if (c.lastSync && Date.now() - c.lastSync < 5 * 60 * 1000) return;
+    sync({ auto: true });
+  }
+
+  function init(helpers) {
+    app = helpers;
+    $("#btn-settings").addEventListener("click", renderStatus);
+    $("#rw-connect").addEventListener("click", async () => {
+      const key = $("#rw-key").value.trim(), email = $("#rw-email").value.trim(), pw = $("#rw-password").value;
+      if (!key || !email || !pw) { app.toast("Hacen falta la API key, el email y la contraseña de Ride with GPS.", "warn"); return; }
+      setStatus("Conectando…");
+      try {
+        await connect(key, email, pw);
+        $("#rw-password").value = "";
+        renderStatus();
+        app.toast("Ride with GPS conectado.");
+        sync();
+      } catch (e) {
+        setStatus(e instanceof TypeError ? "No se pudo conectar: Ride with GPS no acepta llamadas directas desde esta página (o no hay red)." : "No se pudo conectar: " + (e.message || e));
+      }
+    });
+    $("#rw-sync").addEventListener("click", () => sync());
+    $("#rw-disconnect").addEventListener("click", () => { const c = cfg(); saveCfg({ apiKey: c.apiKey, since: c.since }); renderStatus(); });
+    setTimeout(autoSync, 4000);
+    setInterval(autoSync, 30 * 60 * 1000);
+    document.addEventListener("visibilitychange", autoSync);
+  }
+
+  window.RodilloRwgps = { init, sync, toSamples };
+})();
+</script>
 <script>/* Rodillo app: workout library, live ERG session, recording and FIT export. */
 (function () {
   "use strict";
@@ -5805,6 +6040,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     window.RodilloMeasures.init(window.RodilloApp);
     window.RodilloFood.init(window.RodilloApp);
     window.RodilloSync.init(window.RodilloApp);
+    window.RodilloRwgps.init(window.RodilloApp);
     // Reload when a newer version is published (iOS may keep the old page cached for minutes)
     const checkUpdate = async () => {
       if (ride && !ride.finished) return;

@@ -171,7 +171,7 @@
       if (st.avgHr) metrics.push(st.avgHr + " ppm");
       return app.el("button", { class: "act-row", type: "button", onclick: () => openActivity(s.id) },
         app.el("span", { class: "act-date" }, fmtDate(s.start), app.el("small", {}, fmtTimeOfDay(s.start))),
-        app.el("span", { class: "act-name" }, s.name, app.el("small", {}, s.source === "app" ? "Rodillo" : s.source === "icu" ? (s.sport || "Bici") + " · intervals.icu" : "FIT importado")),
+        app.el("span", { class: "act-name" }, s.name, app.el("small", {}, s.source === "app" ? "Rodillo" : s.source === "rwgps" ? "Bryton · Ride with GPS" : s.source === "icu" ? (s.sport || "Bici") + " · intervals.icu" : "FIT importado")),
         app.el("span", { class: "act-dur num" }, fmtDur(s.timerSeconds)),
         app.el("span", { class: "act-metrics num" }, metrics.join(" · ")));
     }
@@ -233,7 +233,7 @@
     app.showView("activity");
     const s = ride.stats || {};
     $("#act-title").textContent = ride.name;
-    $("#act-date").textContent = fmtDate(ride.columns.ts[0]) + " · " + fmtTimeOfDay(ride.columns.ts[0]) + " · " + (ride.source === "app" ? "Rodillo" : ride.source === "icu" ? "intervals.icu" : "FIT importado");
+    $("#act-date").textContent = fmtDate(ride.columns.ts[0]) + " · " + fmtTimeOfDay(ride.columns.ts[0]) + " · " + (ride.source === "app" ? "Rodillo" : ride.source === "rwgps" ? "Bryton" : ride.source === "icu" ? "intervals.icu" : "FIT importado");
     const hasPower = ride.columns.power.some((p) => p > 0);
     const items = [["Tiempo", fmtDur(ride.columns.ts.length)]];
     if (hasPower) items.push(["Potencia media", s.avgPower + " W"], ["NP", s.np + " W"], ["IF", (s.if || 0).toFixed(2)], ["TSS", Math.round(s.tss || 0)], ["Trabajo", s.kj + " kJ"], ["Potencia máx.", s.maxPower + " W"]);

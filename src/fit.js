@@ -28,6 +28,7 @@
     sint16: [0x83, 2, 0x7fff],
     uint16: [0x84, 2, 0xffff],
     uint32: [0x86, 4, 0xffffffff],
+    sint32: [0x85, 4, 0x7fffffff],
     uint32z: [0x8c, 4, 0],
   };
 
@@ -39,6 +40,10 @@
     event: [21, [["timestamp", 253, "uint32"], ["event", 0, "enum"], ["event_type", 1, "enum"],
       ["event_group", 4, "uint8"]]],
     record: [20, [["timestamp", 253, "uint32"], ["heart_rate", 3, "uint8"], ["cadence", 4, "uint8"],
+      ["distance", 5, "uint32"], ["speed", 6, "uint16"], ["power", 7, "uint16"]]],
+    // Outdoor rides: same record with position (semicircles) and altitude (scale 5, offset 500 m)
+    record_gps: [20, [["timestamp", 253, "uint32"], ["position_lat", 0, "sint32"], ["position_long", 1, "sint32"],
+      ["altitude", 2, "uint16"], ["heart_rate", 3, "uint8"], ["cadence", 4, "uint8"],
       ["distance", 5, "uint32"], ["speed", 6, "uint16"], ["power", 7, "uint16"]]],
     lap: [19, [["timestamp", 253, "uint32"], ["message_index", 254, "uint16"], ["event", 0, "enum"], ["event_type", 1, "enum"],
       ["start_time", 2, "uint32"], ["total_elapsed_time", 7, "uint32"], ["total_timer_time", 8, "uint32"],
@@ -162,7 +167,9 @@
     const start = samples[0].ts;
     const end = samples[samples.length - 1].ts;
     enc.write("file_id", { type: 4, manufacturer: 255, product: 1, serial_number: 26102026, time_created: toFitTime(start) });
-    enc.write("sport", { sport: SPORT_CYCLING, sub_sport: SUB_INDOOR });
+    const outdoor = !!(summary && summary.outdoor);
+    const SUB = outdoor ? 7 : SUB_INDOOR; // 7 = road
+    enc.write("sport", { sport: SPORT_CYCLING, sub_sport: SUB });
     enc.write("event", { timestamp: toFitTime(start), event: EVENT_TIMER, event_type: TYPE_START, event_group: 0 });
 
     const laps = [];
@@ -174,7 +181,7 @@
         start_time: toFitTime(st.start), total_elapsed_time: st.elapsedMs, total_timer_time: st.timerMs,
         total_distance: st.distanceCm, avg_heart_rate: st.avgHr, max_heart_rate: st.maxHr,
         avg_cadence: st.avgCadence, avg_power: st.avgPower, max_power: st.maxPower,
-        lap_trigger: trigger, sport: SPORT_CYCLING, sub_sport: SUB_INDOOR,
+        lap_trigger: trigger, sport: SPORT_CYCLING, sub_sport: SUB,
         wkt_step_index: slice[0].lap == null ? undefined : slice[0].lap,
       });
       laps.push(st);
@@ -189,8 +196,12 @@
         enc.write("event", { timestamp: toFitTime(prev.ts), event: EVENT_TIMER, event_type: TYPE_STOP_ALL, event_group: 0 });
         enc.write("event", { timestamp: toFitTime(s.ts), event: EVENT_TIMER, event_type: TYPE_START, event_group: 0 });
       }
-      enc.write("record", {
+      const semi = (deg) => Math.round(deg * 2147483648 / 180);
+      const gps = s.lat != null && s.lon != null;
+      enc.write(gps ? "record_gps" : "record", {
         timestamp: toFitTime(s.ts),
+        position_lat: gps ? semi(s.lat) : undefined, position_long: gps ? semi(s.lon) : undefined,
+        altitude: s.alt != null ? (s.alt + 500) * 5 : undefined,
         heart_rate: s.hr || undefined,
         cadence: s.cadence == null ? undefined : s.cadence,
         distance: s.distance == null ? undefined : s.distance * 100,
@@ -204,7 +215,7 @@
     const total = sliceStats(samples);
     enc.write("session", {
       timestamp: toFitTime(end), event: 8, event_type: 1, start_time: toFitTime(start),
-      sport: SPORT_CYCLING, sub_sport: SUB_INDOOR,
+      sport: SPORT_CYCLING, sub_sport: SUB,
       total_elapsed_time: total.elapsedMs, total_timer_time: total.timerMs, total_distance: total.distanceCm,
       avg_heart_rate: total.avgHr, max_heart_rate: total.maxHr, avg_cadence: total.avgCadence,
       avg_power: total.avgPower, max_power: total.maxPower,
