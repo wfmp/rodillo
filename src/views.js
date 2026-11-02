@@ -212,6 +212,45 @@
     return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "_" + pad(d.getHours()) + pad(d.getMinutes()) + "_" + clean + ".fit";
   }
 
+  /**
+   * Import one FIT file into the history and optionally forward the original file to Dropbox (GoldenCheetah) and
+   * intervals.icu. opts: {name, forward, id, source, skipOverlap}. Returns "ok", or "overlap" when skipped.
+   */
+  async function importFitBytes(bytes, opts) {
+    const fit = P.parse(bytes);
+    const samples = P.toSamples(fit);
+    if (samples.length < 30) throw new Error("tiene menos de 30 s de datos");
+    const start = samples[0].ts, end = samples[samples.length - 1].ts;
+    if (opts.skipOverlap) {
+      await loadData();
+      if (summaries.some((s) => start < s.end + 600 && end > s.start - 600)) return "overlap";
+    }
+    const ftp = app.settings.ftp;
+    const stats = W.rideStats(samples, ftp);
+    const hasPower = samples.some((s) => s.power > 0);
+    let load = stats.tss;
+    if (!hasPower) {
+      stats.np = 0; stats.tss = 0; stats.if = 0;
+      load = Math.round(A.trimp(samples.map((s) => s.hr), app.settings.hrRest, app.settings.hrMax) * 0.56 * 10) / 10;
+    }
+    const sportName = SUB_SPORTS[fit.subSport] && fit.sport !== 2 ? SUB_SPORTS[fit.subSport] : SPORTS[fit.sport] || "Actividad";
+    const name = opts.name || sportName;
+    // Send the original file on: Dropbox for GoldenCheetah, intervals.icu for the load in Forma
+    const outName = datedFileName(start, fit.sport === 2 ? "Bici" : sportName);
+    let dropboxPath = null;
+    if (opts.forward && D.isConnected()) {
+      try { dropboxPath = await D.uploadOrQueue(outName, bytes); } catch (e) { app.toast("Dropbox: " + (e.message || e) + " (queda en cola).", "warn"); }
+    }
+    if (opts.forward) {
+      try { await uploadFitToIntervals(bytes, outName, name); } catch (e) { app.toast("intervals.icu: " + (e.message || e), "warn"); }
+    }
+    await H.saveRide({
+      id: opts.id || "fit-" + start, source: opts.source || "fit", name, sport: sportName,
+      ftp, stats, load, fileName: outName, dropboxPath, samples,
+    });
+    return "ok";
+  }
+
   async function importFitFiles(files) {
     let ok = 0;
     const forward = $("#fit-forward").checked;
@@ -219,32 +258,7 @@
     for (const file of files) {
       try {
         const bytes = new Uint8Array(await file.arrayBuffer());
-        const fit = P.parse(bytes);
-        const samples = P.toSamples(fit);
-        if (samples.length < 30) throw new Error("tiene menos de 30 s de datos");
-        const ftp = app.settings.ftp;
-        const stats = W.rideStats(samples, ftp);
-        const hasPower = samples.some((s) => s.power > 0);
-        let load = stats.tss;
-        if (!hasPower) {
-          stats.np = 0; stats.tss = 0; stats.if = 0;
-          load = Math.round(A.trimp(samples.map((s) => s.hr), app.settings.hrRest, app.settings.hrMax) * 0.56 * 10) / 10;
-        }
-        const sportName = SUB_SPORTS[fit.subSport] && fit.sport !== 2 ? SUB_SPORTS[fit.subSport] : SPORTS[fit.sport] || "Actividad";
-        const name = file.name.replace(/\.fit$/i, "").replace(/_/g, " ");
-        // Send the original file on: Dropbox for GoldenCheetah, intervals.icu for the load in Forma
-        const outName = datedFileName(samples[0].ts, fit.sport === 2 ? "Bici" : sportName);
-        let dropboxPath = null;
-        if (forward && D.isConnected()) {
-          try { dropboxPath = await D.uploadOrQueue(outName, bytes); } catch (e) { app.toast("Dropbox: " + (e.message || e) + " (queda en cola).", "warn"); }
-        }
-        if (forward) {
-          try { await uploadFitToIntervals(bytes, outName, name || sportName); } catch (e) { app.toast("intervals.icu: " + (e.message || e), "warn"); }
-        }
-        await H.saveRide({
-          id: "fit-" + samples[0].ts, source: "fit", name: name || sportName, sport: sportName,
-          ftp, stats, load, fileName: outName, dropboxPath, samples,
-        });
+        await importFitBytes(bytes, { name: file.name.replace(/\.fit$/i, "").replace(/_/g, " "), forward });
         ok++;
       } catch (e) {
         app.toast(file.name + ": " + (e.message || e), "error");
@@ -252,6 +266,12 @@
     }
     if (ok) app.toast((ok === 1 ? "Actividad importada" : ok + " actividades importadas") + (forward ? " y enviada a GoldenCheetah e intervals.icu." : "."));
     renderActivities();
+  }
+
+  /** Re-render the open data tab after new activities arrived from outside. */
+  function refreshDataView() {
+    const view = document.body.dataset.view;
+    if (["activities", "form", "power", "food"].includes(view)) render(view);
   }
 
   // ---------- Activity detail ----------
@@ -786,5 +806,5 @@
     return out;
   }
 
-  window.RodilloViews = { init, showTab, loadData, dayActivities, summariesCache: () => summaries };
+  window.RodilloViews = { init, showTab, loadData, dayActivities, importFitBytes, refreshDataView, summariesCache: () => summaries };
 })();

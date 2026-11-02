@@ -484,7 +484,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 .dialog { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; width: min(440px, 100%); display: grid; gap: 14px; }
 .dialog h2 { font-family: var(--font-num); font-weight: 600; font-size: 26px; }
 .field { display: grid; gap: 4px; }
-.field input[type=number], .field input[type=text], .field input[type=password] {
+.field input[type=number], .field input[type=text], .field input[type=password], .field input[type=email], .field input[type=url], .field select {
   min-width: 0; width: 100%;
   background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 18px;
   font-variant-numeric: tabular-nums;
@@ -931,6 +931,22 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       </div>
       <div class="dbx-actions"><button class="btn" id="icu-save" type="button">Guardar y sincronizar</button></div>
     </fieldset>
+    <fieldset class="dbx">
+      <legend class="label">Bryton</legend>
+      <p class="dbx-status" id="bryton-status"></p>
+      <div class="icu-fields">
+        <label class="field" for="bryton-email"><span class="label">Email Bryton Active</span><input id="bryton-email" type="email" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
+        <label class="field" for="bryton-region"><span class="label">Región</span><select id="bryton-region"><option value="international">Internacional</option><option value="china">China</option></select></label>
+        <label class="field" for="bryton-pass" style="grid-column: 1 / -1"><span class="label">Contraseña (no se guarda)</span><input id="bryton-pass" type="password" autocomplete="current-password"></label>
+      </div>
+      <label class="field" for="bryton-worker"><span class="label">URL del Worker</span><input id="bryton-worker" type="url" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+
+      <div class="dbx-actions">
+        <button class="btn" id="bryton-login" type="button">Conectar Bryton</button>
+        <button class="btn" id="bryton-sync" type="button" hidden>Sincronizar ahora</button>
+        <button class="btn ghost" id="bryton-disconnect" type="button" hidden>Desconectar</button>
+      </div>
+    </fieldset>
     <details class="log-box">
       <summary>Registro Bluetooth</summary>
       <pre id="ble-log"></pre>
@@ -1075,6 +1091,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 <script>/*FOOD_JS*/</script>
 <script>/*SYNC_JS*/</script>
 <script>/*GCEXPORT_JS*/</script>
+<script>/*BRYTON_JS*/</script>
 <script>/*APP_JS*/</script>
 </body>
 </html>

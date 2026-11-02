@@ -1016,6 +1016,7 @@
     window.RodilloMeasures.init(window.RodilloApp);
     window.RodilloFood.init(window.RodilloApp);
     window.RodilloSync.init(window.RodilloApp);
+    window.RodilloBryton.init(window.RodilloApp);
     // Reload when a newer version is published (iOS may keep the old page cached for minutes)
     const checkUpdate = async () => {
       if (ride && !ride.finished) return;

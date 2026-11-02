@@ -484,7 +484,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 .dialog { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; width: min(440px, 100%); display: grid; gap: 14px; }
 .dialog h2 { font-family: var(--font-num); font-weight: 600; font-size: 26px; }
 .field { display: grid; gap: 4px; }
-.field input[type=number], .field input[type=text], .field input[type=password] {
+.field input[type=number], .field input[type=text], .field input[type=password], .field input[type=email], .field input[type=url], .field select {
   min-width: 0; width: 100%;
   background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 18px;
   font-variant-numeric: tabular-nums;
@@ -931,6 +931,22 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       </div>
       <div class="dbx-actions"><button class="btn" id="icu-save" type="button">Guardar y sincronizar</button></div>
     </fieldset>
+    <fieldset class="dbx">
+      <legend class="label">Bryton</legend>
+      <p class="dbx-status" id="bryton-status"></p>
+      <div class="icu-fields">
+        <label class="field" for="bryton-email"><span class="label">Email Bryton Active</span><input id="bryton-email" type="email" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
+        <label class="field" for="bryton-region"><span class="label">Región</span><select id="bryton-region"><option value="international">Internacional</option><option value="china">China</option></select></label>
+        <label class="field" for="bryton-pass" style="grid-column: 1 / -1"><span class="label">Contraseña (no se guarda)</span><input id="bryton-pass" type="password" autocomplete="current-password"></label>
+      </div>
+      <label class="field" for="bryton-worker"><span class="label">URL del Worker</span><input id="bryton-worker" type="url" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+
+      <div class="dbx-actions">
+        <button class="btn" id="bryton-login" type="button">Conectar Bryton</button>
+        <button class="btn" id="bryton-sync" type="button" hidden>Sincronizar ahora</button>
+        <button class="btn ghost" id="bryton-disconnect" type="button" hidden>Desconectar</button>
+      </div>
+    </fieldset>
     <details class="log-box">
       <summary>Registro Bluetooth</summary>
       <pre id="ble-log"></pre>
@@ -1060,7 +1076,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script>window.RODILLO_PLAN = [{"id": "2026-10-26_W1_B_VO2_4x3", "name": "2026-10-26_W1_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-10-27_W1_C_SweetSpot_Sprints", "name": "2026-10-27_W1_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-10-31_W1_A_Anaerobic_8x30s", "name": "2026-10-31_W1_A_Anaerobic_8x30s", "description": "Anaerobic 8x30s @150% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-02_W2_B_VO2_4x3", "name": "2026-11-02_W2_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-05_W2_C_SweetSpot_Short", "name": "2026-11-05_W2_C_SweetSpot_Short", "description": "Short sweet spot 20min @85% (optional)", "segments": [[600, 50, 75], [1200, 85, 85], [300, 60, 40]]}, {"id": "2026-11-13_W3_B_VO2_5x3", "name": "2026-11-13_W3_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "name": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "description": "Repeated sprints: 2 sets of 6x30s @130% / 30s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [300, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-16_W4_B_VO2_5x3", "name": "2026-11-16_W4_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-19_W4_C_SweetSpot_Sprints", "name": "2026-11-19_W4_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-11-22_W4_A_Anaerobic_6x45s", "name": "2026-11-22_W4_A_Anaerobic_6x45s", "description": "Anaerobic capacity: 6x45s @125% / 90s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-24_W5_B_VO2_5x4", "name": "2026-11-24_W5_B_VO2_5x4", "description": "VO2max 5x4min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-28_W5_FTP_Test_20min", "name": "2026-11-28_W5_FTP_Test_20min", "description": "FTP test: 20min max effort in slope/resistance mode, not ERG", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [300, 105, 105], [600, 50, 50], [1200, 100, 100], [300, 50, 50], [600, 60, 40]]}]; window.RODILLO_BUILD = "20261101201746";</script>
+<script>window.RODILLO_PLAN = [{"id": "2026-10-26_W1_B_VO2_4x3", "name": "2026-10-26_W1_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-10-27_W1_C_SweetSpot_Sprints", "name": "2026-10-27_W1_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-10-31_W1_A_Anaerobic_8x30s", "name": "2026-10-31_W1_A_Anaerobic_8x30s", "description": "Anaerobic 8x30s @150% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-02_W2_B_VO2_4x3", "name": "2026-11-02_W2_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-05_W2_C_SweetSpot_Short", "name": "2026-11-05_W2_C_SweetSpot_Short", "description": "Short sweet spot 20min @85% (optional)", "segments": [[600, 50, 75], [1200, 85, 85], [300, 60, 40]]}, {"id": "2026-11-13_W3_B_VO2_5x3", "name": "2026-11-13_W3_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "name": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "description": "Repeated sprints: 2 sets of 6x30s @130% / 30s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [300, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-16_W4_B_VO2_5x3", "name": "2026-11-16_W4_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-19_W4_C_SweetSpot_Sprints", "name": "2026-11-19_W4_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-11-22_W4_A_Anaerobic_6x45s", "name": "2026-11-22_W4_A_Anaerobic_6x45s", "description": "Anaerobic capacity: 6x45s @125% / 90s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-24_W5_B_VO2_5x4", "name": "2026-11-24_W5_B_VO2_5x4", "description": "VO2max 5x4min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-28_W5_FTP_Test_20min", "name": "2026-11-28_W5_FTP_Test_20min", "description": "FTP test: 20min max effort in slope/resistance mode, not ERG", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [300, 105, 105], [600, 50, 50], [1200, 100, 100], [300, 50, 50], [600, 60, 40]]}]; window.RODILLO_BUILD = "20261102145436";</script>
 <script>/* FIT file encoder for indoor cycling activities (power, heart rate, cadence, speed). */
 (function (root) {
   "use strict";
@@ -2761,6 +2777,45 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "_" + pad(d.getHours()) + pad(d.getMinutes()) + "_" + clean + ".fit";
   }
 
+  /**
+   * Import one FIT file into the history and optionally forward the original file to Dropbox (GoldenCheetah) and
+   * intervals.icu. opts: {name, forward, id, source, skipOverlap}. Returns "ok", or "overlap" when skipped.
+   */
+  async function importFitBytes(bytes, opts) {
+    const fit = P.parse(bytes);
+    const samples = P.toSamples(fit);
+    if (samples.length < 30) throw new Error("tiene menos de 30 s de datos");
+    const start = samples[0].ts, end = samples[samples.length - 1].ts;
+    if (opts.skipOverlap) {
+      await loadData();
+      if (summaries.some((s) => start < s.end + 600 && end > s.start - 600)) return "overlap";
+    }
+    const ftp = app.settings.ftp;
+    const stats = W.rideStats(samples, ftp);
+    const hasPower = samples.some((s) => s.power > 0);
+    let load = stats.tss;
+    if (!hasPower) {
+      stats.np = 0; stats.tss = 0; stats.if = 0;
+      load = Math.round(A.trimp(samples.map((s) => s.hr), app.settings.hrRest, app.settings.hrMax) * 0.56 * 10) / 10;
+    }
+    const sportName = SUB_SPORTS[fit.subSport] && fit.sport !== 2 ? SUB_SPORTS[fit.subSport] : SPORTS[fit.sport] || "Actividad";
+    const name = opts.name || sportName;
+    // Send the original file on: Dropbox for GoldenCheetah, intervals.icu for the load in Forma
+    const outName = datedFileName(start, fit.sport === 2 ? "Bici" : sportName);
+    let dropboxPath = null;
+    if (opts.forward && D.isConnected()) {
+      try { dropboxPath = await D.uploadOrQueue(outName, bytes); } catch (e) { app.toast("Dropbox: " + (e.message || e) + " (queda en cola).", "warn"); }
+    }
+    if (opts.forward) {
+      try { await uploadFitToIntervals(bytes, outName, name); } catch (e) { app.toast("intervals.icu: " + (e.message || e), "warn"); }
+    }
+    await H.saveRide({
+      id: opts.id || "fit-" + start, source: opts.source || "fit", name, sport: sportName,
+      ftp, stats, load, fileName: outName, dropboxPath, samples,
+    });
+    return "ok";
+  }
+
   async function importFitFiles(files) {
     let ok = 0;
     const forward = $("#fit-forward").checked;
@@ -2768,32 +2823,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     for (const file of files) {
       try {
         const bytes = new Uint8Array(await file.arrayBuffer());
-        const fit = P.parse(bytes);
-        const samples = P.toSamples(fit);
-        if (samples.length < 30) throw new Error("tiene menos de 30 s de datos");
-        const ftp = app.settings.ftp;
-        const stats = W.rideStats(samples, ftp);
-        const hasPower = samples.some((s) => s.power > 0);
-        let load = stats.tss;
-        if (!hasPower) {
-          stats.np = 0; stats.tss = 0; stats.if = 0;
-          load = Math.round(A.trimp(samples.map((s) => s.hr), app.settings.hrRest, app.settings.hrMax) * 0.56 * 10) / 10;
-        }
-        const sportName = SUB_SPORTS[fit.subSport] && fit.sport !== 2 ? SUB_SPORTS[fit.subSport] : SPORTS[fit.sport] || "Actividad";
-        const name = file.name.replace(/\.fit$/i, "").replace(/_/g, " ");
-        // Send the original file on: Dropbox for GoldenCheetah, intervals.icu for the load in Forma
-        const outName = datedFileName(samples[0].ts, fit.sport === 2 ? "Bici" : sportName);
-        let dropboxPath = null;
-        if (forward && D.isConnected()) {
-          try { dropboxPath = await D.uploadOrQueue(outName, bytes); } catch (e) { app.toast("Dropbox: " + (e.message || e) + " (queda en cola).", "warn"); }
-        }
-        if (forward) {
-          try { await uploadFitToIntervals(bytes, outName, name || sportName); } catch (e) { app.toast("intervals.icu: " + (e.message || e), "warn"); }
-        }
-        await H.saveRide({
-          id: "fit-" + samples[0].ts, source: "fit", name: name || sportName, sport: sportName,
-          ftp, stats, load, fileName: outName, dropboxPath, samples,
-        });
+        await importFitBytes(bytes, { name: file.name.replace(/\.fit$/i, "").replace(/_/g, " "), forward });
         ok++;
       } catch (e) {
         app.toast(file.name + ": " + (e.message || e), "error");
@@ -2801,6 +2831,12 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     }
     if (ok) app.toast((ok === 1 ? "Actividad importada" : ok + " actividades importadas") + (forward ? " y enviada a GoldenCheetah e intervals.icu." : "."));
     renderActivities();
+  }
+
+  /** Re-render the open data tab after new activities arrived from outside. */
+  function refreshDataView() {
+    const view = document.body.dataset.view;
+    if (["activities", "form", "power", "food"].includes(view)) render(view);
   }
 
   // ---------- Activity detail ----------
@@ -3335,7 +3371,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     return out;
   }
 
-  window.RodilloViews = { init, showTab, loadData, dayActivities, summariesCache: () => summaries };
+  window.RodilloViews = { init, showTab, loadData, dayActivities, importFitBytes, refreshDataView, summariesCache: () => summaries };
 })();
 </script>
 <script>/* Minimal .xlsx reader (cached cell values) and writer (one sheet, stored zip), with no external libraries. */
@@ -4863,6 +4899,257 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
   window.RodilloGcExport = { patchFit, exportActivity, exportPending, exportRides, FIT_SPORT };
 })();
 </script>
+<script>/*
+ * Bryton Active sync: log in over Meteor DDP (WebSocket), list the rides and download each new FIT through the
+ * user's Cloudflare Worker (Bryton's REST API sends no CORS headers). New rides go into the history and on to
+ * intervals.icu and Dropbox (GoldenCheetah). Protocol from github.com/jorge-huxley/intervalssync (MIT).
+ * Only the session token is stored, never the password.
+ */
+(function () {
+  "use strict";
+
+  const CFG_KEY = "rodillo.bryton";
+  const DEFAULT_WORKER = "https://bryton-proxy.wfmoralesp.workers.dev";
+  const HOSTS = { international: "m3.brytonactive.com", china: "active.cn.brytonactive.com" };
+  const FIRST_SYNC_DAYS = 7;
+
+  let app = null;
+  let running = false;
+  const $ = (s) => document.querySelector(s);
+
+  const loadCfg = () => { try { return JSON.parse(localStorage.getItem(CFG_KEY) || "{}"); } catch (e) { return {}; } };
+  const saveCfg = (c) => { try { localStorage.setItem(CFG_KEY, JSON.stringify(c)); } catch (e) { /* ignore */ } };
+
+  async function sha256Hex(text) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  /** Minimal Meteor DDP client over a raw WebSocket. */
+  function ddpConnect(host, timeoutMs) {
+    return new Promise((resolve, reject) => {
+      const ws = new WebSocket("wss://" + host + "/websocket");
+      let nextId = 1;
+      const pending = {}, subs = {}, collections = {};
+      const fail = (err) => {
+        for (const p of Object.values(pending)) p.rej(err);
+        for (const p of Object.values(subs)) p.rej(err);
+      };
+      const timer = setTimeout(() => { reject(new Error("Bryton no responde")); try { ws.close(); } catch (e) { /* ignore */ } }, timeoutMs || 20000);
+      const withTimeout = (promise) => Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error("Bryton no responde")), 60000))]);
+      const client = {
+        collections,
+        call(method, params) {
+          const id = String(nextId++);
+          const p = new Promise((res, rej) => { pending[id] = { res, rej }; });
+          ws.send(JSON.stringify({ msg: "method", method, params, id }));
+          return withTimeout(p);
+        },
+        subscribe(name, params) {
+          const id = String(nextId++);
+          const p = new Promise((res, rej) => { subs[id] = { res, rej }; });
+          ws.send(JSON.stringify({ msg: "sub", id, name, params: params || [] }));
+          return withTimeout(p);
+        },
+        close() { try { ws.close(); } catch (e) { /* ignore */ } },
+      };
+      ws.onopen = () => ws.send(JSON.stringify({ msg: "connect", version: "1", support: ["1", "pre2", "pre1"] }));
+      ws.onerror = () => { clearTimeout(timer); const err = new Error("no se pudo conectar con Bryton"); reject(err); fail(err); };
+      ws.onmessage = (ev) => {
+        let m;
+        try { m = JSON.parse(ev.data); } catch (e) { return; }
+        if (m.msg === "ping") ws.send(JSON.stringify({ msg: "pong", id: m.id }));
+        else if (m.msg === "connected") { clearTimeout(timer); resolve(client); }
+        else if (m.msg === "failed") { clearTimeout(timer); reject(new Error("Bryton rechazó la conexión")); }
+        else if (m.msg === "result" && pending[m.id]) {
+          const p = pending[m.id]; delete pending[m.id];
+          if (m.error) { const err = new Error(m.error.reason || m.error.message || "error de Bryton"); err.ddp = m.error; p.rej(err); }
+          else p.res(m.result);
+        } else if (m.msg === "added") {
+          (collections[m.collection] = collections[m.collection] || {})[m.id] = m.fields || {};
+        } else if (m.msg === "changed") {
+          const doc = ((collections[m.collection] = collections[m.collection] || {})[m.id] = collections[m.collection][m.id] || {});
+          Object.assign(doc, m.fields || {});
+          for (const k of m.cleared || []) delete doc[k];
+        } else if (m.msg === "removed") {
+          if (collections[m.collection]) delete collections[m.collection][m.id];
+        } else if (m.msg === "ready") {
+          for (const id of m.subs || []) if (subs[id]) { subs[id].res(); delete subs[id]; }
+        } else if (m.msg === "nosub" && subs[m.id]) {
+          subs[m.id].rej(new Error("Bryton no entregó la lista de actividades")); delete subs[m.id];
+        }
+      };
+    });
+  }
+
+  /** Log in with email and password; returns {userId, token}. */
+  async function login(host, email, password) {
+    const client = await ddpConnect(host);
+    try {
+      const r = await client.call("login", [{ user: { email }, password: { digest: await sha256Hex(password), algorithm: "sha-256" } }]);
+      if (!r || !r.id || !r.token) throw new Error("respuesta inesperada de Bryton");
+      return { userId: r.id, token: r.token };
+    } finally { client.close(); }
+  }
+
+  /** Recent activities of the logged-in user, newest first: [{id, name, start}] (start in Unix seconds). */
+  async function listActivities(cfg) {
+    const client = await ddpConnect(cfg.host);
+    try {
+      try { await client.call("login", [{ resume: cfg.token }]); } catch (e) {
+        const err = new Error("la sesión de Bryton caducó: vuelve a conectar en Ajustes"); err.expired = true; throw err;
+      }
+      await client.subscribe("activityList", []);
+      const docs = client.collections.userActivities || {};
+      return Object.entries(docs)
+        .filter(([, f]) => !f._deleted && (f.name || f.title) !== "_deleted")
+        .map(([id, f]) => ({ id, name: f.name || f.title || "", start: toSeconds(f.start_time || f.local_start_time) }))
+        .sort((a, b) => b.start - a.start);
+    } finally { client.close(); }
+  }
+
+  const toSeconds = (t) => { const n = +t || 0; return n > 1e12 ? Math.floor(n / 1000) : n; };
+
+  async function downloadFit(cfg, activityId) {
+    const base = (cfg.worker || DEFAULT_WORKER).replace(/\/+$/, "");
+    const res = await fetch(base + "/activity?id=" + encodeURIComponent(activityId), {
+      headers: { "x-user-id": cfg.userId, "x-auth-token": cfg.token, "x-bryton-host": cfg.host },
+    });
+    if (res.status === 401 || res.status === 403) { const err = new Error("la sesión de Bryton caducó: vuelve a conectar en Ajustes"); err.expired = true; throw err; }
+    if (!res.ok) throw new Error("descarga HTTP " + res.status);
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.length < 14 || String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]) !== ".FIT") throw new Error("Bryton no devolvió un FIT");
+    return bytes;
+  }
+
+  const GENERIC_NAME = /^(new activity|activity|a|ride|)$/i;
+
+  /** Pull new Bryton rides into the history and forward them. */
+  async function sync(opts) {
+    const auto = opts && opts.auto;
+    const cfg = loadCfg();
+    if (!cfg.token) { if (!auto) app.toast("Conecta primero tu cuenta de Bryton en Ajustes.", "warn"); return; }
+    if (running) return;
+    running = true;
+    setStatus("Sincronizando Bryton…");
+    try {
+      const list = await listActivities(cfg);
+      const done = new Set(cfg.done || []);
+      const from = cfg.since || 0;
+      const summaries = (await window.RodilloViews.loadData()).summaries;
+      const have = new Set(summaries.map((s) => s.id));
+      const todo = list.filter((a) => a.start >= from && !done.has(a.id) && !have.has("bryton-" + a.id)).reverse();
+      let got = 0, failed = 0;
+      for (let i = 0; i < todo.length; i++) {
+        const a = todo[i];
+        setStatus("Bajando actividad de Bryton " + (i + 1) + "/" + todo.length + "…");
+        try {
+          const bytes = await downloadFit(cfg, a.id);
+          const name = GENERIC_NAME.test(a.name.trim()) ? "Salida Bryton" : a.name;
+          const result = await window.RodilloViews.importFitBytes(bytes, { name, forward: true, id: "bryton-" + a.id, source: "bryton", skipOverlap: true });
+          if (result === "ok") got++;
+          done.add(a.id);
+        } catch (e) {
+          if (e.expired) throw e;
+          failed++;
+        }
+      }
+      const fresh = loadCfg();
+      fresh.done = [...done].slice(-500);
+      fresh.lastSync = Date.now();
+      saveCfg(fresh);
+      if (got) {
+        app.toast(got === 1 ? "1 salida nueva del Bryton, enviada a intervals.icu y GoldenCheetah." : got + " salidas nuevas del Bryton, enviadas a intervals.icu y GoldenCheetah.");
+        window.RodilloViews.refreshDataView();
+      } else if (!auto) app.toast("Bryton: no hay salidas nuevas.");
+      if (failed) app.toast("Bryton: " + failed + " actividad(es) no se pudieron bajar; se reintenta en la próxima sincronización.", "warn");
+      renderStatus();
+    } catch (e) {
+      setStatus("No se pudo sincronizar Bryton: " + (e.message || e));
+      if (e.expired) { const c = loadCfg(); c.expired = true; saveCfg(c); renderStatus(); }
+      if (!auto || e.expired) app.toast("Bryton: " + (e.message || e), "warn");
+    } finally {
+      running = false;
+    }
+  }
+
+  function autoSync() {
+    const cfg = loadCfg();
+    if (!cfg.token || cfg.expired || document.visibilityState !== "visible") return;
+    if (document.body.dataset.view === "ride") return;
+    if (cfg.lastSync && Date.now() - cfg.lastSync < 5 * 60 * 1000) return;
+    sync({ auto: true });
+  }
+
+  function setStatus(text) { const n = $("#bryton-status"); if (n) n.textContent = text; }
+
+  function renderStatus() {
+    const cfg = loadCfg();
+    const connected = !!cfg.token;
+    setStatus(!connected ? "Sin conectar."
+      : cfg.expired ? "La sesión caducó: vuelve a conectar."
+      : "Conectado como " + (cfg.email || "") + (cfg.lastSync ? " · última sincronización " + new Date(cfg.lastSync).toLocaleString("es") : "") + ".");
+    $("#bryton-login").hidden = connected && !cfg.expired;
+    $("#bryton-disconnect").hidden = !connected;
+    $("#bryton-sync").hidden = !connected || !!cfg.expired;
+  }
+
+  function fillSettings() {
+    const cfg = loadCfg();
+    $("#bryton-email").value = cfg.email || "";
+    $("#bryton-pass").value = "";
+    $("#bryton-region").value = cfg.region || "international";
+    $("#bryton-worker").value = cfg.worker || DEFAULT_WORKER;
+    renderStatus();
+  }
+
+  async function connect() {
+    const email = $("#bryton-email").value.trim();
+    const password = $("#bryton-pass").value;
+    const region = $("#bryton-region").value;
+    const worker = $("#bryton-worker").value.trim() || DEFAULT_WORKER;
+    if (!email || !password) { app.toast("Escribe el email y la contraseña de Bryton Active.", "warn"); return; }
+    setStatus("Conectando…");
+    try {
+      const host = HOSTS[region] || HOSTS.international;
+      const session = await login(host, email, password);
+      const old = loadCfg();
+      saveCfg({
+        email, region, host, worker, userId: session.userId, token: session.token,
+        since: old.since || Math.floor(Date.now() / 1000) - FIRST_SYNC_DAYS * 86400, done: old.done || [],
+      });
+      $("#bryton-pass").value = "";
+      renderStatus();
+      sync();
+    } catch (e) {
+      setStatus("No se pudo conectar: " + (e.message || e));
+    }
+  }
+
+  function disconnect() {
+    const cfg = loadCfg();
+    // Keep the list of imported rides so a reconnect does not import them again
+    saveCfg({ email: cfg.email, region: cfg.region, worker: cfg.worker, since: cfg.since, done: cfg.done });
+    renderStatus();
+  }
+
+  function init(helpers) {
+    app = helpers;
+    $("#btn-settings").addEventListener("click", fillSettings);
+    $("#bryton-login").addEventListener("click", connect);
+    $("#bryton-disconnect").addEventListener("click", disconnect);
+    $("#bryton-sync").addEventListener("click", () => sync());
+    $("#bryton-worker").addEventListener("change", () => {
+      const cfg = loadCfg(); cfg.worker = $("#bryton-worker").value.trim() || DEFAULT_WORKER; saveCfg(cfg);
+    });
+    setTimeout(autoSync, 4000);
+    setInterval(autoSync, 30 * 60 * 1000);
+    document.addEventListener("visibilitychange", autoSync);
+  }
+
+  window.RodilloBryton = { init, sync, login, listActivities, downloadFit };
+})();
+</script>
 <script>/* Rodillo app: workout library, live ERG session, recording and FIT export. */
 (function () {
   "use strict";
@@ -5881,6 +6168,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     window.RodilloMeasures.init(window.RodilloApp);
     window.RodilloFood.init(window.RodilloApp);
     window.RodilloSync.init(window.RodilloApp);
+    window.RodilloBryton.init(window.RodilloApp);
     // Reload when a newer version is published (iOS may keep the old page cached for minutes)
     const checkUpdate = async () => {
       if (ride && !ride.finished) return;
