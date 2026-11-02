@@ -102,12 +102,18 @@
       const docs = client.collections.userActivities || {};
       return Object.entries(docs)
         .filter(([, f]) => !f._deleted && (f.name || f.title) !== "_deleted")
-        .map(([id, f]) => ({ id, name: f.name || f.title || "", start: toSeconds(f.start_time || f.local_start_time) }))
+        .map(([id, f]) => ({ id, name: f.name || f.title || "", start: toSeconds(f.start_time) || toSeconds(f.local_start_time) }))
         .sort((a, b) => b.start - a.start);
     } finally { client.close(); }
   }
 
-  const toSeconds = (t) => { const n = +t || 0; return n > 1e12 ? Math.floor(n / 1000) : n; };
+  /** Bryton dates may come as Unix seconds, milliseconds, EJSON {$date: ms} or an ISO string; 0 when unknown. */
+  const toSeconds = (t) => {
+    if (t && typeof t === "object" && t.$date != null) t = t.$date;
+    let n = typeof t === "string" && !/^\d+$/.test(t) ? Date.parse(t) : +t;
+    if (!isFinite(n) || n <= 0) return 0;
+    return n > 1e12 ? Math.floor(n / 1000) : n;
+  };
 
   async function downloadFit(cfg, activityId) {
     const base = (cfg.worker || DEFAULT_WORKER).replace(/\/+$/, "");
@@ -137,14 +143,14 @@
       const from = cfg.since || 0;
       const summaries = (await window.RodilloViews.loadData()).summaries;
       const have = new Set(summaries.map((s) => s.id));
-      const todo = list.filter((a) => a.start >= from && !done.has(a.id) && !have.has("bryton-" + a.id)).reverse();
+      const todo = list.filter((a) => (!a.start || a.start >= from) && !done.has(a.id) && !have.has("bryton-" + a.id)).reverse();
       let got = 0, failed = 0;
       for (let i = 0; i < todo.length; i++) {
         const a = todo[i];
         setStatus("Bajando actividad de Bryton " + (i + 1) + "/" + todo.length + "…");
         try {
           const bytes = await downloadFit(cfg, a.id);
-          const name = GENERIC_NAME.test(a.name.trim()) ? "Salida Bryton" : a.name;
+          const name = GENERIC_NAME.test(a.name.trim()) ? null : a.name;
           const result = await window.RodilloViews.importFitBytes(bytes, { name, forward: true, id: "bryton-" + a.id, source: "bryton", skipOverlap: true });
           if (result === "ok") got++;
           done.add(a.id);
