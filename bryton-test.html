@@ -121,8 +121,8 @@ document.getElementById("go").onclick = async () => {
 
   if (!acts.length) { log("4. Descarga FIT: sin actividades para probar"); return; }
   try {
-    const res = await fetch("https://" + host + "/api/activity?id=" + encodeURIComponent(acts[0].id), {
-      headers: { "X-User-Id": session.userId, "X-Auth-Token": session.token, "x-api-key": API_KEY },
+    const res = await fetch("https://bryton-proxy.wfmoralesp.workers.dev/activity?id=" + encodeURIComponent(acts[0].id), {
+      headers: { "x-user-id": session.userId, "x-auth-token": session.token, "x-bryton-host": host },
     });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const bytes = new Uint8Array(await res.arrayBuffer());
@@ -130,7 +130,7 @@ document.getElementById("go").onclick = async () => {
     if (sig === ".FIT") log("4. Descarga FIT: OK — " + bytes.length + " bytes", "ok");
     else log("4. Descarga FIT: respuesta no es FIT (" + bytes.length + " bytes)", "bad");
   } catch (e) {
-    log("4. Descarga FIT: FALLA — " + e.message + " (probablemente bloqueo CORS → necesitaría el intermediario)", "bad");
+    log("4. Descarga FIT: FALLA — " + e.message + " (vía Worker)", "bad");
   }
 };
 </script>
