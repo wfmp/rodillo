@@ -523,6 +523,8 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 .hrz-row { display: grid; grid-template-columns: 30px 1fr 112px; white-space: nowrap; align-items: center; gap: 10px; font-size: 14px; }
 .hrz-track { height: 14px; border-radius: 4px; background: var(--line); overflow: hidden; }
 .hrz-fill { height: 100%; border-radius: 4px; }
+.fd-copy { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.fd-copy input[type=date] { width: 100%; box-sizing: border-box; }
 </style>
 </head>
 <body data-view="library">
@@ -1014,6 +1016,10 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
   <form class="dialog" id="fd-item-form">
     <h2 id="fd-item-title"></h2>
     <label class="field" for="fd-item-qty"><span class="label" id="fd-item-qty-label">Cantidad</span><input id="fd-item-qty" type="text" inputmode="decimal"></label>
+    <div class="fd-copy" id="fd-item-copy">
+      <label class="field" for="fd-item-copy-date"><span class="label">Copiar a</span><input id="fd-item-copy-date" type="date"></label>
+      <button class="btn" id="fd-item-copy-btn" type="button">Copiar</button>
+    </div>
     <div class="dialog-actions">
       <button class="btn danger" id="fd-item-delete" type="button">Quitar</button>
       <span class="spacer"></span>
@@ -1033,6 +1039,10 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       <label class="field" for="fd-libre-carbs"><span class="label">Carbohidratos [g]</span><input id="fd-libre-carbs" type="text" inputmode="decimal"></label>
       <label class="field" for="fd-libre-fat"><span class="label">Grasa [g]</span><input id="fd-libre-fat" type="text" inputmode="decimal"></label>
       <label class="field" for="fd-libre-fiber"><span class="label">Fibra [g]</span><input id="fd-libre-fiber" type="text" inputmode="decimal"></label>
+    </div>
+    <div class="fd-copy" id="fd-libre-copy">
+      <label class="field" for="fd-libre-copy-date"><span class="label">Copiar a</span><input id="fd-libre-copy-date" type="date"></label>
+      <button class="btn" id="fd-libre-copy-btn" type="button">Copiar</button>
     </div>
     <div class="dialog-actions">
       <button class="btn danger" id="fd-libre-delete" type="button" hidden>Quitar</button>

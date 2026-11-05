@@ -253,6 +253,7 @@
     const f = findFood(it.food);
     $("#fd-item-qty-label").textContent = "Cantidad" + (f && f.unit ? " [" + f.unit + "]" : "");
     $("#fd-item-qty").value = it.qty;
+    $("#fd-item-copy-date").value = keyOf(new Date());
     $("#fd-item").hidden = false;
   }
 
@@ -265,6 +266,21 @@
     saveDay(day, entry);
     $("#fd-item").hidden = true;
     render();
+  }
+
+  /** Copy the open entry (as saved) to another day, appended to what is already there, and show that day. */
+  function copyItem(dateInput, dialog) {
+    const target = $(dateInput).value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(target)) { app.toast("Elige una fecha.", "warn"); return; }
+    const it = dayEntry(day).items[editing.index];
+    if (!it) return;
+    const entry = dayEntry(target);
+    entry.items.push(JSON.parse(JSON.stringify(it)));
+    saveDay(target, entry);
+    $(dialog).hidden = true;
+    day = target;
+    render();
+    app.toast("Copiado a " + fmtDay(target) + ".");
   }
 
   function deleteItem() {
@@ -281,6 +297,8 @@
     $("#fd-libre-name").value = values ? values.name || "" : "";
     for (const k of ["kcal", "protein", "carbs", "fat", "fiber"]) $("#fd-libre-" + k).value = values && values[k] != null ? values[k] : "";
     $("#fd-libre-delete").hidden = index == null;
+    $("#fd-libre-copy").hidden = index == null;
+    $("#fd-libre-copy-date").value = keyOf(new Date());
     $("#fd-libre").hidden = false;
     $("#fd-libre-kcal").focus();
   }
@@ -513,6 +531,8 @@
     $("#fd-item-form").addEventListener("submit", saveItem);
     $("#fd-item-cancel").addEventListener("click", () => { $("#fd-item").hidden = true; });
     $("#fd-item-delete").addEventListener("click", deleteItem);
+    $("#fd-item-copy-btn").addEventListener("click", () => copyItem("#fd-item-copy-date", "#fd-item"));
+    $("#fd-libre-copy-btn").addEventListener("click", () => copyItem("#fd-libre-copy-date", "#fd-libre"));
     $("#fd-exercise").addEventListener("change", setExercise);
     $("#fd-copy").addEventListener("click", copyPreviousDay);
     $("#fd-db-open").addEventListener("click", () => { $("#fd-db-search").value = ""; renderFoodDb(); $("#fd-db").hidden = false; });
