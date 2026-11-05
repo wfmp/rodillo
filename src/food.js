@@ -239,7 +239,9 @@
     entry.items.push({ food: f.name, qty });
     saveDay(day, entry);
     $("#fd-food").value = ""; $("#fd-qty").value = ""; $("#fd-unit").textContent = "";
-    $("#fd-food").focus();
+    // Refocusing on touch devices opens the whole food list (datalist) right after adding; only do it with a mouse
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) $("#fd-food").focus();
+    else if (document.activeElement) document.activeElement.blur();
     render();
   }
 
