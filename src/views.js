@@ -181,7 +181,7 @@
     const sport = sportOf(x);
     const unclassified = GENERIC_TYPE.test(sport) && !sportFixes()[x.id];
     const title = sportFixes()[x.id] ? sportLabel(sport) : x.name || sportLabel(sport);
-    const row = app.el("button", { class: "act-row ext", type: "button", onclick: () => openSportPicker(x) },
+    const row = app.el("button", { class: "act-row ext", type: "button", onclick: () => openExternal(x) },
       app.el("span", { class: "act-date" }, fmtDate(x.start), app.el("small", {}, fmtTimeOfDay(x.start))),
       app.el("span", { class: "act-name" }, title, app.el("small", {}, sportLabel(sport) + " · Garmin")),
       app.el("span", { class: "act-dur num" }, fmtDur(x.seconds)),
@@ -281,7 +281,13 @@
     const ride = await H.getRide(id);
     if (!ride) { app.toast("No encuentro esa actividad.", "error"); return; }
     current = ride;
+    currentExt = null;
     app.showView("activity");
+    $("#act-actions").hidden = false;
+    $("#act-ext-actions").hidden = true;
+    $("#act-note").hidden = true;
+    $("#act-hrz-box").hidden = true;
+    $("#act-pace-box").hidden = true;
     const s = ride.stats || {};
     $("#act-title").textContent = ride.name;
     $("#act-date").textContent = fmtDate(ride.columns.ts[0]) + " · " + fmtTimeOfDay(ride.columns.ts[0]) + " · " + (ride.source === "app" ? "Rodillo" : ride.source === "icu" ? "intervals.icu" : "FIT importado");
@@ -296,6 +302,149 @@
     $("#act-dropbox").hidden = !!ride.dropboxPath || !D.isConnected();
     renderLaps(ride);
     requestAnimationFrame(() => drawActivityCharts(ride));
+  }
+
+  // ---------- Detail of a watch activity (summary from intervals.icu, streams fetched on demand) ----------
+  let currentExt = null;
+  const STREAM_CACHE = "icu-streams-v1";
+
+  async function fetchExternalStreams(x) {
+    const url = "https://intervals.icu/api/v1/activity/" + encodeURIComponent(x.icuId) + "/streams?types=time,heartrate,velocity_smooth,distance,altitude";
+    let cache = null;
+    try { cache = await caches.open(STREAM_CACHE); const hit = await cache.match(url); if (hit) return await hit.json(); } catch (e) { cache = null; }
+    const cfg = intervalsCfg();
+    if (!cfg.apiKey) throw new Error("falta la API key de intervals.icu");
+    const res = await fetch(url, { headers: { Authorization: "Basic " + btoa("API_KEY:" + cfg.apiKey) } });
+    if (!res.ok) throw new Error("intervals.icu HTTP " + res.status);
+    const list = await res.json();
+    const streams = {};
+    for (const st of list) streams[st.type] = st.data;
+    try { if (cache) await cache.put(url, new Response(JSON.stringify(streams), { headers: { "Content-Type": "application/json" } })); } catch (e) { /* ignore */ }
+    return streams;
+  }
+
+  /** Streams -> 1 Hz columns {ts, hr, speed, distance, altitude}; gaps longer than 5 s stay empty. */
+  function streamsToColumns(st) {
+    const time = st.time || [];
+    const n = time.length ? time[time.length - 1] + 1 : 0;
+    const cols = { hr: new Array(n).fill(null), speed: new Array(n).fill(null), distance: new Array(n).fill(null), altitude: new Array(n).fill(null) };
+    for (let i = 0; i < time.length; i++) {
+      const t = time[i], next = i + 1 < time.length ? time[i + 1] : t + 1;
+      const span = next - t > 0 && next - t <= 5 ? next - t : 1;
+      for (let k = 0; k < span && t + k < n; k++) {
+        cols.hr[t + k] = st.heartrate ? st.heartrate[i] || null : null;
+        cols.speed[t + k] = st.velocity_smooth ? st.velocity_smooth[i] : null;
+        cols.distance[t + k] = st.distance ? st.distance[i] : null;
+        cols.altitude[t + k] = st.altitude ? st.altitude[i] : null;
+      }
+    }
+    return { n, cols };
+  }
+
+  async function openExternal(x) {
+    current = null;
+    currentExt = x;
+    app.showView("activity");
+    const sport = sportOf(x);
+    $("#act-title").textContent = sportFixes()[x.id] ? sportLabel(sport) : x.name || sportLabel(sport);
+    $("#act-date").textContent = fmtDate(x.start) + " · " + fmtTimeOfDay(x.start) + " · " + sportLabel(sport) + " · Garmin";
+    $("#act-actions").hidden = true;
+    $("#act-ext-actions").hidden = false;
+    $("#act-power-box").hidden = true;
+    $("#act-laps-box").hidden = true;
+    $("#act-hr-box").hidden = true;
+    $("#act-hrz-box").hidden = true;
+    $("#act-pace-box").hidden = true;
+    const kcal = dayActivityKcal(x);
+    const grid = (extra) => {
+      const items = [["Tiempo", fmtDur(x.seconds || 0)], ["Carga", Math.round(x.load || 0)]];
+      if (kcal != null) items.push(["kcal netas", kcal]);
+      items.push(...(extra || []));
+      $("#act-grid").replaceChildren(...items.map(([k, v]) => app.el("div", { class: "stat" }, app.el("span", { class: "stat-k" }, k), app.el("span", { class: "stat-v" }, String(v)))));
+    };
+    grid([["Pulso medio", x.avgHr ? x.avgHr + " ppm" : "—"]]);
+    const note = $("#act-note");
+    note.hidden = false;
+    note.textContent = "Cargando datos de intervals.icu…";
+    if (!x.icuId) { note.textContent = "Esta actividad no tiene datos detallados."; return; }
+    let data;
+    try { data = streamsToColumns(await fetchExternalStreams(x)); } catch (e) {
+      if (currentExt === x) note.textContent = "No se pudieron cargar los datos detallados (" + (e.message || e) + "). Se muestra solo el resumen.";
+      return;
+    }
+    if (currentExt !== x) return;
+    note.hidden = true;
+    const hrs = data.cols.hr.filter((h) => h > 0);
+    const dist = data.cols.distance.filter((d) => d != null);
+    const km = dist.length ? dist[dist.length - 1] / 1000 : 0;
+    const extra = [["Pulso medio", hrs.length ? Math.round(hrs.reduce((a, b) => a + b, 0) / hrs.length) + " ppm" : x.avgHr ? x.avgHr + " ppm" : "—"],
+      ["Pulso máx.", hrs.length ? Math.max(...hrs) + " ppm" : "—"]];
+    if (km >= 0.1) {
+      extra.push(["Distancia", km.toFixed(2) + " km"]);
+      if (sport === "Run" || sport === "Walk" || sport === "Hike") extra.push(["Ritmo medio", fmtPace((x.seconds || data.n) / km)]);
+    }
+    grid(extra);
+    requestAnimationFrame(() => drawExternalCharts(data, sport));
+  }
+
+  const fmtPace = (secPerKm) => { const s = Math.round(secPerKm); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") + " /km"; };
+
+  function dayActivityKcal(x) {
+    if (!x.calories) return null;
+    const base = window.RodilloFood && window.RodilloFood.baseKcal ? window.RodilloFood.baseKcal(A.dayKey(x.start)) : null;
+    return Math.round(base ? Math.max(0, x.calories - base / 1440 * (x.seconds || 0) / 60) : x.calories);
+  }
+
+  function drawExternalCharts(data, sport) {
+    const { n, cols } = data;
+    if (cols.hr.some((h) => h)) {
+      const pts = bucket(cols.hr, 400);
+      const vals = pts.map((p) => p[1]).filter((v) => v);
+      const rest = app.settings.hrRest || 50, max = app.settings.hrMax || 182;
+      const at = (f) => rest + f * (max - rest);
+      const lo = Math.floor((Math.min(...vals) - 10) / 10) * 10, hi = Math.ceil((Math.max(...vals) + 5) / 10) * 10;
+      const edges = [0, at(0.6), at(0.7), at(0.8), at(0.9), 250];
+      $("#act-hr-box").hidden = false;
+      C.mount($("#act-hr"), {
+        x: { type: "linear", min: 0, max: n, ticks: timeTicks(n) },
+        y: { min: lo, max: hi },
+        bands: edges.slice(0, 5).map((y0, i) => ({ y0, y1: edges[i + 1], color: alpha(css(ZONE_VARS[i]), 0.16) })),
+        lines: [{ name: "Pulso", color: css("--hr"), points: pts }],
+        tooltip: (t) => { const v = pts.find((p) => p[0] === t); return "<b>" + app.fmtTime(t) + "</b><br>" + Math.round(v[1] || 0) + " ppm"; },
+      });
+      $("#act-hr-box").hidden = false;
+      // Time in heart-rate zones
+      const secs = [0, 0, 0, 0, 0];
+      for (const h of cols.hr) if (h) secs[zoneOfHr(h) - 1]++;
+      const total = secs.reduce((a, b) => a + b, 0) || 1;
+      $("#act-hrz").replaceChildren(...secs.map((s, i) => app.el("div", { class: "hrz-row" },
+        app.el("span", { class: "num" }, "Z" + (i + 1)),
+        app.el("div", { class: "hrz-track" }, app.el("div", { class: "hrz-fill", style: "width:" + (s / total * 100).toFixed(1) + "%;background:var(" + ZONE_VARS[i] + ")" })),
+        app.el("span", { class: "num muted" }, fmtDur(s) + " · " + Math.round(s / total * 100) + " %"))));
+      $("#act-hrz-box").hidden = false;
+    }
+    if (cols.speed.some((v) => v > 0.3)) {
+      const isFoot = sport === "Run" || sport === "Walk" || sport === "Hike";
+      // Pace in min/km for runs (capped so stops do not flatten the chart), km/h otherwise
+      const vals = cols.speed.map((v) => (v == null ? null : isFoot ? (v > 0.3 ? Math.min(1000 / v, 900) : null) : v * 3.6));
+      const pts = bucket(vals, 400);
+      const ys = pts.map((p) => p[1]).filter((v) => v != null);
+      $("#act-pace-box").hidden = false;
+      $("#act-pace-title").textContent = isFoot ? "Ritmo (min/km)" : "Velocidad (km/h)";
+      C.mount($("#act-pace"), {
+        x: { type: "linear", min: 0, max: n, ticks: timeTicks(n) },
+        y: { min: Math.max(0, Math.floor(Math.min(...ys) * 0.9)), max: Math.ceil(Math.max(...ys) * 1.05), format: isFoot ? (v) => fmtPace(v).replace(" /km", "") : (v) => Math.round(v) + "" },
+        lines: [{ name: isFoot ? "Ritmo" : "Velocidad", color: css("--fg"), width: 1.5, points: pts }],
+        tooltip: (t) => { const v = pts.find((p) => p[0] === t); return "<b>" + app.fmtTime(t) + "</b><br>" + (v[1] == null ? "—" : isFoot ? fmtPace(v[1]) : v[1].toFixed(1) + " km/h"); },
+      });
+      $("#act-pace-box").hidden = false;
+    }
+  }
+
+  function zoneOfHr(hr) {
+    const rest = app.settings.hrRest || 50, max = app.settings.hrMax || 182;
+    const r = (hr - rest) / (max - rest);
+    return r < 0.6 ? 1 : r < 0.7 ? 2 : r < 0.8 ? 3 : r < 0.9 ? 4 : 5;
   }
 
   /** Average consecutive samples into at most maxPoints buckets. */
@@ -752,6 +901,7 @@
     try { $("#fit-forward").checked = localStorage.getItem("rodillo.fitForward") !== "0"; } catch (e) { /* ignore */ }
     $("#act-back").addEventListener("click", () => showTab("activities"));
     $("#act-share").addEventListener("click", shareCurrentFit);
+    $("#act-sport").addEventListener("click", () => { if (currentExt) openSportPicker(currentExt); });
     $("#act-dropbox").addEventListener("click", uploadCurrent);
     $("#act-delete").addEventListener("click", () => { $("#confirm-delete-act").hidden = false; });
     $("#act-delete-yes").addEventListener("click", deleteCurrent);

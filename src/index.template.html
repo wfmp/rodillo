@@ -519,6 +519,10 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
   .toast { animation: rise 180ms ease-out; }
   @keyframes rise { from { transform: translate(-50%, 8px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
 }
+.hrz-bars { display: grid; gap: 8px; }
+.hrz-row { display: grid; grid-template-columns: 30px 1fr 112px; white-space: nowrap; align-items: center; gap: 10px; font-size: 14px; }
+.hrz-track { height: 14px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.hrz-fill { height: 100%; border-radius: 4px; }
 </style>
 </head>
 <body data-view="library">
@@ -696,14 +700,20 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
       </div>
       <div class="summary-grid" id="act-grid"></div>
       <div class="box chart-box" id="act-power-box"><div class="chart-title">Potencia (W)</div><div class="chart-holder"><canvas id="act-power"></canvas></div></div>
+      <p class="muted" id="act-note" hidden></p>
       <div class="box chart-box" id="act-hr-box"><div class="chart-title">Pulso (ppm)</div><div class="chart-holder short"><canvas id="act-hr"></canvas></div></div>
+      <div class="box" id="act-hrz-box" hidden><div class="chart-title">Tiempo en zonas de pulso</div><div class="hrz-bars" id="act-hrz"></div></div>
+      <div class="box chart-box" id="act-pace-box" hidden><div class="chart-title" id="act-pace-title">Ritmo</div><div class="chart-holder short"><canvas id="act-pace"></canvas></div></div>
       <div class="box" id="act-laps-box">
         <div class="chart-title">Laps</div>
         <div class="table-scroll">
           <table class="laps"><thead><tr><th>Lap</th><th>Tiempo</th><th>Media</th><th>Máx.</th><th>Pulso</th><th>Cadencia</th></tr></thead><tbody id="act-laps"></tbody></table>
         </div>
       </div>
-      <div class="summary-actions">
+      <div class="summary-actions" id="act-ext-actions" hidden>
+        <button class="btn" id="act-sport" type="button">Cambiar deporte</button>
+      </div>
+      <div class="summary-actions" id="act-actions">
         <button class="btn" id="act-share" type="button">Guardar archivo FIT</button>
         <button class="btn" id="act-dropbox" type="button">Subir a Dropbox</button>
         <button class="btn danger" id="act-delete" type="button">Borrar</button>
