@@ -672,7 +672,9 @@
   function mapIntervals(a) {
     // start_date is UTC ("...Z"); start_date_local has no zone and is parsed as local time
     const start = Math.floor(new Date(a.start_date || a.start_date_local).getTime() / 1000);
-    const seconds = a.moving_time || a.elapsed_time || 0;
+    // Bike rides: moving time (stops at lights or a café do not count); other sports: total time, as Garmin shows it
+    const bike = BIKE_TYPES.test(a.type || "");
+    const seconds = (bike ? a.moving_time || a.elapsed_time : a.elapsed_time || a.moving_time) || 0;
     const hasPower = (a.icu_weighted_avg_watts || a.icu_average_watts || a.average_watts || 0) > 0;
     let load;
     if (hasPower && a.power_load != null) load = a.power_load;
@@ -682,7 +684,7 @@
     return {
       id: "icu-" + a.id, start, end: start + (a.elapsed_time || seconds), seconds, name: a.name, type: a.type || "Actividad",
       load: Math.round((load || 0) * 10) / 10, hasPower, avgHr: a.average_heartrate ? Math.round(a.average_heartrate) : null,
-      icuId: a.id, ftp: a.icu_ftp || null, bike: BIKE_TYPES.test(a.type || ""),
+      icuId: a.id, ftp: a.icu_ftp || null, bike,
       calories: a.calories != null ? Math.round(a.calories) : null,
     };
   }
