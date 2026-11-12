@@ -525,6 +525,13 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 .hrz-fill { height: 100%; border-radius: 4px; }
 .fd-copy { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .fd-copy input[type=date] { width: 100%; box-sizing: border-box; }
+.fd-selbar-top { display: flex; justify-content: flex-end; margin: 8px 0 4px; }
+.fd-selbar { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.fd-selbar .fd-copy { margin: 0; padding: 0; border: 0; }
+.fd-selbar-row { display: flex; justify-content: space-between; align-items: center; }
+.fd-check { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--muted); border-radius: 5px; margin-right: 10px; vertical-align: -4px; box-sizing: border-box; }
+tr.picked .fd-check { background: var(--ok); border-color: var(--ok); }
+tr.picked td { background: var(--panel-2); }
 </style>
 </head>
 <body data-view="library">
@@ -868,6 +875,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
             <button class="btn primary" type="submit">Añadir</button>
             <button class="btn" id="fd-libre-open" type="button">Libre</button>
           </form>
+          <div class="fd-selbar-top"><button class="btn ghost" id="fd-sel-start" type="button">Seleccionar</button></div>
           <div class="table-scroll">
             <table class="laps fd-items">
               <thead><tr><th>Alimento</th><th>Cantidad</th><th>kcal</th><th>Prot.</th><th>Carb.</th><th>Grasa</th></tr></thead>
@@ -875,6 +883,14 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
             </table>
           </div>
           <p class="muted small" id="fd-noitems">Nada registrado este día.</p>
+          <div class="fd-selbar" id="fd-selbar" hidden>
+            <div class="fd-selbar-row"><span id="fd-sel-count">0 seleccionados</span><button class="btn ghost" id="fd-sel-all" type="button">Todos</button></div>
+            <div class="fd-copy">
+              <label class="field" for="fd-sel-date"><span class="label">Copiar a</span><input id="fd-sel-date" type="date"></label>
+              <button class="btn primary" id="fd-sel-copy" type="button">Copiar</button>
+            </div>
+            <button class="btn ghost" id="fd-sel-cancel" type="button">Cancelar</button>
+          </div>
           <button class="btn ghost" id="fd-copy" type="button">Copiar el último día con comidas</button>
         </div>
         <div class="box fd-summary">

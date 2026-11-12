@@ -136,14 +136,15 @@
   }
 
   function renderItems() {
+    if (selecting && selDay !== day) { selecting = false; picked.clear(); }
     const entry = dayEntry(day);
     const list = foods();
     $("#fd-copy").hidden = entry.items.length > 0;
     const rows = entry.items.map((it, i) => {
       const v = itemValues(it, list);
       const f = it.libre ? null : findFood(it.food, list);
-      return app.el("tr", { onclick: () => openItem(i) },
-        app.el("td", {}, it.libre ? (it.libre.name || "Libre") : it.food, it.libre ? app.el("span", { class: "tag" }, "libre") : null, v.missing ? app.el("span", { class: "tag warn" }, "no está en la base") : null),
+      return app.el("tr", { class: selecting && picked.has(i) ? "picked" : "", onclick: () => (selecting ? togglePick(i) : openItem(i)) },
+        app.el("td", {}, selecting ? app.el("span", { class: "fd-check" }) : null, it.libre ? (it.libre.name || "Libre") : it.food, it.libre ? app.el("span", { class: "tag" }, "libre") : null, v.missing ? app.el("span", { class: "tag warn" }, "no está en la base") : null),
         app.el("td", { class: "num" }, it.libre ? "—" : fmt1(it.qty).replace(/\.0$/, "") + " " + (f ? f.unit || "" : "")),
         app.el("td", { class: "num" }, fmt0(v.kcal)),
         app.el("td", { class: "num" }, fmt1(v.protein)),
@@ -152,6 +153,41 @@
     });
     $("#fd-rows").replaceChildren(...rows);
     $("#fd-noitems").hidden = rows.length > 0;
+    if (selecting && !rows.length) selecting = false;
+    $("#fd-sel-start").hidden = selecting || !rows.length;
+    $("#fd-selbar").hidden = !selecting;
+    $("#fd-sel-count").textContent = picked.size + (picked.size === 1 ? " seleccionado" : " seleccionados");
+  }
+
+  // ---------- Multi-select copy ----------
+  let selecting = false, selDay = null;
+  const picked = new Set();
+
+  function startSelecting() {
+    selecting = true; selDay = day; picked.clear();
+    $("#fd-sel-date").value = keyOf(new Date());
+    renderItems();
+  }
+  function stopSelecting() { selecting = false; picked.clear(); renderItems(); }
+  function togglePick(i) { if (picked.has(i)) picked.delete(i); else picked.add(i); renderItems(); }
+  function pickAll() {
+    const n = dayEntry(day).items.length;
+    if (picked.size === n) picked.clear(); else for (let i = 0; i < n; i++) picked.add(i);
+    renderItems();
+  }
+  function copyPicked() {
+    const target = $("#fd-sel-date").value;
+    if (!picked.size) { app.toast("Marca al menos un alimento.", "warn"); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(target)) { app.toast("Elige una fecha.", "warn"); return; }
+    const items = dayEntry(day).items.filter((_, i) => picked.has(i));
+    const entry = dayEntry(target);
+    entry.items.push(...JSON.parse(JSON.stringify(items)));
+    saveDay(target, entry);
+    const n = items.length;
+    selecting = false; picked.clear();
+    day = target;
+    render();
+    app.toast((n === 1 ? "1 alimento copiado" : n + " alimentos copiados") + " a " + fmtDay(target) + ".");
   }
 
   async function renderDay() {
@@ -531,6 +567,10 @@
     $("#fd-item-form").addEventListener("submit", saveItem);
     $("#fd-item-cancel").addEventListener("click", () => { $("#fd-item").hidden = true; });
     $("#fd-item-delete").addEventListener("click", deleteItem);
+    $("#fd-sel-start").addEventListener("click", startSelecting);
+    $("#fd-sel-cancel").addEventListener("click", stopSelecting);
+    $("#fd-sel-all").addEventListener("click", pickAll);
+    $("#fd-sel-copy").addEventListener("click", copyPicked);
     $("#fd-item-copy-btn").addEventListener("click", () => copyItem("#fd-item-copy-date", "#fd-item"));
     $("#fd-libre-copy-btn").addEventListener("click", () => copyItem("#fd-libre-copy-date", "#fd-libre"));
     $("#fd-exercise").addEventListener("change", setExercise);

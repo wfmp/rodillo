@@ -525,6 +525,13 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 .hrz-fill { height: 100%; border-radius: 4px; }
 .fd-copy { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .fd-copy input[type=date] { width: 100%; box-sizing: border-box; }
+.fd-selbar-top { display: flex; justify-content: flex-end; margin: 8px 0 4px; }
+.fd-selbar { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.fd-selbar .fd-copy { margin: 0; padding: 0; border: 0; }
+.fd-selbar-row { display: flex; justify-content: space-between; align-items: center; }
+.fd-check { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--muted); border-radius: 5px; margin-right: 10px; vertical-align: -4px; box-sizing: border-box; }
+tr.picked .fd-check { background: var(--ok); border-color: var(--ok); }
+tr.picked td { background: var(--panel-2); }
 </style>
 </head>
 <body data-view="library">
@@ -868,6 +875,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
             <button class="btn primary" type="submit">Añadir</button>
             <button class="btn" id="fd-libre-open" type="button">Libre</button>
           </form>
+          <div class="fd-selbar-top"><button class="btn ghost" id="fd-sel-start" type="button">Seleccionar</button></div>
           <div class="table-scroll">
             <table class="laps fd-items">
               <thead><tr><th>Alimento</th><th>Cantidad</th><th>kcal</th><th>Prot.</th><th>Carb.</th><th>Grasa</th></tr></thead>
@@ -875,6 +883,14 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
             </table>
           </div>
           <p class="muted small" id="fd-noitems">Nada registrado este día.</p>
+          <div class="fd-selbar" id="fd-selbar" hidden>
+            <div class="fd-selbar-row"><span id="fd-sel-count">0 seleccionados</span><button class="btn ghost" id="fd-sel-all" type="button">Todos</button></div>
+            <div class="fd-copy">
+              <label class="field" for="fd-sel-date"><span class="label">Copiar a</span><input id="fd-sel-date" type="date"></label>
+              <button class="btn primary" id="fd-sel-copy" type="button">Copiar</button>
+            </div>
+            <button class="btn ghost" id="fd-sel-cancel" type="button">Cancelar</button>
+          </div>
           <button class="btn ghost" id="fd-copy" type="button">Copiar el último día con comidas</button>
         </div>
         <div class="box fd-summary">
@@ -1096,7 +1112,7 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script>window.RODILLO_PLAN = [{"id": "2026-10-26_W1_B_VO2_4x3", "name": "2026-10-26_W1_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-10-27_W1_C_SweetSpot_Sprints", "name": "2026-10-27_W1_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-10-31_W1_A_Anaerobic_8x30s", "name": "2026-10-31_W1_A_Anaerobic_8x30s", "description": "Anaerobic 8x30s @150% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-02_W2_B_VO2_4x3", "name": "2026-11-02_W2_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-05_W2_C_SweetSpot_Short", "name": "2026-11-05_W2_C_SweetSpot_Short", "description": "Short sweet spot 20min @85% (optional)", "segments": [[600, 50, 75], [1200, 85, 85], [300, 60, 40]]}, {"id": "2026-11-13_W3_B_VO2_5x3", "name": "2026-11-13_W3_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "name": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "description": "Repeated sprints: 2 sets of 6x30s @130% / 30s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [300, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-16_W4_B_VO2_5x3", "name": "2026-11-16_W4_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-19_W4_C_SweetSpot_Sprints", "name": "2026-11-19_W4_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-11-22_W4_A_Anaerobic_6x45s", "name": "2026-11-22_W4_A_Anaerobic_6x45s", "description": "Anaerobic capacity: 6x45s @125% / 90s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-24_W5_B_VO2_5x4", "name": "2026-11-24_W5_B_VO2_5x4", "description": "VO2max 5x4min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-28_W5_FTP_Test_20min", "name": "2026-11-28_W5_FTP_Test_20min", "description": "FTP test: 20min max effort in slope/resistance mode, not ERG", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [300, 105, 105], [600, 50, 50], [1200, 100, 100], [300, 50, 50], [600, 60, 40]]}]; window.RODILLO_BUILD = "20261105185206";</script>
+<script>window.RODILLO_PLAN = [{"id": "2026-10-26_W1_B_VO2_4x3", "name": "2026-10-26_W1_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-10-27_W1_C_SweetSpot_Sprints", "name": "2026-10-27_W1_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-10-31_W1_A_Anaerobic_8x30s", "name": "2026-10-31_W1_A_Anaerobic_8x30s", "description": "Anaerobic 8x30s @150% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [150, 50, 50], [30, 150, 150], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-02_W2_B_VO2_4x3", "name": "2026-11-02_W2_B_VO2_4x3", "description": "VO2max 4x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-05_W2_C_SweetSpot_Short", "name": "2026-11-05_W2_C_SweetSpot_Short", "description": "Short sweet spot 20min @85% (optional)", "segments": [[600, 50, 75], [1200, 85, 85], [300, 60, 40]]}, {"id": "2026-11-13_W3_B_VO2_5x3", "name": "2026-11-13_W3_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "name": "2026-11-15_W3_A_Repeated_2x6x30s-30s", "description": "Repeated sprints: 2 sets of 6x30s @130% / 30s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [300, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [30, 130, 130], [30, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-16_W4_B_VO2_5x3", "name": "2026-11-16_W4_B_VO2_5x3", "description": "VO2max 5x3min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [180, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-19_W4_C_SweetSpot_Sprints", "name": "2026-11-19_W4_C_SweetSpot_Sprints", "description": "Sweet spot 40min @85% + 6x12s sprints", "segments": [[600, 50, 75], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [384, 85, 85], [12, 200, 200], [300, 60, 40]]}, {"id": "2026-11-22_W4_A_Anaerobic_6x45s", "name": "2026-11-22_W4_A_Anaerobic_6x45s", "description": "Anaerobic capacity: 6x45s @125% / 90s easy", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [45, 125, 125], [90, 50, 50], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-24_W5_B_VO2_5x4", "name": "2026-11-24_W5_B_VO2_5x4", "description": "VO2max 5x4min @118% FTP", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [240, 118, 118], [180, 50, 50], [480, 60, 40]]}, {"id": "2026-11-28_W5_FTP_Test_20min", "name": "2026-11-28_W5_FTP_Test_20min", "description": "FTP test: 20min max effort in slope/resistance mode, not ERG", "segments": [[600, 50, 75], [120, 90, 90], [60, 55, 55], [30, 120, 120], [60, 55, 55], [30, 120, 120], [180, 55, 55], [300, 105, 105], [600, 50, 50], [1200, 100, 100], [300, 50, 50], [600, 60, 40]]}]; window.RODILLO_BUILD = "20261112163718";</script>
 <script>/* FIT file encoder for indoor cycling activities (power, heart rate, cadence, speed). */
 (function (root) {
   "use strict";
@@ -4250,14 +4266,15 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
   }
 
   function renderItems() {
+    if (selecting && selDay !== day) { selecting = false; picked.clear(); }
     const entry = dayEntry(day);
     const list = foods();
     $("#fd-copy").hidden = entry.items.length > 0;
     const rows = entry.items.map((it, i) => {
       const v = itemValues(it, list);
       const f = it.libre ? null : findFood(it.food, list);
-      return app.el("tr", { onclick: () => openItem(i) },
-        app.el("td", {}, it.libre ? (it.libre.name || "Libre") : it.food, it.libre ? app.el("span", { class: "tag" }, "libre") : null, v.missing ? app.el("span", { class: "tag warn" }, "no está en la base") : null),
+      return app.el("tr", { class: selecting && picked.has(i) ? "picked" : "", onclick: () => (selecting ? togglePick(i) : openItem(i)) },
+        app.el("td", {}, selecting ? app.el("span", { class: "fd-check" }) : null, it.libre ? (it.libre.name || "Libre") : it.food, it.libre ? app.el("span", { class: "tag" }, "libre") : null, v.missing ? app.el("span", { class: "tag warn" }, "no está en la base") : null),
         app.el("td", { class: "num" }, it.libre ? "—" : fmt1(it.qty).replace(/\.0$/, "") + " " + (f ? f.unit || "" : "")),
         app.el("td", { class: "num" }, fmt0(v.kcal)),
         app.el("td", { class: "num" }, fmt1(v.protein)),
@@ -4266,6 +4283,41 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     });
     $("#fd-rows").replaceChildren(...rows);
     $("#fd-noitems").hidden = rows.length > 0;
+    if (selecting && !rows.length) selecting = false;
+    $("#fd-sel-start").hidden = selecting || !rows.length;
+    $("#fd-selbar").hidden = !selecting;
+    $("#fd-sel-count").textContent = picked.size + (picked.size === 1 ? " seleccionado" : " seleccionados");
+  }
+
+  // ---------- Multi-select copy ----------
+  let selecting = false, selDay = null;
+  const picked = new Set();
+
+  function startSelecting() {
+    selecting = true; selDay = day; picked.clear();
+    $("#fd-sel-date").value = keyOf(new Date());
+    renderItems();
+  }
+  function stopSelecting() { selecting = false; picked.clear(); renderItems(); }
+  function togglePick(i) { if (picked.has(i)) picked.delete(i); else picked.add(i); renderItems(); }
+  function pickAll() {
+    const n = dayEntry(day).items.length;
+    if (picked.size === n) picked.clear(); else for (let i = 0; i < n; i++) picked.add(i);
+    renderItems();
+  }
+  function copyPicked() {
+    const target = $("#fd-sel-date").value;
+    if (!picked.size) { app.toast("Marca al menos un alimento.", "warn"); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(target)) { app.toast("Elige una fecha.", "warn"); return; }
+    const items = dayEntry(day).items.filter((_, i) => picked.has(i));
+    const entry = dayEntry(target);
+    entry.items.push(...JSON.parse(JSON.stringify(items)));
+    saveDay(target, entry);
+    const n = items.length;
+    selecting = false; picked.clear();
+    day = target;
+    render();
+    app.toast((n === 1 ? "1 alimento copiado" : n + " alimentos copiados") + " a " + fmtDay(target) + ".");
   }
 
   async function renderDay() {
@@ -4645,6 +4697,10 @@ body.no-trainer .tabs [data-tab="library"], body.no-trainer #chip-trainer, body.
     $("#fd-item-form").addEventListener("submit", saveItem);
     $("#fd-item-cancel").addEventListener("click", () => { $("#fd-item").hidden = true; });
     $("#fd-item-delete").addEventListener("click", deleteItem);
+    $("#fd-sel-start").addEventListener("click", startSelecting);
+    $("#fd-sel-cancel").addEventListener("click", stopSelecting);
+    $("#fd-sel-all").addEventListener("click", pickAll);
+    $("#fd-sel-copy").addEventListener("click", copyPicked);
     $("#fd-item-copy-btn").addEventListener("click", () => copyItem("#fd-item-copy-date", "#fd-item"));
     $("#fd-libre-copy-btn").addEventListener("click", () => copyItem("#fd-libre-copy-date", "#fd-libre"));
     $("#fd-exercise").addEventListener("change", setExercise);
